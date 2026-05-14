@@ -1,0 +1,77 @@
+# =============================================================================
+# config/mariadb/99-practicayoruba.cnf
+# Overrides de MariaDB 11.8 para el proyecto PracticaYoruba
+# =============================================================================
+#
+# Este archivo es la fuente de verdad para la configuración de MariaDB del
+# proyecto. Durante el provisionamiento se activa con un symlink:
+#
+#   sudo ln -sf "$(pwd)/config/mariadb/99-practicayoruba.cnf" \
+#               /etc/mysql/mariadb.conf.d/99-practicayoruba.cnf
+#   sudo systemctl reload mariadb
+#
+# Por qué 99-practicayoruba.cnf y no modificar 50-server.cnf:
+#   - 50-server.cnf es propiedad del paquete mariadb-server. Puede ser
+#     sobreescrito en actualizaciones del sistema operativo.
+#   - MariaDB lee los archivos de mariadb.conf.d/ en orden alfabético.
+#     El prefijo 99 garantiza que estas opciones se aplican al final y
+#     tienen precedencia sobre los defaults del sistema.
+#   - El archivo vive en el repositorio: es la fuente de verdad, no el
+#     servidor. Un cambio aquí es efectivo de inmediato porque el symlink
+#     apunta al repo.
+#
+# Idempotencia:
+#   El symlink se crea con ln -sf — re-ejecutar el provisioner es seguro.
+#
+# Referencia: ADR-009 (MariaDB 11.8 como motor de PracticaYoruba)
+# =============================================================================
+
+[mariadb]
+
+# ─── Codificación ────────────────────────────────────────────────────────────
+# utf8mb4 es el charset real de Unicode (incluye emojis y caracteres fuera
+# del BMP). utf8mb4_unicode_ci alinea con la collation usada en CREATE DATABASE
+# en db_setup.sh y con la opción 'charset': 'utf8mb4' en Django settings.
+#
+# HALLAZGO H-F1-003: 99-iact.cnf usa utf8mb4_general_ci. PracticaYoruba usa
+# utf8mb4_unicode_ci en todos los CREATE DATABASE y en Django OPTIONS.
+# Se usa unicode_ci para consistencia con el proyecto.
+character-set-server  = utf8mb4
+collation-server      = utf8mb4_unicode_ci
+
+# ─── Modo estricto ───────────────────────────────────────────────────────────
+# Alinea con el init_command de Django settings/base.py:
+#   'init_command': "SET sql_mode='STRICT_TRANS_TABLES'"
+# Activarlo a nivel de servidor evita que conexiones que no pasen por Django
+# (clientes directos, scripts de bash, mysqldump) inserten datos truncados
+# o con valores inválidos silenciosamente.
+#
+# NO_ZERO_DATE rechaza fechas tipo 0000-00-00 que MariaDB acepta por defecto
+# y que Django nunca genera pero que podrían colarse por inserciones manuales.
+sql_mode = STRICT_TRANS_TABLES,NO_ZERO_DATE,NO_ZERO_IN_DATE,ERROR_FOR_DIVISION_BY_ZERO
+
+# ─── InnoDB ──────────────────────────────────────────────────────────────────
+# innodb_strict_mode hace que InnoDB rechace operaciones inválidas en lugar
+# de silenciarlas (equivalente a sql_mode estricto pero a nivel de storage engine).
+# Detecta errores de esquema durante CREATE TABLE / ALTER TABLE en desarrollo
+# antes de llegar a producción.
+innodb_strict_mode = ON
+
+# El buffer pool es la memoria caché principal de InnoDB. El valor por defecto
+# (128MB) es suficiente para desarrollo. En producción se ajusta a ~70% de RAM
+# disponible. Se documenta aquí para visibilidad, no se cambia por defecto.
+# innodb_buffer_pool_size = 128M   # default — descomentaar en producción
+
+# ─── Conexiones ──────────────────────────────────────────────────────────────
+# Timeout de espera para conexiones inactivas. Django cierra conexiones con
+# CONN_MAX_AGE pero en entornos de desarrollo puede haber conexiones huérfanas.
+# 300 segundos (5 min) es un valor conservador que libera recursos sin afectar
+# consultas largas legítimas.
+wait_timeout         = 300
+interactive_timeout  = 300
+
+# ─── Logging de errores ──────────────────────────────────────────────────────
+# log_error es la fuente principal de diagnóstico cuando MariaDB no arranca
+# o tiene errores de InnoDB. La ruta por defecto de Ubuntu 24.04 es correcta.
+# Se documenta explícitamente para que scripts/verify.sh pueda referenciarla.
+log_error = /var/lib/mysql/mysqld_err.log

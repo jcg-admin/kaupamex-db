@@ -1,0 +1,28 @@
+# =============================================================================
+# .gitignore — PracticaYoruba-db
+# =============================================================================
+
+# Variables de entorno — nunca en control de versión
+.env
+
+# Artefactos de backup generados por scripts/backup_db.sh
+backups/*.sql
+backups/*.sql.gz
+backups/*.md5
+backups/*.log
+
+# Temporales de sistema
+*.swp
+*.swo
+*~
+.DS_Store
+Thumbs.db
+
+# Python
+__pycache__/
+*.pyc
+*.pyo
+.pytest_cache/
+
+# Logs generales
+*.log

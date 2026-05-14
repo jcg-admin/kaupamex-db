@@ -1,0 +1,5 @@
+# Artefactos generados por scripts/backup_db.sh — no en control de versión
+*.sql
+*.sql.gz
+*.md5
+*.log
