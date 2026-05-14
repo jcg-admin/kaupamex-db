@@ -105,10 +105,10 @@ _has_priv() {
 }
 
 # =============================================================================
-# Check 1 — Variables requeridas en .env
+# Variables requeridas en .env
 # =============================================================================
 check_env_vars() {
-    log_header "Check 1/7 — Variables de entorno"
+    log_header "Variables de entorno (.env)"
 
     local required=(
         "DB_NAME" "DB_USER" "DB_PASSWORD"
@@ -126,10 +126,10 @@ check_env_vars() {
 }
 
 # =============================================================================
-# Check 2 — Herramientas CLI
+# Herramientas CLI
 # =============================================================================
 check_tools() {
-    log_header "Check 2/7 — Herramientas CLI"
+    log_header "Herramientas CLI"
 
     local tools=(
         "mysql:cliente SQL MariaDB"
@@ -149,10 +149,10 @@ check_tools() {
 }
 
 # =============================================================================
-# Check 3 — MariaDB responde
+# MariaDB responde
 # =============================================================================
 check_mariadb_running() {
-    log_header "Check 3/7 — MariaDB responde"
+    log_header "MariaDB responde"
 
     # Intentar socket Unix primero (H-F3-002)
     for sock in "${_MARIADB_SOCKETS[@]}"; do
@@ -175,10 +175,10 @@ check_mariadb_running() {
 }
 
 # =============================================================================
-# Check 4 — Schema practicayoruba_db existe y tiene django_migrations
+# Schema practicayoruba_db existe y tiene django_migrations
 # =============================================================================
 check_schema_db() {
-    log_header "Check 4/7 — Schema ${DB_NAME}"
+    log_header "Schema ${DB_NAME}: existencia y migraciones"
 
     if ! command_exists mysql; then
         warn "mysql CLI no disponible — check omitido"
@@ -220,10 +220,10 @@ check_schema_db() {
 }
 
 # =============================================================================
-# Check 5 — Schema practicayoruba_qa existe y tiene django_migrations
+# Schema practicayoruba_qa existe y tiene django_migrations
 # =============================================================================
 check_schema_qa() {
-    log_header "Check 5/7 — Schema ${DB_QA_NAME}"
+    log_header "Schema ${DB_QA_NAME}: existencia y migraciones"
 
     if ! command_exists mysql; then
         warn "mysql CLI no disponible — check omitido"
@@ -263,10 +263,10 @@ check_schema_qa() {
 }
 
 # =============================================================================
-# Check 6 — Privilegios Django en practicayoruba_db
+# Privilegios Django en practicayoruba_db
 # =============================================================================
 check_privs_db() {
-    log_header "Check 6/7 — Privilegios ${DB_USER} en ${DB_NAME}"
+    log_header "Privilegios ${DB_USER} en ${DB_NAME}"
 
     if ! command_exists mysql; then
         warn "mysql CLI no disponible — check omitido"
@@ -297,10 +297,10 @@ check_privs_db() {
 }
 
 # =============================================================================
-# Check 7 — Privilegios Django en practicayoruba_qa
+# Privilegios Django en practicayoruba_qa
 # =============================================================================
 check_privs_qa() {
-    log_header "Check 7/7 — Privilegios ${DB_QA_USER} en ${DB_QA_NAME}"
+    log_header "Privilegios ${DB_QA_USER} en ${DB_QA_NAME}"
 
     if ! command_exists mysql; then
         warn "mysql CLI no disponible — check omitido"

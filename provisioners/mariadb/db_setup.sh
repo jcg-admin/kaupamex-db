@@ -45,8 +45,6 @@ DB_PASSWORD="${DB_PASSWORD:-django_pass}"
 DB_HOST="${DB_HOST:-127.0.0.1}"
 DB_PORT="${DB_PORT:-3306}"
 
-TOTAL_STEPS=5
-
 # -----------------------------------------------------------------------------
 # _db_exec [args...]
 #   Ejecuta un comando mysql como administrador del servidor.
@@ -72,7 +70,7 @@ _db_exec_quiet() { _db_exec --silent --skip-column-names "$@" 2>/dev/null; }
 
 # =============================================================================
 check_prerequisites() {
-    log_step 1 $TOTAL_STEPS "Verificando prerequisitos"
+    log_header "Verificando prerequisitos"
 
     command -v mysql &>/dev/null || {
         log_fatal "mysql client no encontrado. Instala: apt install mariadb-client"
@@ -96,7 +94,7 @@ check_prerequisites() {
 
 # =============================================================================
 create_database() {
-    log_step 2 $TOTAL_STEPS "Schema: ${DB_NAME}"
+    log_header "Creando schema: ${DB_NAME}"
 
     local exists
     exists=$(_db_exec_quiet -e \
@@ -116,7 +114,7 @@ create_database() {
 
 # =============================================================================
 create_user() {
-    log_step 3 $TOTAL_STEPS "Usuario: ${DB_USER}"
+    log_header "Creando usuario: ${DB_USER}"
 
     for host in "%" "localhost" "127.0.0.1"; do
         local exists
@@ -140,7 +138,7 @@ create_user() {
 
 # =============================================================================
 grant_privileges() {
-    log_step 4 $TOTAL_STEPS "Privilegios: ${DB_USER} sobre ${DB_NAME}"
+    log_header "Otorgando privilegios: ${DB_USER} sobre ${DB_NAME}"
 
     local test_db="test_${DB_NAME}"
 
@@ -158,7 +156,7 @@ grant_privileges() {
 
 # =============================================================================
 verify_connection() {
-    log_step 5 $TOTAL_STEPS "Verificando conexion con credenciales Django"
+    log_header "Verificando conexion con credenciales Django"
 
     local result
     result=$(_db_exec_quiet \

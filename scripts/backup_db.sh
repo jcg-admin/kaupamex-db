@@ -104,10 +104,10 @@ _root_exec() {
 _root_exec_q() { _root_exec --silent --skip-column-names "$@" 2>/dev/null; }
 
 # =============================================================================
-# PASO 1 — Verificar MariaDB activo (BK-001)
+# Verificar MariaDB activo (BK-001)
 # =============================================================================
 _check_mariadb() {
-    log_header "PASO 1/6 — Verificando MariaDB"
+    log_header "Verificando MariaDB"
 
     if mariadb_is_running "$DB_HOST" "$DB_PORT"; then
         log_success "MariaDB activo"
@@ -122,10 +122,10 @@ _check_mariadb() {
 }
 
 # =============================================================================
-# PASO 2 — Crear py_backup_user (idempotente)
+# Crear py_backup_user (idempotente)
 # =============================================================================
 _setup_backup_user() {
-    log_header "PASO 2/6 — Usuario de backup (idempotente)"
+    log_header "Creando usuario de backup (idempotente)"
 
     local sql="
 CREATE USER IF NOT EXISTS '${BACKUP_USER}'@'${BACKUP_HOST}'
@@ -243,10 +243,10 @@ _dump_schema() {
 }
 
 # =============================================================================
-# PASO 5 — Listar backups en BACKUP_DIR
+# Listar backups en BACKUP_DIR
 # =============================================================================
 _list_backups() {
-    log_header "PASO 5/6 — Backups en ${BACKUP_DIR}"
+    log_header "Backups en ${BACKUP_DIR}"
 
     if ls "${BACKUP_DIR}"/*.sql.gz >/dev/null 2>&1; then
         ls -lh "${BACKUP_DIR}"/*.sql.gz | awk '{printf "  %s  %s\n", $9, $5}'
@@ -256,10 +256,10 @@ _list_backups() {
 }
 
 # =============================================================================
-# PASO 6 — Sincronizar a destino remoto (opcional)
+# Sincronizar a destino remoto (opcional)
 # =============================================================================
 _sync_remote() {
-    log_header "PASO 6/6 — Sincronizacion remota"
+    log_header "Sincronizacion remota"
 
     if [[ -z "${BACKUP_REMOTE_DEST}" ]]; then
         log_info "  BACKUP_REMOTE_DEST no configurado — solo backup local"
@@ -299,13 +299,13 @@ echo ""
 _setup_backup_user
 echo ""
 
-log_header "PASO 3/6 — Inventario de tablas (referencial)"
+log_header "Inventario de tablas (referencial)"
 _log_inventory "$DB_PROD"
 echo ""
 _log_inventory "$DB_QA"
 echo ""
 
-log_header "PASO 4/6 — Generando dumps"
+log_header "Generando dumps"
 _dump_schema "$DB_PROD"
 echo ""
 _dump_schema "$DB_QA"
