@@ -3,7 +3,7 @@
 # scripts/verify.sh
 # Verificación completa del entorno MariaDB de PracticaYoruba
 # =============================================================================
-# Comprueba en orden (8 checks):
+# Comprueba en orden (11 checks):
 #
 #   1. Variables requeridas en .env
 #   2. Herramientas CLI disponibles (mysql, mysqladmin)
@@ -13,6 +13,12 @@
 #   6. Schema practicayoruba_qa existe y tiene django_migrations
 #   7. Usuario Django tiene SELECT, INSERT, UPDATE, DELETE en practicayoruba_db
 #   8. Usuario Django tiene SELECT, INSERT, UPDATE, DELETE en practicayoruba_qa
+#   9. Funciones SQL desplegadas (fn_precio_con_iva, fn_stock_status,
+#      fn_aplica_envio_gratis) — warn si faltan, no fail
+#   10. Vistas SQL desplegadas (v_catalogo_publicado, v_productos_destacados,
+#       v_stock_critico) — warn si faltan, no fail
+#   11. SPs de reporte desplegados (sp_rpt_catalogo_por_categoria,
+#       sp_rpt_stock_critico, sp_rpt_resumen_catalogo) — warn si faltan
 #
 # Muestra resumen final con contadores OK / WARN / ERROR.
 # Retorna exit code 0 si ERR=0, 1 si hay algún error.
@@ -370,6 +376,94 @@ check_privs_qa() {
 }
 
 # =============================================================================
+# Check 9: Funciones SQL desplegadas
+# Emite warn (no fail): las funciones son una capa adicional — su ausencia
+# no impide que Django funcione correctamente.
+# =============================================================================
+check_funciones_sql() {
+    log_header "PASO: Funciones SQL desplegadas"
+
+    local fn_ok=0 fn_miss=0
+
+    for fn in fn_precio_con_iva fn_stock_status fn_aplica_envio_gratis; do
+        local exists
+        exists=$(_root_exec \
+            -e "SELECT COUNT(*) FROM information_schema.routines
+                WHERE routine_schema='${DB_NAME}'
+                AND routine_name='${fn}'
+                AND routine_type='FUNCTION';" || echo "0")
+        if [[ "${exists:-0}" -ge 1 ]]; then
+            ok "FUNCTION ${fn}"
+            (( fn_ok++ )) || true
+        else
+            warn "FUNCTION ${fn}: no desplegada"
+            (( fn_miss++ )) || true
+        fi
+    done
+
+    if [[ $fn_miss -gt 0 ]]; then
+        log_warn "  Despliega con: bash provisioners/mariadb/deploy_objetos.sh"
+    fi
+}
+
+# =============================================================================
+# Check 10: Vistas SQL desplegadas
+# =============================================================================
+check_vistas_sql() {
+    log_header "PASO: Vistas SQL desplegadas"
+
+    local v_ok=0 v_miss=0
+
+    for v in v_catalogo_publicado v_productos_destacados v_stock_critico; do
+        local exists
+        exists=$(_root_exec \
+            -e "SELECT COUNT(*) FROM information_schema.views
+                WHERE table_schema='${DB_NAME}'
+                AND table_name='${v}';" || echo "0")
+        if [[ "${exists:-0}" -ge 1 ]]; then
+            ok "VIEW ${v}"
+            (( v_ok++ )) || true
+        else
+            warn "VIEW ${v}: no desplegada"
+            (( v_miss++ )) || true
+        fi
+    done
+
+    if [[ $v_miss -gt 0 ]]; then
+        log_warn "  Despliega con: bash provisioners/mariadb/deploy_objetos.sh"
+    fi
+}
+
+# =============================================================================
+# Check 11: Stored procedures desplegados
+# =============================================================================
+check_sps_sql() {
+    log_header "PASO: Stored procedures desplegados"
+
+    local sp_ok=0 sp_miss=0
+
+    for sp in sp_rpt_catalogo_por_categoria sp_rpt_stock_critico sp_rpt_resumen_catalogo; do
+        local exists
+        exists=$(_root_exec \
+            -e "SELECT COUNT(*) FROM information_schema.routines
+                WHERE routine_schema='${DB_NAME}'
+                AND routine_name='${sp}'
+                AND routine_type='PROCEDURE';" || echo "0")
+        if [[ "${exists:-0}" -ge 1 ]]; then
+            ok "PROCEDURE ${sp}"
+            (( sp_ok++ )) || true
+        else
+            warn "PROCEDURE ${sp}: no desplegado"
+            (( sp_miss++ )) || true
+        fi
+    done
+
+    if [[ $sp_miss -gt 0 ]]; then
+        log_warn "  Despliega con: bash provisioners/mariadb/deploy_objetos.sh"
+    fi
+}
+
+# =============================================================================
 # MAIN
 # =============================================================================
 log_header "PracticaYoruba-db — Verificacion completa"
@@ -385,6 +479,9 @@ check_schema_db;    echo ""
 check_schema_qa;    echo ""
 check_privs_db;     echo ""
 check_privs_qa;     echo ""
+check_funciones_sql; echo ""
+check_vistas_sql;    echo ""
+check_sps_sql;       echo ""
 
 # =============================================================================
 # Resumen

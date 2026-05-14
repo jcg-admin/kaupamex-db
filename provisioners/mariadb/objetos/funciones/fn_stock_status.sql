@@ -1,0 +1,74 @@
+SELECT 'PROCESO INICIO' AS evento, NOW() AS timestamp_inicio FROM DUAL;
+
+/********************************************************************************************
+    Script          : fn_stock_status.sql
+    Version         : 1.0.0
+    Create          : MAYO/2026
+    Engine          : MariaDB 10.11 / 11.8
+    Schema          : practicayoruba_db
+    Prerequisito    : Ninguno — clasificación pura sin dependencias externas
+    Despliegue      : mysql --socket=/run/mysqld/mysqld.sock practicayoruba_db < fn_stock_status.sql
+    Notas           : Recibe el umbral como parámetro — no lee settings_sitesettings
+                      directamente porque las funciones DETERMINISTIC no pueden hacer SELECT.
+                      El caller pasa settings_sitesettings.min_stock_threshold.
+                      Tres estados: AGOTADO (stock=0 o NULL) / BAJO_STOCK (0 < stock < umbral)
+                      / DISPONIBLE (stock >= umbral).
+********************************************************************************************/
+
+-- DEFINICIÓN
+
+DELIMITER $$
+
+-- -----------------------------------------------------------------------------
+-- fn_stock_status
+-- Clasifica el nivel de stock de un producto en tres estados.
+--
+-- Parámetros:
+--   p_stock   INT — unidades actuales en stock (>= 0)
+--   p_umbral  INT — umbral mínimo configurado (settings_sitesettings.min_stock_threshold)
+--
+-- Retorna:
+--   'AGOTADO'    — stock es NULL o 0
+--   'BAJO_STOCK' — 0 < stock < umbral
+--   'DISPONIBLE' — stock >= umbral
+--
+-- Uso:
+--   SELECT fn_stock_status(p.stock, s.min_stock_threshold)
+--     FROM catalogue_product p
+--     CROSS JOIN settings_sitesettings s;
+-- -----------------------------------------------------------------------------
+CREATE OR REPLACE FUNCTION fn_stock_status(
+    p_stock  INT,
+    p_umbral INT
+)
+RETURNS VARCHAR(20)
+DETERMINISTIC
+COMMENT 'Clasifica stock: AGOTADO | BAJO_STOCK | DISPONIBLE según umbral.'
+BEGIN
+    -- NULL se trata como agotado — el stock de un producto nunca debería ser NULL
+    -- pero la función es defensiva para evitar retornar un valor inesperado.
+    IF p_stock IS NULL OR p_stock = 0 THEN
+        RETURN 'AGOTADO';
+    END IF;
+    IF p_umbral IS NULL OR p_stock >= p_umbral THEN
+        RETURN 'DISPONIBLE';
+    END IF;
+    RETURN 'BAJO_STOCK';
+END$$
+
+DELIMITER ;
+
+-- VERIFICACIÓN
+
+SELECT
+    fn_stock_status(0,  5)    AS esperado_AGOTADO
+  , fn_stock_status(3,  5)    AS esperado_BAJO_STOCK
+  , fn_stock_status(5,  5)    AS esperado_DISPONIBLE
+  , fn_stock_status(10, 5)    AS esperado_DISPONIBLE
+  , fn_stock_status(NULL, 5)  AS esperado_AGOTADO
+  , fn_stock_status(1,  NULL) AS esperado_DISPONIBLE
+FROM DUAL;
+
+-- FINALIZACIÓN
+
+SELECT 'PROCESO COMPLETADO' AS evento, NOW() AS timestamp_fin FROM DUAL;
