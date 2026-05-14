@@ -70,7 +70,7 @@ _db_exec_quiet() { _db_exec --silent --skip-column-names "$@" 2>/dev/null; }
 
 # =============================================================================
 check_prerequisites() {
-    log_header "Verificando prerequisitos"
+    log_header "PASO: Verificando prerequisitos"
 
     command -v mysql &>/dev/null || {
         log_fatal "mysql client no encontrado. Instala: apt install mariadb-client"
@@ -94,7 +94,7 @@ check_prerequisites() {
 
 # =============================================================================
 create_database() {
-    log_header "Creando schema QA: ${DB_NAME}"
+    log_header "PASO: Creando schema QA: ${DB_NAME}"
 
     local exists
     exists=$(_db_exec_quiet -e \
@@ -114,7 +114,7 @@ create_database() {
 
 # =============================================================================
 grant_privileges() {
-    log_header "Otorgando privilegios: ${DB_USER} sobre ${DB_NAME}"
+    log_header "PASO: Otorgando privilegios: ${DB_USER} sobre ${DB_NAME}"
 
     for host in "%" "localhost" "127.0.0.1"; do
         _db_exec -e \
@@ -130,7 +130,7 @@ grant_privileges() {
 
 # =============================================================================
 verify_connection() {
-    log_header "Verificando conexion Django → QA"
+    log_header "PASO: Verificando conexion Django → QA"
 
     local result
     result=$(_db_exec_quiet \

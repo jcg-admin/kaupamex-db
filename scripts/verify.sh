@@ -108,7 +108,7 @@ _has_priv() {
 # Variables requeridas en .env
 # =============================================================================
 check_env_vars() {
-    log_header "Variables de entorno (.env)"
+    log_header "PASO: Variables de entorno (.env)"
 
     local required=(
         "DB_NAME" "DB_USER" "DB_PASSWORD"
@@ -129,7 +129,7 @@ check_env_vars() {
 # Herramientas CLI
 # =============================================================================
 check_tools() {
-    log_header "Herramientas CLI"
+    log_header "PASO: Herramientas CLI"
 
     local tools=(
         "mysql:cliente SQL MariaDB"
@@ -152,7 +152,7 @@ check_tools() {
 # MariaDB responde
 # =============================================================================
 check_mariadb_running() {
-    log_header "MariaDB responde"
+    log_header "PASO: MariaDB responde"
 
     # Intentar socket Unix primero (H-F3-002)
     for sock in "${_MARIADB_SOCKETS[@]}"; do
@@ -178,7 +178,7 @@ check_mariadb_running() {
 # Schema practicayoruba_db existe y tiene django_migrations
 # =============================================================================
 check_schema_db() {
-    log_header "Schema ${DB_NAME}: existencia y migraciones"
+    log_header "PASO: Schema ${DB_NAME}: existencia y migraciones"
 
     if ! command_exists mysql; then
         warn "mysql CLI no disponible — check omitido"
@@ -223,7 +223,7 @@ check_schema_db() {
 # Schema practicayoruba_qa existe y tiene django_migrations
 # =============================================================================
 check_schema_qa() {
-    log_header "Schema ${DB_QA_NAME}: existencia y migraciones"
+    log_header "PASO: Schema ${DB_QA_NAME}: existencia y migraciones"
 
     if ! command_exists mysql; then
         warn "mysql CLI no disponible — check omitido"
@@ -266,7 +266,7 @@ check_schema_qa() {
 # Privilegios Django en practicayoruba_db
 # =============================================================================
 check_privs_db() {
-    log_header "Privilegios ${DB_USER} en ${DB_NAME}"
+    log_header "PASO: Privilegios ${DB_USER} en ${DB_NAME}"
 
     if ! command_exists mysql; then
         warn "mysql CLI no disponible — check omitido"
@@ -300,7 +300,7 @@ check_privs_db() {
 # Privilegios Django en practicayoruba_qa
 # =============================================================================
 check_privs_qa() {
-    log_header "Privilegios ${DB_QA_USER} en ${DB_QA_NAME}"
+    log_header "PASO: Privilegios ${DB_QA_USER} en ${DB_QA_NAME}"
 
     if ! command_exists mysql; then
         warn "mysql CLI no disponible — check omitido"

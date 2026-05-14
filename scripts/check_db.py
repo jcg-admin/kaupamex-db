@@ -248,7 +248,7 @@ def _check_dml_privs(
 # Conectividad a practicayoruba_db
 # =============================================================================
 def check_connectivity_db() -> bool:
-    log.header(f"Conectividad a {DB_NAME}")
+    log.header(f"PASO: Conectividad a {DB_NAME}")
     try:
         conn = _connect(DB_HOST, DB_PORT, DB_USER, DB_PASSWORD, DB_NAME)
         version = _query_one(conn, "SELECT VERSION()")
@@ -267,7 +267,7 @@ def check_connectivity_db() -> bool:
 # Conectividad a practicayoruba_qa
 # =============================================================================
 def check_connectivity_qa() -> bool:
-    log.header(f"Conectividad a {DB_QA_NAME}")
+    log.header(f"PASO: Conectividad a {DB_QA_NAME}")
     try:
         conn = _connect(DB_QA_HOST, DB_QA_PORT, DB_QA_USER, DB_QA_PASSWORD, DB_QA_NAME)
         db_at_user = _query_one(conn, "SELECT CONCAT(DATABASE(), ' @ ', USER())")
@@ -284,7 +284,7 @@ def check_connectivity_qa() -> bool:
 # django_migrations en practicayoruba_db
 # =============================================================================
 def check_migrations_db() -> None:
-    log.header(f"Migraciones en {DB_NAME}")
+    log.header(f"PASO: Migraciones en {DB_NAME}")
     try:
         conn = _connect(DB_HOST, DB_PORT, DB_USER, DB_PASSWORD, DB_NAME)
 
@@ -304,7 +304,7 @@ def check_migrations_db() -> None:
 # users_user en practicayoruba_db (H-F4-005)
 # =============================================================================
 def check_users_table() -> None:
-    log.header(f"Tabla users_user en {DB_NAME}")
+    log.header(f"PASO: Tabla users_user en {DB_NAME}")
     log.info("  PracticaYoruba usa AUTH_USER_MODEL = 'users.User' — tabla: users_user")
     try:
         conn = _connect(DB_HOST, DB_PORT, DB_USER, DB_PASSWORD, DB_NAME)
@@ -324,7 +324,7 @@ def check_users_table() -> None:
 # Privilegios DML en practicayoruba_db
 # =============================================================================
 def check_privs_db() -> None:
-    log.header(f"Privilegios DML en {DB_NAME}")
+    log.header(f"PASO: Privilegios DML en {DB_NAME}")
     privs = _check_dml_privs(DB_HOST, DB_PORT, DB_USER, DB_PASSWORD, DB_NAME)
 
     for priv, ok_val in privs.items():
@@ -339,7 +339,7 @@ def check_privs_db() -> None:
 # Privilegios DML en practicayoruba_qa
 # =============================================================================
 def check_privs_qa() -> None:
-    log.header(f"Privilegios DML en {DB_QA_NAME}")
+    log.header(f"PASO: Privilegios DML en {DB_QA_NAME}")
     privs = _check_dml_privs(
         DB_QA_HOST, DB_QA_PORT, DB_QA_USER, DB_QA_PASSWORD, DB_QA_NAME
     )
