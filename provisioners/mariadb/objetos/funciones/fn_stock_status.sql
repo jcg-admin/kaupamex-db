@@ -2,13 +2,13 @@ SELECT 'PROCESO INICIO' AS evento, NOW() AS timestamp_inicio FROM DUAL;
 
 /********************************************************************************************
     Script          : fn_stock_status.sql
-    Version         : 1.0.0
+    Version         : 2.0.0
     Create          : MAYO/2026
     Engine          : MariaDB 10.11 / 11.8
     Schema          : practicayoruba_db
     Prerequisito    : Ninguno — clasificación pura sin dependencias externas
     Despliegue      : mysql --socket=/run/mysqld/mysqld.sock practicayoruba_db < fn_stock_status.sql
-    Notas           : Recibe el umbral como parámetro — no lee settings_sitesettings
+    Notas           : p_umbral renombrado a p_threshold (v2.0.0). Recibe el threshold como parámetro — no lee settings_sitesettings
                       directamente porque las funciones DETERMINISTIC no pueden hacer SELECT.
                       El caller pasa settings_sitesettings.min_stock_threshold.
                       Tres estados: AGOTADO (stock=0 o NULL) / BAJO_STOCK (0 < stock < umbral)
@@ -25,7 +25,7 @@ DELIMITER $$
 --
 -- Parámetros:
 --   p_stock   INT — unidades actuales en stock (>= 0)
---   p_umbral  INT — umbral mínimo configurado (settings_sitesettings.min_stock_threshold)
+--   p_threshold  INT — stock threshold configurado (settings_sitesettings.min_stock_threshold)
 --
 -- Retorna:
 --   'AGOTADO'    — stock es NULL o 0
@@ -39,7 +39,7 @@ DELIMITER $$
 -- -----------------------------------------------------------------------------
 CREATE OR REPLACE FUNCTION fn_stock_status(
     p_stock  INT,
-    p_umbral INT
+    p_threshold INT
 )
 RETURNS VARCHAR(20)
 DETERMINISTIC
@@ -50,7 +50,7 @@ BEGIN
     IF p_stock IS NULL OR p_stock = 0 THEN
         RETURN 'AGOTADO';
     END IF;
-    IF p_umbral IS NULL OR p_stock >= p_umbral THEN
+    IF p_threshold IS NULL OR p_stock >= p_threshold THEN
         RETURN 'DISPONIBLE';
     END IF;
     RETURN 'BAJO_STOCK';
@@ -61,12 +61,12 @@ DELIMITER ;
 -- VERIFICACIÓN
 
 SELECT
-    fn_stock_status(0,  5)    AS esperado_AGOTADO
-  , fn_stock_status(3,  5)    AS esperado_BAJO_STOCK
-  , fn_stock_status(5,  5)    AS esperado_DISPONIBLE
-  , fn_stock_status(10, 5)    AS esperado_DISPONIBLE
-  , fn_stock_status(NULL, 5)  AS esperado_AGOTADO
-  , fn_stock_status(1,  NULL) AS esperado_DISPONIBLE
+    fn_stock_status(0,  5)    AS expected_OUT_OF_STOCK
+  , fn_stock_status(3,  5)    AS expected_LOW_STOCK
+  , fn_stock_status(5,  5)    AS expected_AVAILABLE
+  , fn_stock_status(10, 5)    AS expected_AVAILABLE
+  , fn_stock_status(NULL, 5)  AS expected_OUT_OF_STOCK
+  , fn_stock_status(1,  NULL) AS expected_AVAILABLE
 FROM DUAL;
 
 -- FINALIZACIÓN

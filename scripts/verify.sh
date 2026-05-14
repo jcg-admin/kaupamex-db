@@ -380,12 +380,12 @@ check_privs_qa() {
 # Emite warn (no fail): las funciones son una capa adicional — su ausencia
 # no impide que Django funcione correctamente.
 # =============================================================================
-check_funciones_sql() {
+check_sql_functions() {
     log_header "PASO: Funciones SQL desplegadas"
 
     local fn_ok=0 fn_miss=0
 
-    for fn in fn_precio_con_iva fn_stock_status fn_aplica_envio_gratis; do
+    for fn in fn_price_with_tax fn_stock_status fn_qualifies_free_shipping; do
         local exists
         exists=$(_root_exec \
             -e "SELECT COUNT(*) FROM information_schema.routines
@@ -409,12 +409,12 @@ check_funciones_sql() {
 # =============================================================================
 # Check 10: Vistas SQL desplegadas
 # =============================================================================
-check_vistas_sql() {
+check_sql_views() {
     log_header "PASO: Vistas SQL desplegadas"
 
     local v_ok=0 v_miss=0
 
-    for v in v_catalogo_publicado v_productos_destacados v_stock_critico; do
+    for v in v_published_catalog v_featured_products v_low_stock; do
         local exists
         exists=$(_root_exec \
             -e "SELECT COUNT(*) FROM information_schema.views
@@ -437,12 +437,12 @@ check_vistas_sql() {
 # =============================================================================
 # Check 11: Stored procedures desplegados
 # =============================================================================
-check_sps_sql() {
+check_sql_sps() {
     log_header "PASO: Stored procedures desplegados"
 
     local sp_ok=0 sp_miss=0
 
-    for sp in sp_rpt_catalogo_por_categoria sp_rpt_stock_critico sp_rpt_resumen_catalogo; do
+    for sp in sp_rpt_catalog_by_category sp_rpt_low_stock sp_rpt_catalog_summary; do
         local exists
         exists=$(_root_exec \
             -e "SELECT COUNT(*) FROM information_schema.routines
@@ -479,9 +479,9 @@ check_schema_db;    echo ""
 check_schema_qa;    echo ""
 check_privs_db;     echo ""
 check_privs_qa;     echo ""
-check_funciones_sql; echo ""
-check_vistas_sql;    echo ""
-check_sps_sql;       echo ""
+check_sql_functions; echo ""
+check_sql_views;    echo ""
+check_sql_sps;       echo ""
 
 # =============================================================================
 # Resumen
