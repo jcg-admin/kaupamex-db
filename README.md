@@ -18,7 +18,10 @@ sin Vagrant, sin PostgreSQL, sin Adminer.
 - **bash**: 5.x (`bash --version`)
 - **Dependencias Python** para `scripts/check_db.py`:
   ```bash
-  pip install mysqlclient python-dotenv
+  # Prerequisito del sistema:
+  sudo apt-get install libmysqlclient-dev
+  # Dependencias Python:
+  pip install -r requirements.txt
   ```
 
 ---
@@ -49,7 +52,7 @@ PracticaYoruba-db/
 │
 ├── scripts/
 │   ├── backup_db.sh                # Backup de ambos schemas con MD5 y gzip-6
-│   ├── verify.sh                   # 7 checks con contadores OK/WARN/ERROR
+│   ├── verify.sh                   # 8 checks con contadores OK/WARN/ERROR
 │   └── check_db.py                 # Verificación Python de conectividad y privilegios
 │
 ├── backups/                        # Artefactos generados (en .gitignore)
@@ -95,7 +98,7 @@ sudo bash provisioners/mariadb/db_qa_setup.sh
 ### Verificar el entorno
 
 ```bash
-# Verificación completa del entorno (7 checks)
+# Verificación completa del entorno (8 checks)
 bash scripts/verify.sh
 
 # Verificación de conectividad Python
@@ -114,17 +117,30 @@ bash scripts/backup_db.sh --setup-user
 
 ---
 
-## Relación con PracticaYoruba-api
+## Integración con PracticaYoruba-api
 
-Los `utils/` de este repositorio son un port de los
-`scripts/utils/` de PracticaYoruba-api con las siguientes diferencias:
+`PracticaYoruba-db` provisiona la infraestructura de BD para entornos
+donde la base de datos vive en un servidor dedicado (producción, CI).
 
-- Las funciones públicas de `database.sh` usan prefijo `mariadb_*`
-  en lugar de `mysql_*` para reflejar el motor real (MariaDB 11.8).
-- La ruta de `.env` es la raíz de este repositorio, no `practicayoruba/.env`.
+Las variables en `PracticaYoruba-db/.env` y en
+`PracticaYoruba-api/practicayoruba/.env` deben ser **idénticas** —
+son archivos independientes y un cambio en uno no se replica en el otro.
 
-Los `provisioners/` son idénticos a los de la API salvo las rutas
-de `source` ajustadas a `../../utils/`.
+El flujo completo de configuración inicial, la tabla de equivalencias
+de variables y el troubleshooting están documentados en:
+
+```
+docs/integracion-api.md
+```
+
+### Relación técnica con los scripts de la API
+
+`PracticaYoruba-api` tiene sus propios scripts en `scripts/provisioners/mysql/`
+para entornos de desarrollo local (usados por `scripts/bootstrap.sh`).
+`PracticaYoruba-db` es el repositorio canónico para infraestructura de BD
+en servidores dedicados. Los `utils/` de ambos repos son equivalentes con
+diferencias de nomenclatura: este repo usa prefijo `mariadb_*` en lugar de
+`mysql_*` para reflejar el motor real.
 
 ---
 
