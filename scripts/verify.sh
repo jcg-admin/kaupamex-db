@@ -67,7 +67,30 @@ warn() { log_warn    "  [WARN] $1"; _WARN=$(( _WARN + 1 )); }
 fail() { log_error   "  [ERR]  $1"; _ERR=$(( _ERR + 1 ));  }
 
 # =============================================================================
-# Helper: ejecutar query con credenciales del usuario Django
+# Helper: ejecutar query como root
+# Intenta socket Unix primero (Ubuntu 24.04: root usa unix_socket plugin
+# y no puede autenticar via TCP sin contraseña), luego TCP como fallback.
+# =============================================================================
+_root_exec() {
+    local sock=""
+    for s in "${_MARIADB_SOCKETS[@]}"; do
+        if [[ -S "$s" ]] && mysqladmin --socket="$s" ping --silent >/dev/null 2>&1; then
+            sock="$s"
+            break
+        fi
+    done
+    if [[ -n "$sock" ]]; then
+        mysql --socket="$sock" \
+            --batch --silent --skip-column-names \
+            "$@" 2>/dev/null
+    else
+        mysql -h "$DB_HOST" -P "$DB_PORT" \
+            --batch --silent --skip-column-names \
+            "$@" 2>/dev/null
+    fi
+}
+
+# =============================================================================
 # Intenta socket Unix primero, luego TCP.
 # =============================================================================
 _user_exec() {
@@ -97,12 +120,11 @@ _user_exec() {
 _has_priv() {
     local user="$1" schema="$2" priv="$3"
     local count
-    count=$(mysql -h "$DB_HOST" -P "$DB_PORT" \
-        --batch --silent --skip-column-names \
+    count=$(_root_exec \
         -e "SELECT COUNT(*) FROM information_schema.SCHEMA_PRIVILEGES
             WHERE GRANTEE LIKE \"'${user}'%\"
             AND TABLE_SCHEMA = '${schema}'
-            AND PRIVILEGE_TYPE = '${priv}';" 2>/dev/null || echo "0")
+            AND PRIVILEGE_TYPE = '${priv}';" || echo "0")
     [[ "${count:-0}" -gt 0 ]]
 }
 
@@ -212,10 +234,9 @@ check_schema_db() {
 
     # Verificar que el schema existe
     local schema_exists
-    schema_exists=$(mysql -h "$DB_HOST" -P "$DB_PORT" \
-        --batch --silent --skip-column-names \
+    schema_exists=$(_root_exec \
         -e "SELECT COUNT(*) FROM information_schema.SCHEMATA
-            WHERE SCHEMA_NAME = '${DB_NAME}';" 2>/dev/null || echo "0")
+            WHERE SCHEMA_NAME = '${DB_NAME}';" || echo "0")
 
     if [[ "${schema_exists:-0}" -lt 1 ]]; then
         fail "Schema ${DB_NAME} no existe"
@@ -226,18 +247,16 @@ check_schema_db() {
 
     # Verificar que django_migrations existe (migraciones aplicadas)
     local mig_exists
-    mig_exists=$(mysql -h "$DB_HOST" -P "$DB_PORT" \
-        --batch --silent --skip-column-names \
+    mig_exists=$(_root_exec \
         -e "SELECT COUNT(*) FROM information_schema.TABLES
             WHERE TABLE_SCHEMA = '${DB_NAME}'
-            AND TABLE_NAME = 'django_migrations';" 2>/dev/null || echo "0")
+            AND TABLE_NAME = 'django_migrations';" || echo "0")
 
     if [[ "${mig_exists:-0}" -gt 0 ]]; then
         local mig_count
-        mig_count=$(mysql -h "$DB_HOST" -P "$DB_PORT" \
-            --batch --silent --skip-column-names \
+        mig_count=$(_root_exec \
             -e "SELECT COUNT(*) FROM \`${DB_NAME}\`.django_migrations;" \
-            2>/dev/null || echo "?")
+            || echo "?")
         ok "django_migrations presente (${mig_count} migraciones aplicadas)"
     else
         warn "django_migrations no encontrada — ejecuta: python manage.py migrate"
@@ -256,10 +275,9 @@ check_schema_qa() {
     fi
 
     local schema_exists
-    schema_exists=$(mysql -h "$DB_HOST" -P "$DB_PORT" \
-        --batch --silent --skip-column-names \
+    schema_exists=$(_root_exec \
         -e "SELECT COUNT(*) FROM information_schema.SCHEMATA
-            WHERE SCHEMA_NAME = '${DB_QA_NAME}';" 2>/dev/null || echo "0")
+            WHERE SCHEMA_NAME = '${DB_QA_NAME}';" || echo "0")
 
     if [[ "${schema_exists:-0}" -lt 1 ]]; then
         fail "Schema ${DB_QA_NAME} no existe"
@@ -269,18 +287,16 @@ check_schema_qa() {
     ok "Schema ${DB_QA_NAME} existe"
 
     local mig_exists
-    mig_exists=$(mysql -h "$DB_HOST" -P "$DB_PORT" \
-        --batch --silent --skip-column-names \
+    mig_exists=$(_root_exec \
         -e "SELECT COUNT(*) FROM information_schema.TABLES
             WHERE TABLE_SCHEMA = '${DB_QA_NAME}'
-            AND TABLE_NAME = 'django_migrations';" 2>/dev/null || echo "0")
+            AND TABLE_NAME = 'django_migrations';" || echo "0")
 
     if [[ "${mig_exists:-0}" -gt 0 ]]; then
         local mig_count
-        mig_count=$(mysql -h "$DB_HOST" -P "$DB_PORT" \
-            --batch --silent --skip-column-names \
+        mig_count=$(_root_exec \
             -e "SELECT COUNT(*) FROM \`${DB_QA_NAME}\`.django_migrations;" \
-            2>/dev/null || echo "?")
+            || echo "?")
         ok "django_migrations presente (${mig_count} migraciones aplicadas)"
     else
         warn "django_migrations no encontrada — ejecuta: DJANGO_SETTINGS_MODULE=config.settings.testing python manage.py migrate"
