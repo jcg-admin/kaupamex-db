@@ -3,15 +3,16 @@
 # scripts/verify.sh
 # Verificación completa del entorno MariaDB de PracticaYoruba
 # =============================================================================
-# Comprueba en orden (7 checks):
+# Comprueba en orden (8 checks):
 #
 #   1. Variables requeridas en .env
 #   2. Herramientas CLI disponibles (mysql, mysqladmin)
-#   3. MariaDB responde (socket Unix primero, luego TCP)
-#   4. Schema practicayoruba_db existe y tiene django_migrations
-#   5. Schema practicayoruba_qa existe y tiene django_migrations
-#   6. Usuario Django tiene SELECT, INSERT, UPDATE, DELETE en practicayoruba_db
-#   7. Usuario Django tiene SELECT, INSERT, UPDATE, DELETE en practicayoruba_qa
+#   3. MariaDB instalado y versión correcta (11.8.x — ADR-009)
+#   4. MariaDB responde (socket Unix primero, luego TCP)
+#   5. Schema practicayoruba_db existe y tiene django_migrations
+#   6. Schema practicayoruba_qa existe y tiene django_migrations
+#   7. Usuario Django tiene SELECT, INSERT, UPDATE, DELETE en practicayoruba_db
+#   8. Usuario Django tiene SELECT, INSERT, UPDATE, DELETE en practicayoruba_qa
 #
 # Muestra resumen final con contadores OK / WARN / ERROR.
 # Retorna exit code 0 si ERR=0, 1 si hay algún error.
@@ -32,6 +33,7 @@ source "${PROJECT_ROOT}/utils/logging.sh"
 source "${PROJECT_ROOT}/utils/core.sh"
 source "${PROJECT_ROOT}/utils/network.sh"
 source "${PROJECT_ROOT}/utils/database.sh"
+source "${PROJECT_ROOT}/utils/validation.sh"
 
 # =============================================================================
 # Cargar .env
@@ -146,6 +148,29 @@ check_tools() {
             fail "${cmd} no encontrado — instala: apt install mariadb-client"
         fi
     done
+}
+
+# =============================================================================
+# MariaDB instalado y versión correcta (11.8.x — ADR-009)
+# =============================================================================
+check_mariadb_version() {
+    log_header "PASO: MariaDB instalado y versión"
+
+    if ! command_exists mysql; then
+        fail "mysql CLI no encontrado — MariaDB no está instalado"
+        log_error "  Instala con: sudo bash provisioners/mariadb/install.sh"
+        return
+    fi
+
+    if validate_mariadb_version 11 8; then
+        local version_str
+        version_str=$(mysql --version 2>/dev/null \
+            | grep -oE '[0-9]+\.[0-9]+\.[0-9]+-MariaDB' | head -1)
+        ok "MariaDB ${version_str} instalado (serie 11.8.x — ADR-009)"
+    else
+        fail "Versión de MariaDB incorrecta o motor no es MariaDB"
+        log_error "  Migra con: sudo bash provisioners/mariadb/install.sh"
+    fi
 }
 
 # =============================================================================
@@ -336,9 +361,10 @@ log_info "  DB prod : ${DB_NAME} @ ${DB_HOST}:${DB_PORT}"
 log_info "  DB QA   : ${DB_QA_NAME} @ ${DB_HOST}:${DB_PORT}"
 echo ""
 
-check_env_vars;     echo ""
-check_tools;        echo ""
-check_mariadb_running; echo ""
+check_env_vars;          echo ""
+check_tools;             echo ""
+check_mariadb_version;   echo ""
+check_mariadb_running;   echo ""
 check_schema_db;    echo ""
 check_schema_qa;    echo ""
 check_privs_db;     echo ""

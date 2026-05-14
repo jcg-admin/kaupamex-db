@@ -256,6 +256,27 @@ def check_connectivity_db() -> bool:
         conn.close()
         log.ok(f"Conexion OK: {db_at_user}")
         log.info(f"Servidor: MariaDB {version}")
+
+        # Validar que la versión es 11.8.x (ADR-009)
+        if version and "MariaDB" in str(version):
+            parts = str(version).split("-")[0].split(".")
+            try:
+                major, minor = int(parts[0]), int(parts[1])
+                if major == 11 and minor == 8:
+                    log.ok(f"Version correcta: {version} (ADR-009)")
+                else:
+                    log.warn(
+                        f"Version {version} — se requiere 11.8.x (ADR-009). "
+                        f"Migra con: sudo bash provisioners/mariadb/install.sh"
+                    )
+            except (ValueError, IndexError):
+                log.warn(f"No se pudo parsear la version: {version}")
+        else:
+            log.warn(
+                f"El motor no parece ser MariaDB: {version}. "
+                f"Se requiere MariaDB 11.8.x (ADR-009)"
+            )
+
         return True
     except MySQLdb.OperationalError as e:
         log.err(f"No se pudo conectar a {DB_NAME} como {DB_USER}: {e}")

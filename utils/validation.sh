@@ -71,3 +71,52 @@ validate_python_version() {
     fi
     return 0
 }
+
+# -----------------------------------------------------------------------------
+# validate_mariadb_version [required_major] [required_minor]
+#   Verifica que el binario mysql instalado es MariaDB y cumple la serie
+#   required_major.required_minor.x
+#   Default: 11.8 (ADR-009)
+#
+#   No requiere que el servidor esté corriendo — lee la versión del binario.
+#   Retorna 0 si la versión es correcta, 1 si no está instalado, si es MySQL
+#   en lugar de MariaDB, o si la serie no coincide.
+# -----------------------------------------------------------------------------
+validate_mariadb_version() {
+    local required_major="${1:-11}" required_minor="${2:-8}"
+
+    require_command mysql || {
+        log_error "mysql CLI no encontrado — MariaDB no está instalado"
+        return 1
+    }
+
+    # Obtener la cadena de versión del binario (no requiere servidor activo)
+    local version_str
+    version_str=$(mysql --version 2>/dev/null \
+        | grep -oE '[0-9]+\.[0-9]+\.[0-9]+-MariaDB' \
+        | head -1)
+
+    if [[ -z "$version_str" ]]; then
+        # Puede ser MySQL (sin el sufijo -MariaDB)
+        local raw
+        raw=$(mysql --version 2>/dev/null || echo "")
+        log_error "El motor instalado no es MariaDB o no se pudo leer la versión"
+        log_error "  Salida: ${raw}"
+        log_error "  Se requiere: MariaDB ${required_major}.${required_minor}.x (ADR-009)"
+        return 1
+    fi
+
+    local installed_major installed_minor
+    installed_major=$(echo "$version_str" | cut -d. -f1)
+    installed_minor=$(echo "$version_str" | cut -d. -f2)
+
+    if [[ "${installed_major}" != "${required_major}" ]] || \
+       [[ "${installed_minor}" != "${required_minor}" ]]; then
+        log_error "Version instalada: ${version_str}"
+        log_error "Se requiere: MariaDB ${required_major}.${required_minor}.x (ADR-009)"
+        log_error "  Migra con: sudo bash provisioners/mariadb/install.sh"
+        return 1
+    fi
+
+    return 0
+}
