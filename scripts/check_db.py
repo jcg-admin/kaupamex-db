@@ -25,7 +25,10 @@ Adaptaciones respecto a IACT-db/test/check_db_connections.py:
     - Salida con colores ANSI sin depender de colorama
 
 Requisitos:
-    pip install mysqlclient python-dotenv
+    pip install -r requirements.txt  (desde la raíz del repositorio)
+
+    Prerequisito del sistema (Ubuntu):
+      sudo apt-get install libmysqlclient-dev
 
 Uso:
     python3 scripts/check_db.py
@@ -49,7 +52,9 @@ for _mod, _pkg in _REQUIRED.items():
         __import__(_mod)
     except ImportError:
         print(f"\n  ERROR: Modulo requerido no encontrado: {_mod}")
-        print(f"  Instala con: pip install {_pkg}\n")
+        print(f"  Instala las dependencias del repositorio:")
+        print(f"    pip install -r requirements.txt")
+        print(f"  (Paquete que provee el módulo: {_pkg})\n")
         sys.exit(1)
 
 import MySQLdb

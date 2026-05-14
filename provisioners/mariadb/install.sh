@@ -99,14 +99,14 @@ _check_requisites() {
         log_fatal "Este script requiere root: sudo bash provisioners/mariadb/install.sh"
         exit 1
     }
-    ok "Corriendo como root"
+    log_success "Corriendo como root"
 
     # Ubuntu requerido (apt-based)
     if ! command_exists apt-get; then
         log_fatal "Este script requiere apt (Ubuntu/Debian)"
         exit 1
     fi
-    ok "apt disponible"
+    log_success "apt disponible"
 
     # Conexión a internet (para descargar repo si es necesario)
     if ! tcp_is_reachable "downloads.mariadb.com" 443 5; then
@@ -114,7 +114,7 @@ _check_requisites() {
         log_warn "  El repo de MariaDB.org puede no ser alcanzable"
         log_warn "  Si el paquete ya está en los repos del sistema, puede continuar"
     else
-        ok "Acceso a downloads.mariadb.com"
+        log_success "Acceso a downloads.mariadb.com"
     fi
 }
 
@@ -135,10 +135,12 @@ _check_current_version() {
         if [[ -n "$raw_version" ]]; then
             log_warn "mysql encontrado pero no es MariaDB: ${raw_version}"
             log_warn "  Este script solo gestiona MariaDB"
-            fail "Motor no soportado instalado — instala MariaDB manualmente"
+            log_error "Motor no soportado — instala MariaDB manualmente"
+            log_error "  Este script no puede continuar con MySQL instalado"
+            exit 1
         else
             log_info "MariaDB no instalado — se instalará 11.8 desde cero"
-            ok "Sin instalación previa — listo para instalar"
+            log_success "Sin instalación previa — listo para instalar"
         fi
         return 0
     fi
@@ -146,8 +148,8 @@ _check_current_version() {
     log_info "Instalado: MariaDB ${installed_version} (serie ${installed_series})"
 
     if [[ "$installed_series" == "$MARIADB_TARGET_SERIES" ]]; then
-        ok "MariaDB ${installed_version} — serie correcta (${MARIADB_TARGET_SERIES}.x)"
-        ok "Idempotente: no se requiere ninguna acción"
+        log_success "MariaDB ${installed_version} — serie correcta (${MARIADB_TARGET_SERIES}.x)"
+        log_success "Idempotente: no se requiere ninguna acción"
         echo ""
         log_separator 60 "="
         log_success "MariaDB ${MARIADB_TARGET_SERIES}.x ya instalado. Sin cambios."
@@ -155,7 +157,7 @@ _check_current_version() {
     fi
 
     # Versión incorrecta
-    fail "Serie incorrecta: ${installed_series} (se requiere ${MARIADB_TARGET_SERIES})"
+    log_error "Serie incorrecta: ${installed_series} (se requiere ${MARIADB_TARGET_SERIES})"
     echo ""
 
     if [[ "$ALLOW_MIGRATE" == "false" ]]; then
@@ -217,7 +219,7 @@ _purge_wrong_version() {
     rm -f /etc/apt/preferences.d/mariadb-pin
     DEBIAN_FRONTEND=noninteractive apt-get autoremove -y 2>/dev/null > /dev/null || true
 
-    ok "MariaDB ${installed_series} purgado"
+    log_success "MariaDB ${installed_series} purgado"
 }
 
 # =============================================================================
@@ -230,7 +232,7 @@ _add_mariadb_repo() {
     apt-get update -qq 2>/dev/null || true
     if apt-cache show mariadb-server 2>/dev/null \
             | grep -qE "Version: 1:${MARIADB_TARGET_SERIES}\."; then
-        ok "MariaDB ${MARIADB_TARGET_SERIES}.x disponible en repos del sistema"
+        log_success "MariaDB ${MARIADB_TARGET_SERIES}.x disponible en repos del sistema"
         return 0
     fi
 
@@ -263,7 +265,7 @@ deb [arch=amd64 signed-by=${keyring}] https://downloads.mariadb.com/MariaDB/mari
 EOF
 
     apt-get update -qq 2>/dev/null
-    ok "Repositorio MariaDB ${MARIADB_TARGET_SERIES} agregado (${repo_file})"
+    log_success "Repositorio MariaDB ${MARIADB_TARGET_SERIES} agregado (${repo_file})"
 }
 
 # =============================================================================
@@ -283,7 +285,7 @@ Pin: version 1:${MARIADB_TARGET_SERIES}.*
 Pin-Priority: 1001
 EOF
 
-    ok "Serie ${MARIADB_TARGET_SERIES}.x pineada — no actualizará a 12.x automáticamente"
+    log_success "Serie ${MARIADB_TARGET_SERIES}.x pineada — no actualizará a 12.x automáticamente"
 }
 
 # =============================================================================
@@ -328,7 +330,7 @@ _install_mariadb() {
         exit 1
     }
 
-    ok "MariaDB ${MARIADB_TARGET_SERIES} instalado y activo"
+    log_success "MariaDB ${MARIADB_TARGET_SERIES} instalado y activo"
 }
 
 # =============================================================================
@@ -340,7 +342,7 @@ _verify_installation() {
     if validate_mariadb_version "$MARIADB_TARGET_MAJOR" "$MARIADB_TARGET_MINOR"; then
         local version_str
         version_str=$(_detect_installed_version)
-        ok "MariaDB ${version_str} — serie ${MARIADB_TARGET_SERIES}.x confirmada (ADR-009)"
+        log_success "MariaDB ${version_str} — serie ${MARIADB_TARGET_SERIES}.x confirmada (ADR-009)"
     else
         log_fatal "La verificación de versión falló tras la instalación"
         exit 1
@@ -362,14 +364,14 @@ _activate_project_config() {
     fi
 
     ln -sf "$cnf_src" "$cnf_dst"
-    ok "Symlink activo: ${cnf_dst} → ${cnf_src}"
+    log_success "Symlink activo: ${cnf_dst} → ${cnf_src}"
 
     # Recargar configuración sin reiniciar
     if systemctl is-active --quiet mariadb 2>/dev/null; then
         systemctl reload mariadb 2>/dev/null \
             || mysqladmin reload 2>/dev/null \
             || log_warn "  No se pudo recargar la configuración — reinicia el servicio manualmente"
-        ok "Configuración recargada"
+        log_success "Configuración recargada"
     fi
 }
 

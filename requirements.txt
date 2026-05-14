@@ -1,0 +1,23 @@
+# =============================================================================
+# requirements.txt — PracticaYoruba-db
+# =============================================================================
+# Dependencias de scripts/check_db.py.
+#
+# Uso:
+#   pip install -r requirements.txt
+#
+# Prerequisito del sistema (Ubuntu):
+#   sudo apt-get install libmysqlclient-dev
+#   (o: sudo apt-get install libmariadb-dev)
+#   Necesario para compilar mysqlclient.
+#
+# Nota: mysqlclient==2.2.1 coincide con la versión usada en
+#   PracticaYoruba-api/requirements/base.txt. Mantener en sincronía.
+#
+# Nota: python-dotenv es distinto de python-decouple (usado en la API).
+#   check_db.py usa load_dotenv() de python-dotenv porque es un script
+#   standalone — no importa Django ni sus mecanismos de configuración.
+# =============================================================================
+
+mysqlclient==2.2.1
+python-dotenv>=1.0.0,<2.0.0
