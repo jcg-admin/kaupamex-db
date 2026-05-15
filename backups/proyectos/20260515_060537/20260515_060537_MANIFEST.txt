@@ -1,0 +1,145 @@
+BACKUP MANIFEST — PracticaYoruba-ui
+=====================================
+Timestamp:  20260515_060537
+Fecha:      2026-05-15 06:05:54 UTC
+Origen:     /tmp/project/PracticaYoruba-ui
+Destino:    /tmp/references/PracticaYoruba-db/backups/proyectos/20260515_060537
+
+─────────────────────────────────────────────────────────────────
+REPOSITORIO: PracticaYoruba-ui
+─────────────────────────────────────────────────────────────────
+Branch activo:  main
+Último commit:  53b46e0095681e119caa5c288fe705fbfbbaa037  feat(server): Fase 0 — build de produccion con API_URL configurable
+Total commits:  12
+Ramas:          main, origin/main, origin/develop
+
+Historial de commits:
+53b46e0 feat(server): Fase 0 — build de produccion con API_URL configurable
+86943a3 feat(admin): Sprint 4 — Gestión de usuarios admin (UC-AUTH-12/13/14/15)
+54069c0 feat(catalogue): Sprint 5 — CatalogPage, ProductPage, SearchBar, catalogSlice
+caf2b66 feat(sprint-3): ForgotPasswordPage y ResetPasswordPage funcionales (UC-AUTH-09)
+5ae8675 fix(scss): reemplazar darken/lighten por sass:color — compatible con Sass 2.0
+b546549 refactor(scss): CSS Modules puro — eliminar todas las clases globales de componentes
+5c86229 feat(scss): crear capa de patrones de página compartidos
+d23592b fix(scss): build 0 errores — sistema @use/forward de Dart Sass 1.99
+9ebcae8 test(sprint-2): 68 tests GREEN — authSlice, páginas auth y account
+4437825 feat(sprint-2): LoginPage, RegisterPage, ProfilePage, AccountPage + authSlice
+54b3bb6 feat: integrar arquitectura madura de IACT-ui (30 artefactos)
+9be20c1 feat: esqueleto inicial de PracticaYoruba-ui
+
+─────────────────────────────────────────────────────────────────
+STACK TÉCNICO
+─────────────────────────────────────────────────────────────────
+Framework:  React 18 + Redux Toolkit
+Build:      Webpack 5
+Tests:      Jest + React Testing Library
+Estilos:    SCSS Modules (Dart Sass 1.99)
+Router:     React Router v6
+
+─────────────────────────────────────────────────────────────────
+ESTRUCTURA src/
+─────────────────────────────────────────────────────────────────
+src
+src/app
+src/components
+src/components/animations
+src/components/catalog
+src/components/common
+src/components/common/Toast
+src/components/layout
+src/components/layout/Footer
+src/components/layout/Header
+src/components/shared
+src/components/shared/ErrorBoundary
+src/components/shared/LazyLoad
+src/components/shared/ProtectedRoute
+src/config
+src/constants
+src/context
+src/decorators
+src/hooks
+src/hooks/domain
+src/hooks/utils
+src/layouts
+src/lib
+src/mocks
+src/pages
+src/pages/account
+src/pages/admin
+src/pages/auth
+src/pages/cart
+src/pages/catalog
+src/pages/checkout
+src/pages/home
+src/redux
+src/redux/middleware
+src/redux/selectors
+src/redux/slices
+src/router
+src/services
+src/services/utils
+src/styles
+src/styles/abstracts
+src/styles/accessibility
+src/styles/base
+src/styles/components
+src/styles/layouts
+src/styles/utils
+src/types
+src/utils
+
+─────────────────────────────────────────────────────────────────
+PÁGINAS IMPLEMENTADAS
+─────────────────────────────────────────────────────────────────
+NotFoundPage.jsx
+account/AccountPage.jsx
+account/OrderDetailPage.jsx
+account/OrdersPage.jsx
+account/ProfilePage.jsx
+account/WishlistPage.jsx
+admin/AdminDashboardPage.jsx
+admin/AdminOrdersPage.jsx
+admin/AdminProductsPage.jsx
+admin/AdminUserDetailPage.jsx
+admin/AdminUserDetailPage.test.jsx
+admin/AdminUsersPage.jsx
+admin/AdminUsersPage.test.jsx
+auth/ForgotPasswordPage.jsx
+auth/LoginPage.jsx
+auth/RegisterPage.jsx
+auth/ResetPasswordPage.jsx
+cart/CartPage.jsx
+catalog/CatalogPage.jsx
+catalog/CatalogPage.test.jsx
+catalog/ProductPage.jsx
+catalog/ProductPage.test.jsx
+checkout/CheckoutPage.jsx
+checkout/OrderSuccessPage.jsx
+home/HomePage.jsx
+
+─────────────────────────────────────────────────────────────────
+ARTEFACTOS
+─────────────────────────────────────────────────────────────────
+bundle:  20260515_060537_PracticaYoruba-ui.bundle  (288K)
+tar.gz:  20260515_060537_PracticaYoruba-ui.tar.gz  (544K)
+NOTA:    node_modules excluido del tar.gz (restaurar con: npm install)
+
+─────────────────────────────────────────────────────────────────
+CHECKSUMS MD5
+─────────────────────────────────────────────────────────────────
+fe41e6c8d5541bbd1c7abe0080117c74  20260515_060537_PracticaYoruba-ui.bundle
+56683aad7d2eaee1391f1c10056f1587  20260515_060537_PracticaYoruba-ui.tar.gz
+
+─────────────────────────────────────────────────────────────────
+RESTAURACIÓN
+─────────────────────────────────────────────────────────────────
+Desde bundle (preserva historial git):
+  git clone 20260515_060537_PracticaYoruba-ui.bundle PracticaYoruba-ui
+  cd PracticaYoruba-ui && npm install
+
+Desde tar.gz:
+  tar -xzf 20260515_060537_PracticaYoruba-ui.tar.gz
+  cd PracticaYoruba-ui && npm install
+
+Verificar integridad:
+  md5sum -c 20260515_060537_checksums.md5
