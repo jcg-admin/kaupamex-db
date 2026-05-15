@@ -27,3 +27,9 @@ __pycache__/
 # Logs generales
 *.log
 logs/
+
+# Backup de proyectos — proyectos/ se incluye en control de versión
+# Los artefactos .bundle, .tar.gz, .md5 y .log dentro de proyectos/ SÍ se commiten
+# (a diferencia de los dumps SQL de backups/ que van excluidos)
+!backups/proyectos/
+!backups/proyectos/**
