@@ -27,6 +27,71 @@ sudo bash provisioners/mariadb/db_qa_setup.sh
 
 ---
 
+## Arrancar MariaDB en entornos sin systemd (ADR-008)
+
+Usar el script `scripts/start_db.sh` — detecta si ya está activo,
+limpia archivos stale, arranca y verifica en una sola llamada.
+
+```bash
+# Arranque completo + verificación
+bash scripts/start_db.sh
+
+# Solo arrancar, sin ejecutar verify.sh
+bash scripts/start_db.sh --no-verify
+```
+
+Salida esperada cuando MariaDB no está corriendo:
+
+```
+  --  MariaDB no responde. Limpiando archivos stale...
+  --  Arrancando /usr/sbin/mariadbd (sin systemd, log → /tmp/mariadbd-20260515T083000.log)...
+  OK  MariaDB OK en 3s
+  --  Ejecutando verify.sh...
+  OK  OK:           28
+```
+
+Salida esperada cuando ya está corriendo (idempotente):
+
+```
+  OK  MariaDB ya está activo — nada que hacer
+  --  Ejecutando verify.sh...
+  OK  OK:           28
+```
+
+### Nota sobre mysqld_safe
+
+`mysqld_safe` está **deprecated en MariaDB 11.8** y no existe en
+Ubuntu 24.04 con el paquete `mariadb-server`. El script usa
+`mariadbd` directamente con `nohup su -s /bin/bash mysql`, que es
+el método recomendado por ADR-008.
+
+### Log de arranque
+
+El log de cada arranque se guarda en `/tmp/mariadbd-{timestamp}.log`.
+Si MariaDB no levanta en 20 segundos, el script muestra las últimas
+5 líneas del log y termina con exit code 1.
+
+### Integración con conftest.py de PracticaYoruba-api
+
+El fixture `mariadb_keepalive` en `tests/conftest.py` detecta si
+MariaDB cayó durante una suite larga y puede relanzarlo. Para una
+sesión nueva, el punto de entrada correcto es:
+
+```bash
+cd /tmp/references/PracticaYoruba-db
+bash scripts/start_db.sh
+
+# Luego provisionar QA si es la primera vez:
+bash provisioners/mariadb/db_qa_setup.sh
+
+# Correr las migraciones de Django:
+cd /tmp/project/PracticaYoruba-api/practicayoruba
+python3 manage.py migrate --settings=config.settings.testing
+```
+
+
+---
+
 ## Verificar el entorno
 
 ```bash
