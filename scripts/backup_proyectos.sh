@@ -28,7 +28,18 @@ LOG="${BACKUP_DIR}/backup.log"
 CHECKSUMS="${BACKUP_DIR}/${TIMESTAMP}_checksums.md5"
 MANIFEST="${BACKUP_DIR}/${TIMESTAMP}_MANIFEST.txt"
 
-REPOS=(PracticaYoruba-api PracticaYoruba-doc PracticaYoruba-ui)
+# Nombres de directorio de repos hermanos — configurable via BACKUP_REPOS en .env
+# Default: nombres reales de los repos en GitHub (resultado de git clone sin destino)
+BACKUP_REPOS_DEFAULT="e-comerce-api e-comerce-docs e-comerce-ui"
+
+# Cargar .env si existe
+ENV_FILE="${REPO_ROOT}/.env"
+if [[ -f "$ENV_FILE" ]]; then
+    # shellcheck disable=SC1090
+    set -a; source "$ENV_FILE"; set +a
+fi
+
+read -ra REPOS <<< "${BACKUP_REPOS:-$BACKUP_REPOS_DEFAULT}"
 
 log() { echo "[$(date '+%Y-%m-%d %H:%M:%S')] $*" | tee -a "$LOG"; }
 
