@@ -272,6 +272,9 @@ _sync_remote() {
         return 0
     fi
 
+    # DECISION DE IMPLEMENTACION: aws s3 sync es el mecanismo actual.
+    # El proveedor de almacenamiento remoto debe documentarse en un ADR
+    # separado (CNST-ARQ-001 P3 v3.0.0 — excepcion para backups).
     log_info "  Sincronizando a ${BACKUP_REMOTE_DEST} ..."
     if aws s3 sync "$BACKUP_DIR" "$BACKUP_REMOTE_DEST" \
             --exclude "*.log" --exclude "*.stderr" \
