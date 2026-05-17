@@ -39,7 +39,20 @@ if [[ -f "$ENV_FILE" ]]; then
     set -a; source "$ENV_FILE"; set +a
 fi
 
-read -ra REPOS <<< "${BACKUP_REPOS:-$BACKUP_REPOS_DEFAULT}"
+REPO_SOURCE="${BACKUP_REPOS:-}"
+if [[ -z "${REPO_SOURCE//[[:space:]]/}" ]]; then
+    REPO_SOURCE="$BACKUP_REPOS_DEFAULT"
+fi
+
+REPOS=()
+while IFS= read -r repo; do
+    [[ -n "$repo" ]] && REPOS+=("$repo")
+done < <(printf '%s' "$REPO_SOURCE" | tr -s '[:space:]' '\n')
+
+if [[ ${#REPOS[@]} -eq 0 ]]; then
+    echo "ERROR: BACKUP_REPOS no contiene repositorios válidos." >&2
+    exit 1
+fi
 
 log() { echo "[$(date '+%Y-%m-%d %H:%M:%S')] $*" | tee -a "$LOG"; }
 
