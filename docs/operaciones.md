@@ -8,7 +8,7 @@ Runbook de operaciones para PracticaYoruba-db.
 
 ```bash
 # 1. Clonar el repositorio
-git clone <repo>
+git clone <repo> e-comerce-db
 cd e-comerce-db
 
 # 2. Crear .env desde la plantilla
