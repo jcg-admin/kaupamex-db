@@ -78,7 +78,7 @@ MariaDB cayó durante una suite larga y puede relanzarlo. Para una
 sesión nueva, el punto de entrada correcto es:
 
 ```bash
-cd e-comerce-db
+cd /tmp/project/e-comerce-db
 bash scripts/start_db.sh
 
 # Luego provisionar QA si es la primera vez:
