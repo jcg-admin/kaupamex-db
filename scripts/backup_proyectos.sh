@@ -1,6 +1,6 @@
 #!/usr/bin/env bash
 # =============================================================================
-# backup_proyectos.sh — Backup completo de los tres repositorios PracticaYoruba
+# backup_proyectos.sh — Backup completo de repositorios hermanos configurables
 # =============================================================================
 # Genera por cada repo:
 #   - git bundle  (restaurable con git clone <bundle>)
@@ -57,7 +57,7 @@ fi
 log() { echo "[$(date '+%Y-%m-%d %H:%M:%S')] $*" | tee -a "$LOG"; }
 
 mkdir -p "$BACKUP_DIR"
-log "=== INICIO BACKUP — PracticaYoruba Proyectos ==="
+log "=== INICIO BACKUP — Repositorios configurados ==="
 log "Origen:  $ORIGEN"
 log "Destino: $BACKUP_DIR"
 echo "" | tee -a "$LOG"
