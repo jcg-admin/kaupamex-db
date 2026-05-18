@@ -68,7 +68,7 @@ PracticaYoruba-db/
 
 ```bash
 # 1. Clonar
-git clone <repo>
+git clone <repo> e-comerce-db
 cd e-comerce-db
 
 # 2. Variables de entorno
