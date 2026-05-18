@@ -68,8 +68,8 @@ PracticaYoruba-db/
 
 ```bash
 # 1. Clonar
-git clone <repo> PracticaYoruba-db
-cd PracticaYoruba-db
+git clone <repo> e-comerce-db
+cd e-comerce-db
 
 # 2. Variables de entorno
 cp .env.example .env

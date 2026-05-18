@@ -1,6 +1,6 @@
 #!/usr/bin/env bash
 # =============================================================================
-# backup_proyectos.sh — Backup completo de los tres repositorios PracticaYoruba
+# backup_proyectos.sh — Backup completo de repositorios hermanos configurables
 # =============================================================================
 # Genera por cada repo:
 #   - git bundle  (restaurable con git clone <bundle>)
@@ -28,12 +28,36 @@ LOG="${BACKUP_DIR}/backup.log"
 CHECKSUMS="${BACKUP_DIR}/${TIMESTAMP}_checksums.md5"
 MANIFEST="${BACKUP_DIR}/${TIMESTAMP}_MANIFEST.txt"
 
-REPOS=(PracticaYoruba-api PracticaYoruba-doc PracticaYoruba-ui)
+# Nombres de directorio de repos hermanos — configurable via BACKUP_REPOS en .env
+# Default: nombres reales de los repos en GitHub (resultado de git clone sin destino)
+BACKUP_REPOS_DEFAULT="e-comerce-api e-comerce-docs e-comerce-ui"
+
+# Cargar .env si existe
+ENV_FILE="${REPO_ROOT}/.env"
+if [[ -f "$ENV_FILE" ]]; then
+    # shellcheck disable=SC1090
+    set -a; source "$ENV_FILE"; set +a
+fi
+
+REPO_SOURCE="${BACKUP_REPOS:-}"
+if [[ -z "${REPO_SOURCE//[[:space:]]/}" ]]; then
+    REPO_SOURCE="$BACKUP_REPOS_DEFAULT"
+fi
+
+REPOS=()
+while IFS= read -r repo; do
+    [[ -n "$repo" ]] && REPOS+=("$repo")
+done < <(printf '%s' "$REPO_SOURCE" | tr -s '[:space:]' '\n')
+
+if [[ ${#REPOS[@]} -eq 0 ]]; then
+    echo "ERROR: BACKUP_REPOS no contiene repositorios válidos." >&2
+    exit 1
+fi
 
 log() { echo "[$(date '+%Y-%m-%d %H:%M:%S')] $*" | tee -a "$LOG"; }
 
 mkdir -p "$BACKUP_DIR"
-log "=== INICIO BACKUP — PracticaYoruba Proyectos ==="
+log "=== INICIO BACKUP — Repositorios configurados ==="
 log "Origen:  $ORIGEN"
 log "Destino: $BACKUP_DIR"
 echo "" | tee -a "$LOG"

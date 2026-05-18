@@ -13,12 +13,12 @@
 #   6. Schema practicayoruba_qa existe y tiene django_migrations
 #   7. Usuario Django tiene SELECT, INSERT, UPDATE, DELETE en practicayoruba_db
 #   8. Usuario Django tiene SELECT, INSERT, UPDATE, DELETE en practicayoruba_qa
-#   9. Funciones SQL desplegadas (fn_precio_con_iva, fn_stock_status,
-#      fn_aplica_envio_gratis) — warn si faltan, no fail
-#   10. Vistas SQL desplegadas (v_catalogo_publicado, v_productos_destacados,
-#       v_stock_critico) — warn si faltan, no fail
-#   11. SPs de reporte desplegados (sp_rpt_catalogo_por_categoria,
-#       sp_rpt_stock_critico, sp_rpt_resumen_catalogo) — warn si faltan
+#   9. Funciones SQL desplegadas (fn_price_with_tax, fn_stock_status,
+#      fn_qualifies_free_shipping) — warn si faltan, no fail
+#   10. Vistas SQL desplegadas (v_published_catalog, v_featured_products,
+#       v_low_stock) — warn si faltan, no fail
+#   11. SPs de reporte desplegados (sp_rpt_catalog_by_category,
+#       sp_rpt_low_stock, sp_rpt_catalog_summary) — warn si faltan
 #
 # Muestra resumen final con contadores OK / WARN / ERROR.
 # Retorna exit code 0 si ERR=0, 1 si hay algún error.
