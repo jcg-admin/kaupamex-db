@@ -8,7 +8,7 @@ Runbook de operaciones para PracticaYoruba-db.
 
 ```bash
 # 1. Clonar el repositorio
-git clone <repo>
+git clone <repo> e-comerce-db
 cd e-comerce-db
 
 # 2. Crear .env desde la plantilla
@@ -78,7 +78,7 @@ MariaDB cayó durante una suite larga y puede relanzarlo. Para una
 sesión nueva, el punto de entrada correcto es:
 
 ```bash
-cd e-comerce-db
+cd /tmp/project/e-comerce-db
 bash scripts/start_db.sh
 
 # Luego provisionar QA si es la primera vez:
