@@ -4,7 +4,7 @@ SELECT 'PROCESO INICIO' AS evento, NOW() AS timestamp_inicio FROM DUAL;
     Script          : sp_rpt_catalog_by_category.sql
     Version         : 2.0.0
     Create          : MAYO/2026
-    Engine          : MariaDB 10.11 / 11.8
+    Engine          : MariaDB 11.8 LTS (ADR-009)
     Schema          : practicayoruba_db
     Prerequisito    : Migraciones Django aplicadas (catalogue_product, catalogue_category)
     Despliegue      : mysql --socket=/run/mysqld/mysqld.sock practicayoruba_db < sp_rpt_catalog_by_category.sql

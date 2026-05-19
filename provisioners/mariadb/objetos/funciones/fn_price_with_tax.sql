@@ -4,7 +4,7 @@ SELECT 'PROCESO INICIO' AS evento, NOW() AS timestamp_inicio FROM DUAL;
     Script          : fn_price_with_tax.sql
     Version         : 2.0.0
     Create          : MAYO/2026
-    Engine          : MariaDB 10.11 / 11.8
+    Engine          : MariaDB 11.8 LTS (ADR-009)
     Schema          : practicayoruba_db
     Prerequisito    : Ninguno — calculo puro sin dependencias externas
     Despliegue      : mysql --socket=/run/mysqld/mysqld.sock practicayoruba_db < fn_price_with_tax.sql

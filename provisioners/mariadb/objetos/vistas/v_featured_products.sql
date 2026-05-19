@@ -4,7 +4,7 @@ SELECT 'PROCESO INICIO' AS evento, NOW() AS timestamp_inicio FROM DUAL;
     Script          : v_featured_products.sql
     Version         : 2.0.0
     Create          : MAYO/2026
-    Engine          : MariaDB 10.11 / 11.8
+    Engine          : MariaDB 11.8 LTS (ADR-009)
     Schema          : practicayoruba_db
     Prerequisito    : v_published_catalog — desplegar antes que esta vista
     Despliegue      : mysql --socket=/run/mysqld/mysqld.sock practicayoruba_db < v_featured_products.sql
