@@ -428,7 +428,17 @@ _install_mariadb() {
             log_fatal "No se encontró mariadb-install-db ni mysql_install_db"
             exit 1
         fi
-        "$init_cmd" --user=mysql --datadir=/var/lib/mysql 2>/dev/null
+        # DEC-DOC-008: loud failure on datadir init.
+        local init_log
+        init_log=$(mktemp)
+        if ! "$init_cmd" --user=mysql --datadir=/var/lib/mysql 2>"$init_log"; then
+            log_fatal "${init_cmd} fallo inicializando /var/lib/mysql"
+            log_error "stderr:"
+            sed 's/^/    /' "$init_log" >&2
+            rm -f "$init_log"
+            exit 1
+        fi
+        rm -f "$init_log"
         log_info "  datadir inicializado via ${init_cmd}"
     fi
 
