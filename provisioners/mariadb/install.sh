@@ -49,6 +49,87 @@ for arg in "$@"; do
 done
 
 # =============================================================================
+# Deteccion de systemd (contenedores Docker/devcontainer no lo tienen)
+# =============================================================================
+# Estrategia: PID 1 es systemd O 'systemctl' funciona como cliente real.
+# En contenedores tipicamente PID 1 es bash/sh/tini y systemctl ausente o
+# falla con "System has not been booted with systemd as init system".
+# Exporta HAS_SYSTEMD (true/false) usado por las rutas de service/start.
+_detect_systemd() {
+    if [[ -d /run/systemd/system ]] && command -v systemctl >/dev/null 2>&1; then
+        if systemctl is-system-running --quiet 2>/dev/null \
+                || systemctl list-units --type=service >/dev/null 2>&1; then
+            return 0
+        fi
+    fi
+    return 1
+}
+
+if _detect_systemd; then
+    HAS_SYSTEMD=true
+else
+    HAS_SYSTEMD=false
+    log_warn "systemd NO detectado (contenedor sin init real)."
+    log_warn "  install.sh usara la ruta directa: mariadb_repo_setup + nohup mariadbd"
+    log_warn "  El servicio NO se gestionara via systemctl; arranque manual con nohup."
+fi
+readonly HAS_SYSTEMD
+
+# =============================================================================
+# Helper: verificar si mariadbd ya esta corriendo en el socket canonico
+# Usado para idempotencia en rutas sin systemd.
+# =============================================================================
+_mariadbd_already_running() {
+    local sock
+    for sock in /run/mysqld/mysqld.sock /var/run/mysqld/mysqld.sock; do
+        if [[ -S "$sock" ]] && mysqladmin --socket="$sock" ping --silent >/dev/null 2>&1; then
+            return 0
+        fi
+    done
+    return 1
+}
+
+# =============================================================================
+# Helper: arrancar mariadbd directo bajo nohup (sin systemd)
+# IDEMPOTENTE: no-op si ya hay un mariadbd respondiendo en el socket.
+# =============================================================================
+_start_mariadbd_nohup() {
+    if _mariadbd_already_running; then
+        log_info "  mariadbd ya activo en /run/mysqld/mysqld.sock — omitiendo arranque"
+        return 0
+    fi
+
+    mkdir -p /run/mysqld /var/log/mysql
+    chown mysql:mysql /run/mysqld /var/log/mysql 2>/dev/null || true
+
+    local daemon=""
+    for bin in /usr/sbin/mariadbd /usr/sbin/mysqld /usr/bin/mariadbd; do
+        [[ -x "$bin" ]] && daemon="$bin" && break
+    done
+    if [[ -z "$daemon" ]]; then
+        log_fatal "No se encontro el binario mariadbd/mysqld"
+        exit 1
+    fi
+
+    log_info "  Arrancando ${daemon} con nohup (sin systemd)"
+    nohup "$daemon" --user=mysql \
+        > /var/log/mysql/mariadbd.log 2>&1 &
+
+    # Esperar hasta 30s a que el socket responda
+    local elapsed=0
+    while (( elapsed < 30 )); do
+        if _mariadbd_already_running; then
+            log_success "  mariadbd respondiendo (${elapsed}s)"
+            return 0
+        fi
+        sleep 2
+        elapsed=$(( elapsed + 2 ))
+    done
+    log_error "mariadbd no respondio en 30s — revisa /var/log/mysql/mariadbd.log"
+    return 1
+}
+
+# =============================================================================
 # Cargar .env si existe (opcional para este provisioner)
 # =============================================================================
 ENV_FILE="${PROJECT_ROOT}/.env"
@@ -242,6 +323,22 @@ _add_mariadb_repo() {
     _apt_install software-properties-common dirmngr \
         apt-transport-https curl gpg > /dev/null
 
+    # Preferir el setup script oficial de MariaDB cuando no hay systemd:
+    # es la ruta documentada por mariadb.com, configura keyring + sources
+    # consistentemente para contenedores y hosts sin gestor de servicios.
+    if [[ "$HAS_SYSTEMD" == "false" ]] \
+            && tcp_is_reachable "r.mariadb.com" 443 5 2>/dev/null; then
+        log_info "  Usando mariadb_repo_setup oficial (ruta sin systemd)"
+        if curl -fsSL https://r.mariadb.com/downloads/mariadb_repo_setup \
+                | bash -s -- --mariadb-server-version="${MARIADB_TARGET_SERIES}" \
+                    > /dev/null 2>&1; then
+            apt-get update -qq 2>/dev/null || true
+            log_success "Repositorio MariaDB ${MARIADB_TARGET_SERIES} agregado (mariadb_repo_setup)"
+            return 0
+        fi
+        log_warn "  mariadb_repo_setup fallo — cayendo al metodo manual"
+    fi
+
     # Codename del OS (noble, jammy, focal...)
     local codename
     codename=$(lsb_release -cs 2>/dev/null || echo "noble")
@@ -321,14 +418,22 @@ _install_mariadb() {
     fi
 
     # Activar y arrancar el servicio
-    systemctl enable mariadb 2>/dev/null \
-        || service mariadb enable 2>/dev/null \
-        || true
+    if [[ "$HAS_SYSTEMD" == "true" ]]; then
+        systemctl enable mariadb 2>/dev/null \
+            || service mariadb enable 2>/dev/null \
+            || true
 
-    mariadb_start || {
-        log_fatal "MariaDB instalado pero no responde"
-        exit 1
-    }
+        mariadb_start || {
+            log_fatal "MariaDB instalado pero no responde"
+            exit 1
+        }
+    else
+        # Sin systemd: arrancar mariadbd manualmente con nohup. Idempotente.
+        _start_mariadbd_nohup || {
+            log_fatal "MariaDB instalado pero no se pudo arrancar mariadbd"
+            exit 1
+        }
+    fi
 
     log_success "MariaDB ${MARIADB_TARGET_SERIES} instalado y activo"
 }
@@ -367,11 +472,20 @@ _activate_project_config() {
     log_success "Symlink activo: ${cnf_dst} → ${cnf_src}"
 
     # Recargar configuración sin reiniciar
-    if systemctl is-active --quiet mariadb 2>/dev/null; then
+    if [[ "$HAS_SYSTEMD" == "true" ]] && systemctl is-active --quiet mariadb 2>/dev/null; then
         systemctl reload mariadb 2>/dev/null \
             || mysqladmin reload 2>/dev/null \
             || log_warn "  No se pudo recargar la configuración — reinicia el servicio manualmente"
         log_success "Configuración recargada"
+    elif [[ "$HAS_SYSTEMD" == "false" ]] && _mariadbd_already_running; then
+        # Sin systemd: usar mysqladmin contra el socket activo
+        local sock
+        for sock in /run/mysqld/mysqld.sock /var/run/mysqld/mysqld.sock; do
+            [[ -S "$sock" ]] || continue
+            mysqladmin --socket="$sock" reload 2>/dev/null && {
+                log_success "Configuración recargada (via socket)"; break
+            }
+        done
     fi
 }
 
