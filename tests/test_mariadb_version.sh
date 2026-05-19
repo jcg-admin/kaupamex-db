@@ -34,7 +34,11 @@ if ! command -v mysql >/dev/null 2>&1; then
 fi
 
 client_version=$(mysql --version 2>/dev/null || true)
-if ! grep -q "${EXPECTED_SERIES}" <<<"$client_version"; then
+# Anchored match: la salida del cliente trae "Distrib 11.8.7-MariaDB" o
+# "from 11.8.7-MariaDB". Un substring-match plano de "11.8" tambien
+# matchea "10.11.8" — falso positivo (Codex review 2026-05-19).
+# Forzamos el punto que cierra la serie y un prefijo Distrib|from.
+if ! grep -Eq "(Distrib|from) ${EXPECTED_SERIES}\." <<<"$client_version"; then
     echo "  cliente: ${client_version}" >&2
     fail "cliente mysql/mariadb no es ${EXPECTED_SERIES}.x — ADR-009 mandata la serie ${EXPECTED_SERIES}"
 fi
@@ -66,7 +70,11 @@ if [[ -z "$server_version" ]]; then
     fail "servidor activo pero SELECT VERSION() no retorno resultado"
 fi
 
-if ! grep -q "${EXPECTED_SERIES}" <<<"$server_version"; then
+# Anchored match: SELECT VERSION() devuelve "11.8.7-MariaDB-..." al
+# inicio del string. Forzamos coincidencia desde el principio con el
+# punto que cierra la serie. Misma proteccion que el cliente contra
+# falsos positivos del tipo "10.11.8" (Codex review 2026-05-19).
+if ! grep -Eq "^${EXPECTED_SERIES}\." <<<"$server_version"; then
     echo "  servidor: ${server_version}" >&2
     fail "servidor MariaDB no es ${EXPECTED_SERIES}.x — ADR-009 mandata la serie ${EXPECTED_SERIES}"
 fi
