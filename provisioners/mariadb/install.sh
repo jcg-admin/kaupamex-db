@@ -361,7 +361,22 @@ _add_mariadb_repo() {
 deb [arch=amd64 signed-by=${keyring}] https://downloads.mariadb.com/MariaDB/mariadb-${MARIADB_TARGET_SERIES}/repo/ubuntu ${codename} main
 EOF
 
-    apt-get update -qq 2>/dev/null
+    # DEC-DOC-008: loud failure. Capture stderr; if apt-get update fails,
+    # surface the underlying error before exiting. Sin esto, set -euo
+    # pipefail mata el script silenciosamente justo tras "GPG key importada".
+    local apt_update_log
+    apt_update_log=$(mktemp)
+    if ! apt-get update -qq 2>"$apt_update_log"; then
+        log_fatal "apt-get update fallo tras agregar el repo MariaDB ${MARIADB_TARGET_SERIES}"
+        log_error "stderr:"
+        sed 's/^/    /' "$apt_update_log" >&2
+        log_error "Verificacion sugerida:"
+        log_error "  cat ${repo_file}"
+        log_error "  sudo apt-get update      # sin -qq para ver el error completo"
+        rm -f "$apt_update_log"
+        exit 1
+    fi
+    rm -f "$apt_update_log"
     log_success "Repositorio MariaDB ${MARIADB_TARGET_SERIES} agregado (${repo_file})"
 }
 
