@@ -100,6 +100,12 @@ create_database() {
     exists=$(_db_exec_quiet -e \
         "SELECT COUNT(*) FROM information_schema.SCHEMATA
          WHERE SCHEMA_NAME = '${DB_NAME}';" || echo "0")
+    # MariaDB 11.8 imprime un aviso de deprecacion de 'mysql' por stdout que
+    # contamina el resultado; nos quedamos con la ultima linea (el conteo).
+    # Sin esto, la comparacion numerica gatilla "mysql: unbound variable"
+    # bajo set -u al intentar evaluar 'mysql:' como nombre de variable.
+    exists="${exists##*$'\n'}"
+    exists="${exists:-0}"
 
     if [[ "$exists" -gt 0 ]]; then
         log_info "Schema QA ya existe — sin cambios"
