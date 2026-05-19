@@ -13,7 +13,11 @@ sin Vagrant, sin PostgreSQL, sin Adminer.
 ## Prerequisitos
 
 - **OS**: Ubuntu 24.04 LTS (recomendado) o macOS con Homebrew
-- **MariaDB**: 11.8 LTS (`apt install mariadb-server mariadb-client`)
+- **MariaDB**: **11.8 LTS** — version canonica del proyecto segun
+  :ref:`ADR-009 <adr-009>` e instalada por
+  ``provisioners/mariadb/install.sh``. La serie 10.11 (la que ofrece
+  el repo base de Ubuntu 24.04) **no** es soportada — el provisioner
+  pinea la serie 11.8.x para evitar saltos automaticos a 12.x.
 - **Python**: 3.11 o superior
 - **bash**: 5.x (`bash --version`)
 - **Dependencias Python** para `scripts/check_db.py`:
@@ -75,10 +79,36 @@ cd e-comerce-db
 cp .env.example .env
 # Editar .env con las credenciales reales
 
-# 3. Activar la configuración de MariaDB
+# 3. Instalar MariaDB 11.8 LTS (idempotente — no-op si ya está 11.8.x)
+sudo bash provisioners/mariadb/install.sh
+
+# 4. Activar la configuración del proyecto (lo hace install.sh, pero
+#    en upgrades manuales el symlink puede faltar)
 sudo ln -sf "$(pwd)/config/mariadb/99-practicayoruba.cnf" \
             /etc/mysql/mariadb.conf.d/99-practicayoruba.cnf
-sudo systemctl reload mariadb
+sudo systemctl reload mariadb 2>/dev/null \
+    || sudo mysqladmin --socket=/run/mysqld/mysqld.sock reload
+```
+
+### Version canónica de MariaDB
+
+`MariaDB 11.8 LTS` es la version mandatoria del proyecto por
+:ref:`ADR-009 <adr-009>` y la instala `provisioners/mariadb/install.sh`:
+
+- El provisioner detecta la version actual; si ya es `11.8.x` reporta
+  `"Sin cambios"` y sale (idempotente).
+- Si encuentra una serie distinta (p.ej. `10.11` del repo base de
+  Ubuntu) se detiene con un mensaje claro y requiere `--migrate`
+  como confirmacion del operador para purgar e instalar `11.8`.
+- En contenedores sin systemd usa `mariadb_repo_setup` oficial y
+  arranca `mariadbd` con `nohup`.
+- La serie esta pineada (`/etc/apt/preferences.d/mariadb-pin`) para
+  permitir parches `11.8.x` pero bloquear saltos automaticos a `12.x`.
+
+Auditar la version instalada cuando MariaDB esta activo:
+
+```bash
+bash tests/test_mariadb_version.sh
 ```
 
 ---
