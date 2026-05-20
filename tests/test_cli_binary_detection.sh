@@ -100,6 +100,27 @@ for f in "$PROJECT_ROOT/provisioners/mariadb/db_setup.sh" \
 done
 
 # ----------------------------------------------------------------------------
+# H-20 (D-031): install.sh instala los plugin-provider packages
+# (bzip2, lz4, lzma, lzo, snappy). Sin estos paquetes mariadbd 11.8
+# revienta porque el config default los referencia con
+# force_plus_permanent y las .so no existen.
+# ----------------------------------------------------------------------------
+INSTALL_SH="$PROJECT_ROOT/provisioners/mariadb/install.sh"
+if [[ -f "$INSTALL_SH" ]]; then
+    missing_providers=()
+    for prov in bzip2 lz4 lzma lzo snappy; do
+        if ! grep -qE "mariadb-plugin-provider-${prov}" "$INSTALL_SH"; then
+            missing_providers+=("$prov")
+        fi
+    done
+    if (( ${#missing_providers[@]} == 0 )); then
+        pass "install.sh instala los 5 mariadb-plugin-provider-* (H-20)"
+    else
+        fail "install.sh no instala: ${missing_providers[*]} (H-20 regresion)"
+    fi
+fi
+
+# ----------------------------------------------------------------------------
 # 4) Si MariaDB esta instalado localmente, los helpers resuelven a
 #    binarios que existen (smoke test funcional).
 # ----------------------------------------------------------------------------

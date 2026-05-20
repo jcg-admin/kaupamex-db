@@ -438,8 +438,27 @@ _install_mariadb() {
     apt-get update -qq 2>/dev/null || \
         log_warn "  apt-get update retornó error — continuando"
 
-    if ! _apt_install mariadb-server mariadb-client > /dev/null; then
-        log_fatal "No se pudo instalar mariadb-server"
+    # D-031 H-20 (reportado por deploy@yollotl): el config default de
+    # MariaDB 11.8 referencia plugin providers con 'force_plus_permanent'
+    # en /etc/mysql/mariadb.conf.d/*.cnf. Como _apt_install usa
+    # --no-install-recommends, esos paquetes provider NO se instalan
+    # automaticamente y mariadbd revienta al arrancar con:
+    #   [ERROR] mariadbd: Can't open shared library
+    #     '/usr/lib/mysql/plugin/provider_bzip2.so'
+    #   [ERROR] unknown variable 'provider_bzip2=force_plus_permanent'
+    #   [ERROR] Aborting
+    # Especificar los providers explicitamente para que un install
+    # limpio (o un --migrate) deje un daemon arrancable. Idempotente:
+    # apt skip si ya estan instalados.
+    if ! _apt_install \
+            mariadb-server mariadb-client \
+            mariadb-plugin-provider-bzip2 \
+            mariadb-plugin-provider-lz4 \
+            mariadb-plugin-provider-lzma \
+            mariadb-plugin-provider-lzo \
+            mariadb-plugin-provider-snappy \
+            > /dev/null; then
+        log_fatal "No se pudo instalar mariadb-server + plugin providers"
         exit 1
     fi
 
