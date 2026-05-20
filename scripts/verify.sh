@@ -3,7 +3,15 @@
 # scripts/verify.sh
 # Verificación completa del entorno MariaDB de PracticaYoruba
 # =============================================================================
-# Comprueba en orden (11 checks):
+# Comprueba en orden los N checks declarados como funciones
+# check_*() en este archivo. El conteo NO se hardcodea aqui —
+# se calcula al iniciar el script (TOTAL_CHECKS = grep -c '^check_'
+# "$0") y se reporta en el header. Asi, agregar/quitar un check
+# nunca queda desincronizado con la documentacion. (T-C1 de
+# iniciativa resolver-problemas-db-pendientes — cierre H-01/S-01.)
+#
+# Lista actual al momento de escribir (referencial — la fuente de
+# verdad es el conteo dinamico):
 #
 #   1. Variables requeridas en .env
 #   2. Herramientas CLI disponibles (mysql, mysqladmin)
@@ -466,7 +474,12 @@ check_sql_sps() {
 # =============================================================================
 # MAIN
 # =============================================================================
-log_header "PracticaYoruba-db — Verificacion completa"
+# DEC-DB-4: conteo de checks calculado dinamicamente.
+# grep -c sobre el propio script para encontrar las definiciones
+# de funcion check_*(). Evita el magic number en docs.
+TOTAL_CHECKS=$(grep -cE '^(function )?check_[a-z_]+\(\)' "$0")
+
+log_header "PracticaYoruba-db — Verificacion completa (${TOTAL_CHECKS} checks)"
 log_info "  DB prod : ${DB_NAME} @ ${DB_HOST}:${DB_PORT}"
 log_info "  DB QA   : ${DB_QA_NAME} @ ${DB_HOST}:${DB_PORT}"
 echo ""

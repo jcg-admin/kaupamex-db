@@ -83,11 +83,13 @@ DJANGO_SETTINGS_MODULE=config.settings.testing \
 
 # ── Verificación de la integración ──────────────────────────────────
 
-# 6. Verificar BD desde PracticaYoruba-db (8 checks shell)
+# 6. Verificar BD desde PracticaYoruba-db (script reporta N checks
+#    dinamicamente en el header — DEC-DB-4, sin magic number).
 cd e-comerce-db
 bash scripts/verify.sh
 
-# 7. Verificar BD + ORM desde PracticaYoruba-db (6 checks Python)
+# 7. Verificar BD + ORM desde PracticaYoruba-db (Python; ver check_db.py
+#    para el conteo actual).
 pip install -r requirements.txt
 python scripts/check_db.py
 

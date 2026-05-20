@@ -95,7 +95,10 @@ python3 manage.py migrate --settings=config.settings.testing
 ## Verificar el entorno
 
 ```bash
-# Verificación completa (7 checks: env, CLI, conectividad, schemas, privilegios)
+# Verificación completa — el script reporta dinámicamente N checks
+# en el header. La fuente de verdad es el conteo dinámico (DEC-DB-4).
+# Cubre env, CLI, versión, conectividad, schemas, privilegios, funciones,
+# vistas y SPs.
 bash scripts/verify.sh
 
 # Verificación Python (conectividad, migraciones, privilegios DML)
