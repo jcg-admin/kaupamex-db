@@ -149,26 +149,31 @@ Editar en el repositorio y recargar:
 ```bash
 # El symlink ya apunta al repo — el cambio es inmediato
 sudo systemctl reload mariadb
-# o sin systemd:
-sudo mysqladmin reload
+# o sin systemd (MariaDB 11.x: mariadb-admin; <=10.11 legacy: mysqladmin):
+sudo mariadb-admin reload
 ```
 
 ---
 
 ## Diagnóstico
 
+> **MariaDB 11.x (Ubuntu 24.04 noble) — D-028:** los binarios
+> ``mysql`` / ``mysqladmin`` ya NO se instalan. Usar ``mariadb`` y
+> ``mariadb-admin``. Si convives con MariaDB <=10.11 los nombres
+> legacy todavia existen como aliases en el paquete.
+
 ```bash
 # Log de errores de MariaDB
 sudo tail -f /var/lib/mysql/mysqld_err.log
 
 # Verificar que MariaDB responde
-mysqladmin ping
+mariadb-admin ping
 
 # Ver el estado de los schemas
-mysql -e "SHOW DATABASES LIKE 'practicayoruba%';"
+sudo mariadb -e "SHOW DATABASES LIKE 'practicayoruba%';"
 
 # Ver privilegios del usuario Django
-mysql -e "SHOW GRANTS FOR 'django_user'@'localhost';"
+sudo mariadb -e "SHOW GRANTS FOR 'django_user'@'localhost';"
 ```
 
 ---
