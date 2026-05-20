@@ -206,6 +206,24 @@ md5sum -c 20260513_225115_practicayoruba_db.md5
 Define `BACKUP_REMOTE_DEST=s3://bucket/ruta/` en `.env`.
 El script sincroniza automáticamente después de verificar la integridad.
 
+### Variables `BACKUP_*` / `PY_BACKUP_*` — solo en `db/.env` (T-B3, ENV-02)
+
+Las siguientes variables viven **únicamente** en `db/.env` y NO se
+replican en `api/practicayoruba/.env`:
+
+- `PY_BACKUP_USER`, `PY_BACKUP_PASSWORD` — credenciales del usuario
+  MariaDB con privilegios `SELECT, SHOW VIEW, LOCK TABLES, EVENT,
+  TRIGGER` que utiliza `backup_db.sh`. La api no las consume.
+- `BACKUP_DIR` — directorio destino de los dumps.
+- `BACKUP_REMOTE_DEST` — URI de S3 / rclone para sincronizacion
+  opcional.
+- `BACKUP_REPOS` — lista de directorios del monorepo a snapshotear
+  via `backup_proyectos.sh`.
+
+`verify_env_sync.sh` (T-B1) compara solo claves `^DB_` justamente
+para que la sincronizacion cross-repo no force `api/.env` a llevar
+estas claves de backup. La asimetria es intencional.
+
 ---
 
 ## Actualizar la configuración de MariaDB
