@@ -149,26 +149,31 @@ Editar en el repositorio y recargar:
 ```bash
 # El symlink ya apunta al repo — el cambio es inmediato
 sudo systemctl reload mariadb
-# o sin systemd:
-sudo mysqladmin reload
+# o sin systemd (MariaDB 11.x: mariadb-admin; <=10.11 legacy: mysqladmin):
+sudo mariadb-admin reload
 ```
 
 ---
 
 ## Diagnóstico
 
+> **MariaDB 11.x (Ubuntu 24.04 noble) — D-028:** los binarios
+> ``mysql`` / ``mysqladmin`` ya NO se instalan. Usar ``mariadb`` y
+> ``mariadb-admin``. Si convives con MariaDB <=10.11 los nombres
+> legacy todavia existen como aliases en el paquete.
+
 ```bash
 # Log de errores de MariaDB
 sudo tail -f /var/lib/mysql/mysqld_err.log
 
 # Verificar que MariaDB responde
-mysqladmin ping
+mariadb-admin ping
 
 # Ver el estado de los schemas
-mysql -e "SHOW DATABASES LIKE 'practicayoruba%';"
+sudo mariadb -e "SHOW DATABASES LIKE 'practicayoruba%';"
 
 # Ver privilegios del usuario Django
-mysql -e "SHOW GRANTS FOR 'django_user'@'localhost';"
+sudo mariadb -e "SHOW GRANTS FOR 'django_user'@'localhost';"
 ```
 
 ---
@@ -186,8 +191,79 @@ bash scripts/verify.sh
 
 ---
 
+## Modelo cross-user de permisos (D-030)
+
+El proyecto opera bajo cinco cuentas del sistema heredadas del
+procedimiento externo
+**Procedimiento-Implementacion-Almacenamiento-WSL2-ecomerce-p001 v1.0.0**.
+Para troubleshoot de permisos de BD + apache + backups, entender la
+relación cross-user es crítico.
+
+### Quién puede leer qué (resumen)
+
+| Recurso | Propietario | Perms | Quién más lee |
+|---|---|---|---|
+| `/srv/repos/ecom/e-comerce-db/` (código) | `develop:develop` | 755/644 | Todos via "other" (incluido `www-data`) |
+| `/srv/backups/database/` (dumps) | `svc-dbdata:svc-dbdata` | 755 | Solo `svc-dbdata` y root |
+| `/srv/backups/project/` (backups proyecto) | `svc-backups:svc-backups` | 755 | Solo `svc-backups` y root |
+| `/var/lib/mysql/` (MariaDB datadir) | `mysql:mysql` | 700 | Solo `mysql` y root |
+| `/etc/ssl/practicayoruba/cert.pem` (post-D-029) | `root:root` | 644 | Todos (cert público) |
+| `/etc/ssl/practicayoruba/key.pem` | `root:root` | 600 | Solo root |
+
+### Quién corre qué
+
+- **Provisioners**: `deploy` con `sudo` (`db_setup.sh`, `db_qa_setup.sh`,
+  `install.sh`). El binario interactivo `mariadb` se invoca como root
+  via socket (`unix_socket` auth plugin), no como `deploy` directo —
+  por eso `mariadb -e ...` falla con "Access denied for 'deploy'" pero
+  `sudo mariadb -e ...` funciona.
+- **MariaDB daemon (`mariadbd`)**: como `mysql:mysql`. Lee solo
+  `/var/lib/mysql/`.
+- **Django ORM (vía Apache mod-wsgi)**: como `www-data`. Conecta a
+  MariaDB con credenciales `django_user`/`django_pass` definidas en
+  `e-comerce-api/practicayoruba/.env`. NO usa el socket de unix; usa
+  TCP a `127.0.0.1:3306`.
+- **Backups manuales / scripts cron**: deberían correr como
+  `svc-dbdata` (pero `nologin` impide invocación interactiva — se
+  hace vía `sudo -u svc-dbdata ...` desde scripts de cron del root).
+
+### Bind mount Clase C → repo
+
+Los repos `e-comerce-db` y `e-comerce-server` tienen un directorio
+`backups/` que vive físicamente fuera del checkout git (Clase C, owner
+`svc-dbdata`). Esto previene que `git clean -fdx` o un `git checkout`
+accidental destruyan dumps:
+
+```
+/srv/backups/database/e-comerce-db     → /srv/repos/ecom/e-comerce-db/backups
+/srv/backups/database/e-comerce-server → /srv/repos/ecom/e-comerce-server/backups
+```
+
+Configuración fstab en el procedimiento de provisioning, NO en este
+script. Si haces dumps manuales:
+
+```bash
+sudo -u svc-dbdata mariadb-dump practicayoruba_db > /srv/repos/ecom/e-comerce-db/backups/dump-$(date -u +%Y-%m-%dT%H-%M-%SZ).sql
+```
+
+El dump aparece dentro del checkout git pero `git status` lo ignora
+porque `backups/` está en `.gitignore` del repo y el bind mount lo
+saca del árbol real.
+
+### Troubleshooting cross-user típico
+
+| Síntoma | Probable causa |
+|---|---|
+| `mariadb -e "..."` como deploy → "Access denied" | Falta `sudo` (auth via socket requiere root) |
+| Django responde 500 + `OperationalError: Permission denied` en logs | `www-data` no puede leer SSL cert (post-D-029 ya no aplica) o el `.env` del api no es readable por `www-data` |
+| `mariadb-dump` falla con "Can't read dir of '/etc/mysql/'" | `mariadb-dump` corre como root via `sudo -u mysql`; chequear `--defaults-file` |
+| Apache `Could not open WSGI script /srv/repos/ecom/...wsgi.py` | Probable repo no clonado en `API_ROOT`, o perms del repo distintos de `755 develop:develop` |
+
+---
+
 ## Referencias
 
 - `ADR-009`: decisión de usar MariaDB 11.8
 - `ADR-008`: arranque sin systemd
 - `databases/referencias/analisis-iact-db`: patrones de IACT-db adaptados
+- `Procedimiento-Implementacion-Almacenamiento-WSL2-ecomerce-p001 v1.0.0` (externo): modelo de cinco cuentas + tres clases

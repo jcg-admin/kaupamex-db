@@ -19,13 +19,19 @@ El provisioner `provisioners/mariadb/install.sh` impone esto:
 ## 2. Detectar la version actual
 
 ```bash
+# MariaDB 11.x (Ubuntu 24.04 noble):
+mariadb --version
+# mariadb from 11.8.x-MariaDB-ubu2404 ...           <- ya en destino
+
+# MariaDB <=10.11 (alias legacy mysql todavia existe):
 mysql --version
-# mysql  Ver 15.1 Distrib 10.11.x-MariaDB ...   <- destino: 11.8
-# mysql  Ver 15.1 Distrib 11.8.x-MariaDB  ...   <- ya en destino
+# mysql  Ver 15.1 Distrib 10.11.x-MariaDB ...       <- destino: 11.8
 ```
 
-En MariaDB 11.x el binario `mysql` imprime un aviso de deprecacion;
-usar `mariadb --version` cuando este presente.
+**D-028 (verificado yollotl 2026-05-20):** en MariaDB 11.x sobre
+Ubuntu 24.04 noble el binario `mysql` ya NO se instala; solo
+existe `mariadb`. Usa `command -v mariadb || command -v mysql`
+para auto-detectar antes de invocar.
 
 ## 3. Upgrade con el repo oficial de MariaDB
 

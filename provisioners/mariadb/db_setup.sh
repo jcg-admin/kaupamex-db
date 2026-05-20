@@ -10,6 +10,15 @@
 #   # En contenedores sin sudo (MariaDB ya accesible como root sin pass):
 #   bash provisioners/mariadb/db_setup.sh
 #
+# Modelo de usuarios (ver Procedimiento-Implementacion-Almacenamiento-
+# WSL2-ecomerce-p001 v1.0.0 si aplica):
+#   - INVOCADOR canonico: 'deploy' (sudo general).
+#   - NO RUN AS develop: sin sudo el acceso al socket mariadbd via
+#     unix_socket auth como root falla.
+#   - NO RUN AS infra: 'bash' no esta en la whitelist NOPASSWD de
+#     infra; 'sudo bash db_setup.sh' como infra falla con
+#     'sudo: a password is required'.
+#
 # Variables leidas desde .env en la raiz del repositorio (con defaults):
 #   DB_NAME      (default: practicayoruba_db)
 #   DB_USER      (default: django_user)
@@ -52,18 +61,42 @@ DB_PORT="${DB_PORT:-3306}"
 #   Usar _db_exec_quiet para resultados escalares sin cabecera.
 # -----------------------------------------------------------------------------
 _db_exec() {
-    local sock=""
-    for s in "${_MARIADB_SOCKETS[@]}"; do
-        if [[ -S "$s" ]] && mysqladmin --socket="$s" ping --silent >/dev/null 2>&1; then
-            sock="$s"
-            break
-        fi
-    done
-    if [[ -n "$sock" ]]; then
-        mysql --socket="$sock" --batch "$@" 2>&1
-    else
-        mysql -h "$DB_HOST" -P "$DB_PORT" --batch "$@" 2>&1
+    # D-028: usar MARIADB_CLI/MARIADB_ADM resueltos por database.sh
+    # (mariadb / mariadb-admin en MariaDB 11.x; mysql / mysqladmin en
+    # MariaDB <=10.11 o MySQL puro). Validacion en check_prerequisites.
+    #
+    # DEC-DOC-008 (D-028 bug #3 reportado por deploy@yollotl):
+    # Antes el script moria silenciosamente bajo ``set -euo pipefail``
+    # cuando un CREATE/GRANT fallaba — la salida iba a /dev/null en
+    # el caller y nunca se veia el error real. Ahora capturamos
+    # output, lo emitimos a stderr con prefijo si el exit code es
+    # distinto de cero, y propagamos el rc para que el caller (o
+    # set -e) reaccione con contexto visible.
+    local sock="" adm="${MARIADB_ADM:-}" cli="${MARIADB_CLI:-}" out rc
+    if [[ -n "$adm" ]]; then
+        for s in "${_MARIADB_SOCKETS[@]}"; do
+            if [[ -S "$s" ]] && "$adm" --socket="$s" ping --silent >/dev/null 2>&1; then
+                sock="$s"
+                break
+            fi
+        done
     fi
+    if [[ -n "$sock" ]]; then
+        out=$("$cli" --socket="$sock" --batch "$@" 2>&1); rc=$?
+    else
+        out=$("$cli" -h "$DB_HOST" -P "$DB_PORT" --batch "$@" 2>&1); rc=$?
+    fi
+    if [[ "$rc" -ne 0 ]]; then
+        # Loud failure: dejar la causa visible antes de que set -e
+        # mate el script en el caller.
+        {
+            printf '\n[ERR] _db_exec fallo (rc=%s):\n' "$rc"
+            printf '%s' "$out" | sed 's/^/    /'
+            printf '\n'
+        } >&2
+    fi
+    printf '%s' "$out"
+    return $rc
 }
 
 _db_exec_quiet() { _db_exec --silent --skip-column-names "$@" 2>/dev/null; }
@@ -72,10 +105,12 @@ _db_exec_quiet() { _db_exec --silent --skip-column-names "$@" 2>/dev/null; }
 check_prerequisites() {
     log_header "PASO: Verificando prerequisitos"
 
-    command -v mysql &>/dev/null || {
-        log_fatal "mysql client no encontrado. Instala: apt install mariadb-client"
+    [[ -n "${MARIADB_CLI:-}" ]] || {
+        log_fatal "Cliente MariaDB no encontrado (ni 'mariadb' ni 'mysql' en PATH)"
+        log_error "  Instala: apt install mariadb-client"
         exit 1
     }
+    log_info "  Cliente CLI: ${MARIADB_CLI}"
 
     if ! mariadb_is_running "$DB_HOST" "$DB_PORT"; then
         log_warn "MariaDB no responde — intentando arranque automatico"

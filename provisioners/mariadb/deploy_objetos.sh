@@ -56,16 +56,16 @@ _exec_sql_file() {
     local sock="" result=""
 
     for s in "${_MARIADB_SOCKETS[@]}"; do
-        if [[ -S "$s" ]] && mysqladmin --socket="$s" ping --silent >/dev/null 2>&1; then
+        if [[ -S "$s" ]] && "${MARIADB_ADM:-mariadb-admin}" --socket="$s" ping --silent >/dev/null 2>&1; then
             sock="$s"
             break
         fi
     done
 
     if [[ -n "$sock" ]]; then
-        result=$(mysql --socket="$sock" "$DB_NAME" < "$file" 2>&1)
+        result=$("${MARIADB_CLI:-mariadb}" --socket="$sock" "$DB_NAME" < "$file" 2>&1)
     else
-        result=$(mysql -h "$DB_HOST" -P "$DB_PORT" "$DB_NAME" < "$file" 2>&1)
+        result=$("${MARIADB_CLI:-mariadb}" -h "$DB_HOST" -P "$DB_PORT" "$DB_NAME" < "$file" 2>&1)
     fi
 
     local errors
@@ -88,14 +88,14 @@ _exec_sql() {
     local sql="$1"
     local sock=""
     for s in "${_MARIADB_SOCKETS[@]}"; do
-        if [[ -S "$s" ]] && mysqladmin --socket="$s" ping --silent >/dev/null 2>&1; then
+        if [[ -S "$s" ]] && "${MARIADB_ADM:-mariadb-admin}" --socket="$s" ping --silent >/dev/null 2>&1; then
             sock="$s"; break
         fi
     done
     if [[ -n "$sock" ]]; then
-        mysql --socket="$sock" "$DB_NAME" -e "$sql" 2>/dev/null
+        "${MARIADB_CLI:-mariadb}" --socket="$sock" "$DB_NAME" -e "$sql" 2>/dev/null
     else
-        mysql -h "$DB_HOST" -P "$DB_PORT" "$DB_NAME" -e "$sql" 2>/dev/null
+        "${MARIADB_CLI:-mariadb}" -h "$DB_HOST" -P "$DB_PORT" "$DB_NAME" -e "$sql" 2>/dev/null
     fi
 }
 
@@ -113,19 +113,19 @@ _check_prereqs() {
 
     local sock=""
     for s in "${_MARIADB_SOCKETS[@]}"; do
-        if [[ -S "$s" ]] && mysqladmin --socket="$s" ping --silent >/dev/null 2>&1; then
+        if [[ -S "$s" ]] && "${MARIADB_ADM:-mariadb-admin}" --socket="$s" ping --silent >/dev/null 2>&1; then
             sock="$s"; break
         fi
     done
 
     local mig_exists
     if [[ -n "$sock" ]]; then
-        mig_exists=$(mysql --socket="$sock" --batch --silent --skip-column-names \
+        mig_exists=$("${MARIADB_CLI:-mariadb}" --socket="$sock" --batch --silent --skip-column-names \
             -e "SELECT COUNT(*) FROM information_schema.TABLES
                 WHERE TABLE_SCHEMA='${DB_NAME}' AND TABLE_NAME='django_migrations';" \
             2>/dev/null || echo "0")
     else
-        mig_exists=$(mysql -h "$DB_HOST" -P "$DB_PORT" --batch --silent --skip-column-names \
+        mig_exists=$("${MARIADB_CLI:-mariadb}" -h "$DB_HOST" -P "$DB_PORT" --batch --silent --skip-column-names \
             -e "SELECT COUNT(*) FROM information_schema.TABLES
                 WHERE TABLE_SCHEMA='${DB_NAME}' AND TABLE_NAME='django_migrations';" \
             2>/dev/null || echo "0")
@@ -284,17 +284,17 @@ _verify_objects() {
 
     local sock=""
     for s in "${_MARIADB_SOCKETS[@]}"; do
-        if [[ -S "$s" ]] && mysqladmin --socket="$s" ping --silent >/dev/null 2>&1; then
+        if [[ -S "$s" ]] && "${MARIADB_ADM:-mariadb-admin}" --socket="$s" ping --silent >/dev/null 2>&1; then
             sock="$s"; break
         fi
     done
 
     _q() {
         if [[ -n "$sock" ]]; then
-            mysql --socket="$sock" --batch --silent --skip-column-names \
+            "${MARIADB_CLI:-mariadb}" --socket="$sock" --batch --silent --skip-column-names \
                 -e "$1" information_schema 2>/dev/null || echo "0"
         else
-            mysql -h "$DB_HOST" -P "$DB_PORT" --batch --silent --skip-column-names \
+            "${MARIADB_CLI:-mariadb}" -h "$DB_HOST" -P "$DB_PORT" --batch --silent --skip-column-names \
                 -e "$1" information_schema 2>/dev/null || echo "0"
         fi
     }
