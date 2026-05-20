@@ -25,6 +25,16 @@
 #   DB_HOST, DB_PORT
 #
 # Requiere: root, Ubuntu 20.04+, conexión a internet (para descargar el repo)
+#
+# Modelo de usuarios (ver Procedimiento-Implementacion-Almacenamiento-
+# WSL2-ecomerce-p001 v1.0.0 si aplica):
+#   - INVOCADOR: cualquier cuenta con sudo + 'bash' en su whitelist.
+#     En el modelo WSL2 canonico esa cuenta es 'deploy' (sudo general).
+#   - NO RUN AS develop: develop no tiene sudo, el apt-get fallaria.
+#   - NO RUN AS infra: en el modelo WSL2 infra tiene NOPASSWD solo
+#     sobre una whitelist de binarios (mkfs.ext4, mount, apt, ...).
+#     'bash' NO esta en la whitelist, asi que 'sudo bash install.sh'
+#     como infra falla con 'sudo: a password is required'. Usar deploy.
 # =============================================================================
 set -euo pipefail
 

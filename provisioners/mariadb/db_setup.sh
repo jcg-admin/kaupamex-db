@@ -10,6 +10,15 @@
 #   # En contenedores sin sudo (MariaDB ya accesible como root sin pass):
 #   bash provisioners/mariadb/db_setup.sh
 #
+# Modelo de usuarios (ver Procedimiento-Implementacion-Almacenamiento-
+# WSL2-ecomerce-p001 v1.0.0 si aplica):
+#   - INVOCADOR canonico: 'deploy' (sudo general).
+#   - NO RUN AS develop: sin sudo el acceso al socket mariadbd via
+#     unix_socket auth como root falla.
+#   - NO RUN AS infra: 'bash' no esta en la whitelist NOPASSWD de
+#     infra; 'sudo bash db_setup.sh' como infra falla con
+#     'sudo: a password is required'.
+#
 # Variables leidas desde .env en la raiz del repositorio (con defaults):
 #   DB_NAME      (default: practicayoruba_db)
 #   DB_USER      (default: django_user)
