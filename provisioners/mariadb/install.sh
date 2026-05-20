@@ -25,6 +25,16 @@
 #   DB_HOST, DB_PORT
 #
 # Requiere: root, Ubuntu 20.04+, conexión a internet (para descargar el repo)
+#
+# Modelo de usuarios (ver Procedimiento-Implementacion-Almacenamiento-
+# WSL2-ecomerce-p001 v1.0.0 si aplica):
+#   - INVOCADOR: cualquier cuenta con sudo + 'bash' en su whitelist.
+#     En el modelo WSL2 canonico esa cuenta es 'deploy' (sudo general).
+#   - NO RUN AS develop: develop no tiene sudo, el apt-get fallaria.
+#   - NO RUN AS infra: en el modelo WSL2 infra tiene NOPASSWD solo
+#     sobre una whitelist de binarios (mkfs.ext4, mount, apt, ...).
+#     'bash' NO esta en la whitelist, asi que 'sudo bash install.sh'
+#     como infra falla con 'sudo: a password is required'. Usar deploy.
 # =============================================================================
 set -euo pipefail
 
@@ -80,9 +90,11 @@ readonly HAS_SYSTEMD
 # Usado para idempotencia en rutas sin systemd.
 # =============================================================================
 _mariadbd_already_running() {
-    local sock
+    local sock adm
+    adm=$(mariadb_admin_bin)
+    [[ -z "$adm" ]] && return 1
     for sock in /run/mysqld/mysqld.sock /var/run/mysqld/mysqld.sock; do
-        if [[ -S "$sock" ]] && mysqladmin --socket="$sock" ping --silent >/dev/null 2>&1; then
+        if [[ -S "$sock" ]] && "$adm" --socket="$sock" ping --silent >/dev/null 2>&1; then
             return 0
         fi
     done
@@ -157,7 +169,12 @@ _apt_purge() {
 _detect_installed_version() {
     # Retorna "major.minor.patch-MariaDB" o cadena vacía si no hay MariaDB
     # También retorna vacío si hay MySQL (sin sufijo -MariaDB)
-    mysql --version 2>/dev/null \
+    # D-028: en MariaDB 11.x el binario CLI es ``mariadb``; ``mysql``
+    # solo existe en MariaDB <= 10.11. mariadb_client_bin resuelve cual
+    # esta instalado.
+    local cli; cli=$(mariadb_client_bin)
+    [[ -z "$cli" ]] && echo "" && return
+    "$cli" --version 2>/dev/null \
         | grep -oE '[0-9]+\.[0-9]+\.[0-9]+-MariaDB' \
         | head -1 \
         || echo ""
@@ -213,19 +230,25 @@ _check_current_version() {
     installed_series=$(_detect_installed_series)
 
     if [[ -z "$installed_version" ]]; then
-        # Verificar si hay MySQL (no MariaDB)
-        local raw_version
-        raw_version=$(mysql --version 2>/dev/null || echo "")
-        if [[ -n "$raw_version" ]]; then
-            log_warn "mysql encontrado pero no es MariaDB: ${raw_version}"
-            log_warn "  Este script solo gestiona MariaDB"
-            log_error "Motor no soportado — instala MariaDB manualmente"
-            log_error "  Este script no puede continuar con MySQL instalado"
-            exit 1
-        else
-            log_info "MariaDB no instalado — se instalará 11.8 desde cero"
-            log_success "Sin instalación previa — listo para instalar"
-        fi
+        # Verificar si hay MySQL (no MariaDB). En MariaDB <=10.11 el
+        # binario CLI puede llamarse 'mysql'; en MariaDB 11.x es
+        # 'mariadb'. Si NO se detecto version MariaDB pero existe
+        # alguno de los binarios, asumimos MySQL puro y abortamos.
+        local raw_version raw_cli
+        for raw_cli in mariadb mysql; do
+            if command -v "$raw_cli" &>/dev/null; then
+                raw_version=$("$raw_cli" --version 2>/dev/null || echo "")
+                if [[ -n "$raw_version" ]]; then
+                    log_warn "${raw_cli} encontrado pero no es MariaDB: ${raw_version}"
+                    log_warn "  Este script solo gestiona MariaDB"
+                    log_error "Motor no soportado — instala MariaDB manualmente"
+                    log_error "  Este script no puede continuar con MySQL puro instalado"
+                    exit 1
+                fi
+            fi
+        done
+        log_info "MariaDB no instalado — se instalará 11.8 desde cero"
+        log_success "Sin instalación previa — listo para instalar"
         return 0
     fi
 
@@ -425,8 +448,27 @@ _install_mariadb() {
     apt-get update -qq 2>/dev/null || \
         log_warn "  apt-get update retornó error — continuando"
 
-    if ! _apt_install mariadb-server mariadb-client > /dev/null; then
-        log_fatal "No se pudo instalar mariadb-server"
+    # D-031 H-20 (reportado por deploy@yollotl): el config default de
+    # MariaDB 11.8 referencia plugin providers con 'force_plus_permanent'
+    # en /etc/mysql/mariadb.conf.d/*.cnf. Como _apt_install usa
+    # --no-install-recommends, esos paquetes provider NO se instalan
+    # automaticamente y mariadbd revienta al arrancar con:
+    #   [ERROR] mariadbd: Can't open shared library
+    #     '/usr/lib/mysql/plugin/provider_bzip2.so'
+    #   [ERROR] unknown variable 'provider_bzip2=force_plus_permanent'
+    #   [ERROR] Aborting
+    # Especificar los providers explicitamente para que un install
+    # limpio (o un --migrate) deje un daemon arrancable. Idempotente:
+    # apt skip si ya estan instalados.
+    if ! _apt_install \
+            mariadb-server mariadb-client \
+            mariadb-plugin-provider-bzip2 \
+            mariadb-plugin-provider-lz4 \
+            mariadb-plugin-provider-lzma \
+            mariadb-plugin-provider-lzo \
+            mariadb-plugin-provider-snappy \
+            > /dev/null; then
+        log_fatal "No se pudo instalar mariadb-server + plugin providers"
         exit 1
     fi
 
@@ -482,10 +524,25 @@ _install_mariadb() {
 _verify_installation() {
     log_header "PASO: Verificando versión instalada"
 
+    # D-028: tras instalar MariaDB 11.x, el binario CLI se llama
+    # ``mariadb`` (no ``mysql``). Re-resolver MARIADB_CLI por si el
+    # source inicial de database.sh ocurrio antes de que existiera
+    # algun cliente (instalacion desde cero).
+    MARIADB_CLI=$(mariadb_client_bin)
+    MARIADB_ADM=$(mariadb_admin_bin)
+    export MARIADB_CLI MARIADB_ADM
+
+    if [[ -z "$MARIADB_CLI" ]]; then
+        log_fatal "Tras la instalacion no se encontro 'mariadb' ni 'mysql' en PATH"
+        log_error "  Verifica con: dpkg -l | grep mariadb-client"
+        exit 1
+    fi
+
     if validate_mariadb_version "$MARIADB_TARGET_MAJOR" "$MARIADB_TARGET_MINOR"; then
         local version_str
         version_str=$(_detect_installed_version)
         log_success "MariaDB ${version_str} — serie ${MARIADB_TARGET_SERIES}.x confirmada (ADR-009)"
+        log_info "  Cliente CLI: ${MARIADB_CLI}"
     else
         log_fatal "La verificación de versión falló tras la instalación"
         exit 1
@@ -512,15 +569,17 @@ _activate_project_config() {
     # Recargar configuración sin reiniciar
     if [[ "$HAS_SYSTEMD" == "true" ]] && systemctl is-active --quiet mariadb 2>/dev/null; then
         systemctl reload mariadb 2>/dev/null \
-            || mysqladmin reload 2>/dev/null \
+            || "${MARIADB_ADM:-mariadb-admin}" reload 2>/dev/null \
             || log_warn "  No se pudo recargar la configuración — reinicia el servicio manualmente"
         log_success "Configuración recargada"
     elif [[ "$HAS_SYSTEMD" == "false" ]] && _mariadbd_already_running; then
-        # Sin systemd: usar mysqladmin contra el socket activo
-        local sock
+        # Sin systemd: usar mariadb-admin (o mysqladmin legacy) contra
+        # el socket activo. MARIADB_ADM ya esta resuelto al sourcear
+        # database.sh; usar default literal si vacio.
+        local sock adm; adm="${MARIADB_ADM:-mariadb-admin}"
         for sock in /run/mysqld/mysqld.sock /var/run/mysqld/mysqld.sock; do
             [[ -S "$sock" ]] || continue
-            mysqladmin --socket="$sock" reload 2>/dev/null && {
+            "$adm" --socket="$sock" reload 2>/dev/null && {
                 log_success "Configuración recargada (via socket)"; break
             }
         done

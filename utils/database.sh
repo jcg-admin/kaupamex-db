@@ -11,12 +11,22 @@
 #   - Mensajes de log actualizados: "MySQL" → "MariaDB"
 #   El renombrado es completo (público + privado + constantes) para
 #   mantener consistencia interna y evitar confusión entre nombres.
-#   Los binarios CLI (mysqladmin, mysqldump, mysql) mantienen sus
-#   nombres — son herramientas del sistema operativo, no del repo.
+#
+#   2026-05-20 (D-028): los binarios CLI tambien cambian de nombre.
+#   En MariaDB 11.x el cliente canonico es ``mariadb`` y la
+#   herramienta admin ``mariadb-admin``; los aliases legacy
+#   ``mysql`` y ``mysqladmin`` ya NO se instalan en Ubuntu 24.04
+#   noble con MariaDB 11.8.x. Los helpers ``mariadb_client_bin`` y
+#   ``mariadb_admin_bin`` resuelven el binario disponible (prefieren
+#   el canonico, caen al legacy si esta presente). Las variables
+#   exportadas ``MARIADB_CLI`` y ``MARIADB_ADM`` se inicializan al
+#   sourcear este archivo para que cada script las use directo.
 #
 # Depende de: logging.sh, network.sh
 #
 # Funciones públicas:
+#   mariadb_client_bin      — devuelve el binario CLI disponible (mariadb|mysql)
+#   mariadb_admin_bin       — devuelve el binario admin disponible (mariadb-admin|mysqladmin)
 #   mariadb_is_running      — detecta si el servidor responde (socket o TCP)
 #   mariadb_cleanup_stale   — limpia archivos pid/sock de sesiones anteriores
 #   mariadb_start           — arranca MariaDB (systemd o directo)
@@ -34,6 +44,55 @@ _MARIADB_SOCKETS=(
 _MARIADB_PID_FILE="/run/mysqld/mysqld.pid"
 
 # -----------------------------------------------------------------------------
+# mariadb_client_bin
+#   Devuelve el binario de cliente CLI disponible. Preferencia:
+#     1. mariadb (canonico en MariaDB 10.5+, unico en 11.x noble)
+#     2. mysql   (legacy, solo presente en MariaDB <= 10.11 o MySQL)
+#   Devuelve cadena vacia si ninguno esta instalado.
+#
+# Ejemplo:
+#     local cli; cli=$(mariadb_client_bin)
+#     [[ -z "$cli" ]] && log_fatal "No CLI MariaDB instalado"
+#     "$cli" --version
+# -----------------------------------------------------------------------------
+mariadb_client_bin() {
+    if command -v mariadb &>/dev/null; then
+        echo "mariadb"
+    elif command -v mysql &>/dev/null; then
+        echo "mysql"
+    else
+        echo ""
+    fi
+}
+
+# -----------------------------------------------------------------------------
+# mariadb_admin_bin
+#   Devuelve el binario admin disponible. Preferencia:
+#     1. mariadb-admin (canonico en MariaDB 10.5+)
+#     2. mysqladmin    (legacy)
+#   Devuelve cadena vacia si ninguno esta instalado.
+# -----------------------------------------------------------------------------
+mariadb_admin_bin() {
+    if command -v mariadb-admin &>/dev/null; then
+        echo "mariadb-admin"
+    elif command -v mysqladmin &>/dev/null; then
+        echo "mysqladmin"
+    else
+        echo ""
+    fi
+}
+
+# Resolucion al sourcear el archivo — las variables son globales y los
+# scripts consumidores las usan como ${MARIADB_CLI} / ${MARIADB_ADM}.
+# Si algun script se sourcea ANTES de que MariaDB este instalado (caso
+# install.sh primera ejecucion), las variables quedan vacias y el
+# script debe re-resolverlas tras la instalacion con
+# ``MARIADB_CLI=$(mariadb_client_bin)``.
+MARIADB_CLI="$(mariadb_client_bin)"
+MARIADB_ADM="$(mariadb_admin_bin)"
+export MARIADB_CLI MARIADB_ADM
+
+# -----------------------------------------------------------------------------
 # mariadb_is_running [host] [port]
 #   Retorna 0 si el servidor responde, 1 si no.
 #   Orden de verificación:
@@ -43,12 +102,13 @@ _MARIADB_PID_FILE="/run/mysqld/mysqld.pid"
 # -----------------------------------------------------------------------------
 mariadb_is_running() {
     local host="${1:-127.0.0.1}" port="${2:-3306}"
+    local adm; adm=$(mariadb_admin_bin)
 
     # 1. Socket Unix — más rápido, disponible antes que el puerto TCP
-    if command -v mysqladmin &>/dev/null; then
+    if [[ -n "$adm" ]]; then
         for sock in "${_MARIADB_SOCKETS[@]}"; do
             if [[ -S "$sock" ]]; then
-                if mysqladmin --socket="$sock" ping --silent >/dev/null 2>&1; then
+                if "$adm" --socket="$sock" ping --silent >/dev/null 2>&1; then
                     return 0
                 fi
             fi
@@ -56,8 +116,8 @@ mariadb_is_running() {
     fi
 
     # 2. TCP con autenticación
-    if command -v mysqladmin &>/dev/null; then
-        if mysqladmin ping --silent --host="$host" --port="$port" >/dev/null 2>&1; then
+    if [[ -n "$adm" ]]; then
+        if "$adm" ping --silent --host="$host" --port="$port" >/dev/null 2>&1; then
             return 0
         fi
     fi
@@ -89,9 +149,10 @@ mariadb_cleanup_stale() {
     done
 
     # Limpiar socket files sin proceso activo
+    local adm; adm=$(mariadb_admin_bin)
     for sock in "${_MARIADB_SOCKETS[@]}"; do
         [[ -S "$sock" ]] || continue
-        if ! mysqladmin --socket="$sock" ping --silent >/dev/null 2>&1; then
+        if [[ -z "$adm" ]] || ! "$adm" --socket="$sock" ping --silent >/dev/null 2>&1; then
             log_warn "Socket stale detectado: ${sock}"
             rm -f "$sock"
             cleaned=$(( cleaned + 1 ))
