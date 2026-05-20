@@ -2,6 +2,24 @@
 
 Runbook de operaciones para PracticaYoruba-db.
 
+> **Naming — producto vs repo (T-E3, H-05, DEC-DB-8):**
+> Este runbook usa indistintamente "PracticaYoruba-db" y
+> "e-comerce-db". Son la misma cosa vista desde dos angulos:
+>
+> - **PracticaYoruba** es el nombre del **producto** (e-commerce
+>   de productos Yoruba). Se usa internamente en el codigo
+>   (schemas `practicayoruba_db`, `practicayoruba_qa`, usuario
+>   `django_user`, archivo `99-practicayoruba.cnf`, mensajes de
+>   log).
+> - **e-comerce-db** es el nombre del **repositorio** en GitHub
+>   (`jcg-admin/e-comerce-db`). Forma parte del monorepo
+>   `jcg-admin/e-comerce` junto a `e-comerce-{api,ui,server,docs}`.
+>
+> No renombrar uno al otro sin decision explicita de producto
+> (CLAUDE.md lo marca como Locked Decision). Las 11 referencias
+> textuales a "PracticaYoruba" en los scripts y este runbook son
+> intencionales y deben preservarse.
+
 ---
 
 ## Configuración inicial (una vez por servidor)
@@ -73,9 +91,55 @@ Si MariaDB no levanta en 20 segundos, el script muestra las últimas
 
 ### Integración con conftest.py de PracticaYoruba-api
 
-El fixture `mariadb_keepalive` en `tests/conftest.py` detecta si
-MariaDB cayó durante una suite larga y puede relanzarlo. Para una
-sesión nueva, el punto de entrada correcto es:
+### Contrato del fixture `mariadb_keepalive` (T-E1, H-02)
+
+El fixture `mariadb_keepalive` vive en
+`api/tests/conftest.py` (submodulo `api`, no `db`) y opera como
+"guardrail" para la suite de tests pytest. Su contrato:
+
+**Scope (cuando aplica):**
+
+- Cualquier test marcado `@pytest.mark.django_db` o que use
+  el fixture `db` / `transactional_db` del plugin pytest-django.
+- Suite larga (>10 tests con db) — la fixture se ejecuta
+  por sesion (autouse), no por test.
+
+**Precondiciones:**
+
+- MariaDB **debe estar corriendo** al arrancar la suite. Si
+  no responde a `mysqladmin ping`, la fixture falla loud
+  (no intenta arrancarlo silenciosamente — eso seria
+  ocultar un error de setup del operador).
+- Las credenciales DB_QA_* deben estar en
+  `api/practicayoruba/.env` (mismo schema que `db/.env`, ver
+  T-B3 mas abajo).
+
+**Side-effects:**
+
+- Hace `mysqladmin ping` al comienzo de la sesion pytest.
+- Si ping falla a mitad de la suite (MariaDB se cayo por
+  OOM, restart manual, etc), la fixture detecta y emite un
+  warning verbose al log; los tests siguientes se marcan
+  como `errored` (no `failed`) hasta que vuelva.
+- **NO arranca MariaDB.** Esa responsabilidad es del
+  operador via `bash scripts/start_db.sh` (este repo).
+
+**Idempotencia:**
+
+- Si MariaDB esta arriba al arrancar, la fixture es no-op
+  modulo el ping.
+- Si MariaDB cae y vuelve, la fixture detecta el regreso al
+  siguiente ping de scope-session.
+
+**No hace:**
+
+- No corre migraciones (eso es `manage.py migrate
+  --settings=config.settings.testing`).
+- No crea schemas (eso es `db_qa_setup.sh` la primera vez).
+- No carga fixtures de datos (eso son los `@pytest.fixture`
+  por test).
+
+Para una sesión nueva, el punto de entrada correcto es:
 
 ```bash
 cd e-comerce-db
