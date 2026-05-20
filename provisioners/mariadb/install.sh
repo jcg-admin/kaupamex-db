@@ -190,12 +190,15 @@ _check_requisites() {
     log_success "apt disponible"
 
     # Conexión a internet (para descargar repo si es necesario)
-    if ! tcp_is_reachable "downloads.mariadb.com" 443 5; then
-        log_warn "Sin acceso a downloads.mariadb.com:443"
-        log_warn "  El repo de MariaDB.org puede no ser alcanzable"
+    # 2026-05-20: downloads.mariadb.com quedó deprecado para apt repos
+    # (302 -> mariadb.com/downloads HTML); la CDN apt activa es
+    # dlm.mariadb.com (verificado contra noble + amd64).
+    if ! tcp_is_reachable "dlm.mariadb.com" 443 5; then
+        log_warn "Sin acceso a dlm.mariadb.com:443"
+        log_warn "  El repo de MariaDB puede no ser alcanzable"
         log_warn "  Si el paquete ya está en los repos del sistema, puede continuar"
     else
-        log_success "Acceso a downloads.mariadb.com"
+        log_success "Acceso a dlm.mariadb.com"
     fi
 }
 
@@ -354,11 +357,21 @@ _add_mariadb_repo() {
     log_info "  GPG key importada: ${keyring}"
 
     # Agregar la fuente
+    # 2026-05-20: la ruta historica
+    #   https://downloads.mariadb.com/MariaDB/mariadb-<v>/repo/ubuntu
+    # quedo deprecada (302 -> 302 -> mariadb.com/downloads HTML, sin
+    # InRelease PGP). Operador deploy@yollotl reporto fallo con
+    # 'Clearsigned file isn't valid, got NOSPLIT'. CDN apt activo:
+    #   https://dlm.mariadb.com/repo/mariadb-server/<v>/repo/ubuntu
+    # Verificado contra noble + amd64 con paquetes 11.8.7+maria~ubu2404.
+    # El endpoint sirve 302 a una signed URL de Google Cloud Storage
+    # (storage.googleapis.com/downloads-cdn.mariadb.com); apt sigue el
+    # redirect transparentemente.
     local repo_file="/etc/apt/sources.list.d/mariadb.list"
     cat > "$repo_file" << EOF
 # MariaDB ${MARIADB_TARGET_SERIES} LTS — gestionado por PracticaYoruba-db
 # provisioners/mariadb/install.sh
-deb [arch=amd64 signed-by=${keyring}] https://downloads.mariadb.com/MariaDB/mariadb-${MARIADB_TARGET_SERIES}/repo/ubuntu ${codename} main
+deb [arch=amd64 signed-by=${keyring}] https://dlm.mariadb.com/repo/mariadb-server/${MARIADB_TARGET_SERIES}/repo/ubuntu ${codename} main
 EOF
 
     # DEC-DOC-008: loud failure. Capture stderr; if apt-get update fails,
