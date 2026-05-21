@@ -2,6 +2,24 @@
 
 Runbook de operaciones para PracticaYoruba-db.
 
+> **Naming — producto vs repo (T-E3, H-05, DEC-DB-8):**
+> Este runbook usa indistintamente "PracticaYoruba-db" y
+> "e-comerce-db". Son la misma cosa vista desde dos angulos:
+>
+> - **PracticaYoruba** es el nombre del **producto** (e-commerce
+>   de productos Yoruba). Se usa internamente en el codigo
+>   (schemas `practicayoruba_db`, `practicayoruba_qa`, usuario
+>   `django_user`, archivo `99-practicayoruba.cnf`, mensajes de
+>   log).
+> - **e-comerce-db** es el nombre del **repositorio** en GitHub
+>   (`jcg-admin/e-comerce-db`). Forma parte del monorepo
+>   `jcg-admin/e-comerce` junto a `e-comerce-{api,ui,server,docs}`.
+>
+> No renombrar uno al otro sin decision explicita de producto
+> (CLAUDE.md lo marca como Locked Decision). Las 11 referencias
+> textuales a "PracticaYoruba" en los scripts y este runbook son
+> intencionales y deben preservarse.
+
 ---
 
 ## Configuración inicial (una vez por servidor)
@@ -73,9 +91,55 @@ Si MariaDB no levanta en 20 segundos, el script muestra las últimas
 
 ### Integración con conftest.py de PracticaYoruba-api
 
-El fixture `mariadb_keepalive` en `tests/conftest.py` detecta si
-MariaDB cayó durante una suite larga y puede relanzarlo. Para una
-sesión nueva, el punto de entrada correcto es:
+### Contrato del fixture `mariadb_keepalive` (T-E1, H-02)
+
+El fixture `mariadb_keepalive` vive en
+`api/tests/conftest.py` (submodulo `api`, no `db`) y opera como
+"guardrail" para la suite de tests pytest. Su contrato:
+
+**Scope (cuando aplica):**
+
+- Cualquier test marcado `@pytest.mark.django_db` o que use
+  el fixture `db` / `transactional_db` del plugin pytest-django.
+- Suite larga (>10 tests con db) — la fixture se ejecuta
+  por sesion (autouse), no por test.
+
+**Precondiciones:**
+
+- MariaDB **debe estar corriendo** al arrancar la suite. Si
+  no responde a `mysqladmin ping`, la fixture falla loud
+  (no intenta arrancarlo silenciosamente — eso seria
+  ocultar un error de setup del operador).
+- Las credenciales DB_QA_* deben estar en
+  `api/practicayoruba/.env` (mismo schema que `db/.env`, ver
+  T-B3 mas abajo).
+
+**Side-effects:**
+
+- Hace `mysqladmin ping` al comienzo de la sesion pytest.
+- Si ping falla a mitad de la suite (MariaDB se cayo por
+  OOM, restart manual, etc), la fixture detecta y emite un
+  warning verbose al log; los tests siguientes se marcan
+  como `errored` (no `failed`) hasta que vuelva.
+- **NO arranca MariaDB.** Esa responsabilidad es del
+  operador via `bash scripts/start_db.sh` (este repo).
+
+**Idempotencia:**
+
+- Si MariaDB esta arriba al arrancar, la fixture es no-op
+  modulo el ping.
+- Si MariaDB cae y vuelve, la fixture detecta el regreso al
+  siguiente ping de scope-session.
+
+**No hace:**
+
+- No corre migraciones (eso es `manage.py migrate
+  --settings=config.settings.testing`).
+- No crea schemas (eso es `db_qa_setup.sh` la primera vez).
+- No carga fixtures de datos (eso son los `@pytest.fixture`
+  por test).
+
+Para una sesión nueva, el punto de entrada correcto es:
 
 ```bash
 cd e-comerce-db
@@ -95,7 +159,10 @@ python3 manage.py migrate --settings=config.settings.testing
 ## Verificar el entorno
 
 ```bash
-# Verificación completa (7 checks: env, CLI, conectividad, schemas, privilegios)
+# Verificación completa — el script reporta dinámicamente N checks
+# en el header. La fuente de verdad es el conteo dinámico (DEC-DB-4).
+# Cubre env, CLI, versión, conectividad, schemas, privilegios, funciones,
+# vistas y SPs.
 bash scripts/verify.sh
 
 # Verificación Python (conectividad, migraciones, privilegios DML)
@@ -138,6 +205,24 @@ md5sum -c 20260513_225115_practicayoruba_db.md5
 
 Define `BACKUP_REMOTE_DEST=s3://bucket/ruta/` en `.env`.
 El script sincroniza automáticamente después de verificar la integridad.
+
+### Variables `BACKUP_*` / `PY_BACKUP_*` — solo en `db/.env` (T-B3, ENV-02)
+
+Las siguientes variables viven **únicamente** en `db/.env` y NO se
+replican en `api/practicayoruba/.env`:
+
+- `PY_BACKUP_USER`, `PY_BACKUP_PASSWORD` — credenciales del usuario
+  MariaDB con privilegios `SELECT, SHOW VIEW, LOCK TABLES, EVENT,
+  TRIGGER` que utiliza `backup_db.sh`. La api no las consume.
+- `BACKUP_DIR` — directorio destino de los dumps.
+- `BACKUP_REMOTE_DEST` — URI de S3 / rclone para sincronizacion
+  opcional.
+- `BACKUP_REPOS` — lista de directorios del monorepo a snapshotear
+  via `backup_proyectos.sh`.
+
+`verify_env_sync.sh` (T-B1) compara solo claves `^DB_` justamente
+para que la sincronizacion cross-repo no force `api/.env` a llevar
+estas claves de backup. La asimetria es intencional.
 
 ---
 

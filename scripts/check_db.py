@@ -381,8 +381,26 @@ def check_privs_qa() -> None:
 # =============================================================================
 # MAIN
 # =============================================================================
+def _count_checks() -> int:
+    """Cuenta dinamicamente las funciones publicas check_*().
+
+    Mismo patron que verify.sh (T-C1): la unica fuente de verdad del
+    numero de checks es la introspeccion del modulo. Si en el futuro
+    se agrega o quita una funcion check_*(), el header del run se
+    actualiza solo y la documentacion no queda desincronizada.
+    Cierra DC-03 de iniciativa resolver-problemas-db-pendientes.
+    """
+    import inspect
+    module = sys.modules[__name__]
+    return sum(
+        1 for name, obj in inspect.getmembers(module, inspect.isfunction)
+        if name.startswith("check_") and not name.startswith("_")
+    )
+
+
 def main() -> None:
-    print(_bold(_cyan("\n>>> PracticaYoruba-db — Verificacion Python\n")))
+    n = _count_checks()
+    print(_bold(_cyan(f"\n>>> PracticaYoruba-db — Verificacion Python ({n} checks)\n")))
     print(f"  DB prod : {DB_NAME} @ {DB_HOST}:{DB_PORT}  ({DB_USER})")
     print(f"  DB QA   : {DB_QA_NAME} @ {DB_QA_HOST}:{DB_QA_PORT}  ({DB_QA_USER})")
 

@@ -56,7 +56,7 @@ PracticaYoruba-db/
 │
 ├── scripts/
 │   ├── backup_db.sh                # Backup de ambos schemas con MD5 y gzip-6
-│   ├── verify.sh                   # 8 checks con contadores OK/WARN/ERROR
+│   ├── verify.sh                   # checks con contadores OK/WARN/ERROR (conteo dinamico — ver header)
 │   └── check_db.py                 # Verificación Python de conectividad y privilegios
 │
 ├── backups/                        # Artefactos generados (en .gitignore)
@@ -128,7 +128,8 @@ sudo bash provisioners/mariadb/db_qa_setup.sh
 ### Verificar el entorno
 
 ```bash
-# Verificación completa del entorno (8 checks)
+# Verificación completa del entorno — el header reporta N dinamicamente
+# (fuente de verdad: TOTAL_CHECKS en verify.sh, DEC-DB-4).
 bash scripts/verify.sh
 
 # Verificación de conectividad Python
@@ -143,6 +144,36 @@ bash scripts/backup_db.sh
 
 # Primera vez: crear el usuario de backup con privilegios mínimos
 bash scripts/backup_db.sh --setup-user
+```
+
+### Cobertura de tests (T-D3)
+
+Mapeo de scripts -> test asociado -> tipo. Highlight = scripts sin
+test (deuda conocida — re-evaluable cuando aparezca un incidente).
+
+| Script                                | Test                                       | Tipo            |
+|---------------------------------------|--------------------------------------------|-----------------|
+| `scripts/verify.sh`                   | `tests/test_verify_sh.sh`                  | smoke + estructural |
+| `scripts/start_db.sh`                 | `tests/test_start_db_idempotency.sh`       | smoke + idempotencia |
+| `scripts/verify_env_sync.sh`          | (verificacion via T-B1: dos smoke tests positivo/negativo en el progreso) | smoke manual    |
+| `provisioners/mariadb/install.sh`     | `tests/test_mariadb_version.sh` (parcial — solo serie 11.8) | smoke parcial   |
+| `provisioners/mariadb/db_setup.sh`    | **sin test** — cubierto por `verify.sh` end-to-end | gap (TS-01)     |
+| `provisioners/mariadb/db_qa_setup.sh` | **sin test** — cubierto por `verify.sh` end-to-end | gap (TS-01)     |
+| `scripts/backup_db.sh`                | **sin test** — outcome verificable manualmente con `gzip -t` + `md5sum -c` | gap (TS-01)     |
+| `scripts/check_db.py`                 | **sin test** — corre como verificacion en si | gap (TS-01)     |
+
+Los 4 gaps son **conscientes**: corresponden a scripts que ya tienen
+salidas auto-verificables (verify.sh, md5sum, exit codes) o cuyo costo
+de mockear MariaDB excede el beneficio. Re-evaluable si aparece un
+incidente concreto que requiera regression test.
+
+Correr todos los tests del repo:
+
+```bash
+for t in tests/*.sh; do
+    echo "=== $t ==="
+    bash "$t" || break
+done
 ```
 
 ---
