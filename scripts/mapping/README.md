@@ -15,6 +15,17 @@ Cada script SQL incluye en comentarios:
 
 ### Flujo A — Compra como invitado (sin registro)
 
+> **DEPRECADO A NIVEL UI** (a partir de `ui@e4889bd2`, 2026-05-23).
+> `/checkout` y `/checkout/payment/:orderId` requieren sesión activa
+> (`ProtectedRoute`). El flujo de compra como invitado ya no es
+> alcanzable desde la UI (directiva: "forzamos login antes, no podemos
+> comprar si no está registrado").
+>
+> El schema de BD (`orders_order.user IS NULL`, `guest_email`) permanece
+> intacto — ninguna migración lo elimina. El SQL de este flujo conserva
+> valor para inspección de schema y diagnóstico. El flujo operativo
+> activo es ahora **solo Flujo B** (registro + compra autenticada).
+
 Usuario anónimo navega el catálogo, agrega productos al carrito y
 completa la compra sin crear cuenta. La orden queda con
 `orders_order.user IS NULL` y `orders_order.guest_email` poblado.
@@ -60,13 +71,14 @@ Script: `flow-register-activate-checkout.sql`.
   `is_active=False` por auto-soft-delete → reactivar via email".
   Operativamente la cobertura existe porque `ResendVerificationView`
   acepta cualquier user inactivo, pero el UC no lo explicita.
-- **GAP-2 (sin UC para auto soft-delete):** no existe un caso de uso
-  formal "Usuario da de baja su propia cuenta". Solo UC-AUTH-13/14
-  cubren la operación admin↔user. Tampoco hay:
-  - Endpoint API (`/api/v1/auth/me/deactivate/` no existe).
-  - Item en el menú `AccountLayout.jsx NAV_ITEMS` (8 items: Resumen,
-    Mis pedidos, Mis favoritos, Mis devoluciones, Soporte,
-    Notificaciones, Mi perfil, Cambiar contraseña).
+
+- **GAP-2 (sin UC para auto soft-delete): RESUELTO** (2026-05-23).
+  Endpoint API `me/deactivate/` implementado en `apps/users/urls.py`
+  como `DeactivateAccountView` (UC-AUTH-16). Ruta `/account/deactivate`
+  en `AppRouter.jsx`. Nav item "Dar de baja" en `AccountLayout.jsx`
+  `NAV_ITEMS` (posición final deliberada para evitar confusión con
+  opciones cotidianas). 9 items totales en el sidebar de cuenta.
+
 - **GAP-3 (`is_active` semántico-overloaded):** el flag es una sola
   columna booleana que actualmente representa **tres causas**
   distintas — no verificado, suspendido por admin, y auto-eliminado
@@ -99,7 +111,7 @@ El wrapper `inspect-flow.sh` lee las variables `DB_NAME`,
 ## Por qué SQL puro y no Python
 
 - El submódulo `db/` no carga Django ORM (es bash + python-dotenv).
-  Inspeccionar via ORM requeriría montar el entorno del api.
+  Inspeccionar via ORM requeriía montar el entorno del api.
 - `mariadb` CLI ya está provisionado y verificado (D-028).
 - El output (SHOW CREATE TABLE, INFORMATION_SCHEMA queries) es
   reproducible y diff-friendly entre runs.
