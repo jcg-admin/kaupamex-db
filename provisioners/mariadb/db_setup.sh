@@ -177,18 +177,24 @@ create_user() {
 grant_privileges() {
     log_header "PASO: Otorgando privilegios: ${DB_USER} sobre ${DB_NAME}"
 
+    # H-CICLO26-03: principio de mínimo privilegio — el usuario Django de
+    # aplicación solo necesita DML + los permisos estructurales para
+    # que `migrate` funcione (CREATE TABLE, ALTER TABLE, DROP TABLE, INDEX,
+    # REFERENCES).  No necesita GRANT OPTION, SUPER, FILE, etc.
+    # Para la base de test, pytest requiere CREATE y DROP a nivel de schema.
+    local APP_GRANTS="SELECT, INSERT, UPDATE, DELETE, CREATE, ALTER, DROP, INDEX, REFERENCES"
     local test_db="test_${DB_NAME}"
 
     for host in "%" "localhost" "127.0.0.1"; do
         _db_exec -e \
-            "GRANT ALL PRIVILEGES ON \`${DB_NAME}\`.* TO '${DB_USER}'@'${host}';" > /dev/null
-        # pytest necesita crear y destruir test_<DB_NAME>
+            "GRANT ${APP_GRANTS} ON \`${DB_NAME}\`.* TO '${DB_USER}'@'${host}';" > /dev/null
+        # pytest necesita crear y destruir test_<DB_NAME> (CREATE/DROP DATABASE)
         _db_exec -e \
             "GRANT ALL PRIVILEGES ON \`${test_db}\`.* TO '${DB_USER}'@'${host}';" > /dev/null
     done
 
     _db_exec -e "FLUSH PRIVILEGES;" > /dev/null
-    log_success "Privilegios aplicados (incluye test_${DB_NAME} para pytest)"
+    log_success "Privilegios aplicados (${APP_GRANTS}; incluye test_${DB_NAME} para pytest)"
 }
 
 # =============================================================================
