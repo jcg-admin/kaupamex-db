@@ -157,7 +157,7 @@ create_user() {
         exists=$(_db_exec_quiet -e \
             "SELECT COUNT(*) FROM mysql.user
              WHERE User = '${DB_USER}' AND Host = '${host}';" || echo "0")
-    exists="${exists##*$'\n'}"; exists="${exists:-0}"
+        exists="${exists##*$'\n'}"; exists="${exists:-0}"
 
         if [[ "$exists" -gt 0 ]]; then
             _db_exec -e \
