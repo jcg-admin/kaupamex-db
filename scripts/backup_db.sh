@@ -69,6 +69,11 @@ BACKUP_HOST="localhost"
 
 BACKUP_DIR="${BACKUP_DIR:-${PROJECT_ROOT}/backups}"
 BACKUP_REMOTE_DEST="${BACKUP_REMOTE_DEST:-}"
+# H-CICLO25-03: retención de backups.  Los archivos .sql.gz, .md5 y .log con
+# más de BACKUP_RETENTION_DAYS días se eliminan automáticamente al final de
+# cada ejecución.  Default: 30 días.  Sobreescribir con BACKUP_RETENTION_DAYS
+# en .env para ajustar la política de retención del entorno.
+BACKUP_RETENTION_DAYS="${BACKUP_RETENTION_DAYS:-30}"
 
 # Timestamp en zona horaria del proyecto (H-F1-004, H-F4-002)
 TS=$(TZ="America/Mexico_City" date +"%Y%m%d_%H%M%S")
@@ -244,6 +249,30 @@ _dump_schema() {
 }
 
 # =============================================================================
+# H-CICLO25-03: Eliminar backups antiguos (retención)
+# =============================================================================
+_prune_old_backups() {
+    log_header "PASO: Retención de backups (>${BACKUP_RETENTION_DAYS} días)"
+
+    local count=0
+    # Buscar archivos de backup (.sql.gz, .md5, .log, .mysqldump.stderr)
+    # con más de BACKUP_RETENTION_DAYS días y eliminarlos.
+    while IFS= read -r -d '' f; do
+        log_info "  Eliminando: $(basename "$f")"
+        rm -f "$f"
+        (( count++ )) || true
+    done < <(find "$BACKUP_DIR" -maxdepth 1 \
+        \( -name "*.sql.gz" -o -name "*.md5" -o -name "*.log" -o -name "*.mysqldump.stderr" \) \
+        -mtime +"${BACKUP_RETENTION_DAYS}" -print0 2>/dev/null)
+
+    if [[ $count -eq 0 ]]; then
+        log_info "  Sin backups expirados (retención: ${BACKUP_RETENTION_DAYS} días)"
+    else
+        log_success "  ${count} archivo(s) expirado(s) eliminado(s)"
+    fi
+}
+
+# =============================================================================
 # Listar backups en BACKUP_DIR
 # =============================================================================
 _list_backups() {
@@ -319,6 +348,9 @@ _list_backups
 echo ""
 
 _sync_remote
+echo ""
+
+_prune_old_backups
 echo ""
 
 log_separator 60 "="
