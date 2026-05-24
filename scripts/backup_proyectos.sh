@@ -75,8 +75,15 @@ echo "" | tee -a "$LOG"
 
 # ── MD5 checksums ─────────────────────────────────────────────────────────────
 log "Generando checksums MD5..."
-cd "$BACKUP_DIR"
-md5sum ${TIMESTAMP}_*.bundle ${TIMESTAMP}_*.tar.gz > "$CHECKSUMS"
+cd "$BACKUP_DIR" || { log "ERROR: no se puede acceder a BACKUP_DIR=${BACKUP_DIR}"; exit 1; }
+# Quote glob patterns to avoid word-splitting if TIMESTAMP contains spaces;
+# use find to list files safely before checksumming
+mapfile -t CHECKSUM_FILES < <(find . -maxdepth 1 -name "${TIMESTAMP}_*.bundle" -o -name "${TIMESTAMP}_*.tar.gz" | sort)
+if [[ ${#CHECKSUM_FILES[@]} -eq 0 ]]; then
+    log "ERROR: no se encontraron artefactos para checksum con TIMESTAMP=${TIMESTAMP}"
+    exit 1
+fi
+md5sum "${CHECKSUM_FILES[@]}" > "$CHECKSUMS"
 
 log "Verificando checksums..."
 md5sum -c "$CHECKSUMS" | tee -a "$LOG"

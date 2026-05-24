@@ -196,8 +196,8 @@ verify_connection() {
     log_header "PASO: Verificando conexion con credenciales Django"
 
     local result
-    result=$(_db_exec_quiet \
-        -u "$DB_USER" -p"${DB_PASSWORD}" \
+    result=$(MYSQL_PWD="${DB_PASSWORD}" _db_exec_quiet \
+        -u "$DB_USER" \
         -e "SELECT CONCAT(DATABASE(), ' @ ', USER());" \
         "$DB_NAME" 2>&1) || {
         log_error "No se pudo conectar como ${DB_USER} a ${DB_NAME}"

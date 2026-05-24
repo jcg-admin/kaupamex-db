@@ -192,18 +192,19 @@ _dump_schema() {
         --extended-insert
         --comments
         --set-charset
-        -u"${BACKUP_USER}" -p"${BACKUP_PASS}"
+        -u"${BACKUP_USER}"
         "${schema}"
     )
 
     local t_ini
     t_ini=$(date +%s)
 
+    # MYSQL_PWD avoids exposing the password in the process list (ps aux).
     if [[ -n "$sock" ]]; then
-        mysqldump --socket="$sock" "${dump_args[@]}" \
+        MYSQL_PWD="${BACKUP_PASS}" mysqldump --socket="$sock" "${dump_args[@]}" \
             2>"$stderr_file" | gzip -6 > "$dump_file"
     else
-        mysqldump -h "$DB_HOST" -P "$DB_PORT" "${dump_args[@]}" \
+        MYSQL_PWD="${BACKUP_PASS}" mysqldump -h "$DB_HOST" -P "$DB_PORT" "${dump_args[@]}" \
             2>"$stderr_file" | gzip -6 > "$dump_file"
     fi
 
