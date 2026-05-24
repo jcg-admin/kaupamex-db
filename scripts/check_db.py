@@ -166,22 +166,22 @@ def _connect(host: str, port: int, user: str, password: str, db: str):
     )
 
 
-def _query_one(conn, sql: str):
+def _query_one(conn, sql: str, params=None):
     """Ejecuta una query y retorna el primer campo de la primera fila, o None."""
     with conn.cursor() as cur:
-        cur.execute(sql)
+        cur.execute(sql, params)
         row = cur.fetchone()
         return row[0] if row else None
 
 
 def _table_exists(conn, schema: str, table: str) -> bool:
     """Retorna True si la tabla existe en information_schema."""
-    result = _query_one(conn, f"""
-        SELECT COUNT(*)
-        FROM information_schema.TABLES
-        WHERE TABLE_SCHEMA = '{schema}'
-        AND TABLE_NAME = '{table}'
-    """)
+    result = _query_one(
+        conn,
+        "SELECT COUNT(*) FROM information_schema.TABLES "
+        "WHERE TABLE_SCHEMA = %s AND TABLE_NAME = %s",
+        (schema, table),
+    )
     return int(result or 0) > 0
 
 
