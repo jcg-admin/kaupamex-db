@@ -64,7 +64,7 @@ DB_HOST="${DB_HOST:-127.0.0.1}"
 DB_PORT="${DB_PORT:-3306}"
 
 BACKUP_USER="${PY_BACKUP_USER:-py_backup_user}"
-BACKUP_PASS="${PY_BACKUP_PASSWORD:-changeme_backup_pass}"
+BACKUP_PASS="${PY_BACKUP_PASSWORD:?PY_BACKUP_PASSWORD must be set in environment or .env}"
 BACKUP_HOST="localhost"
 
 BACKUP_DIR="${BACKUP_DIR:-${PROJECT_ROOT}/backups}"

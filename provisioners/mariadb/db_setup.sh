@@ -50,7 +50,7 @@ fi
 
 DB_NAME="${DB_NAME:-practicayoruba_db}"
 DB_USER="${DB_USER:-django_user}"
-DB_PASSWORD="${DB_PASSWORD:-django_pass}"
+DB_PASSWORD="${DB_PASSWORD:?DB_PASSWORD must be set in environment or .env}"
 DB_HOST="${DB_HOST:-127.0.0.1}"
 DB_PORT="${DB_PORT:-3306}"
 
