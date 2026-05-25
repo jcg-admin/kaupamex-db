@@ -33,3 +33,4 @@ logs/
 # (a diferencia de los dumps SQL de backups/ que van excluidos)
 !backups/proyectos/
 !backups/proyectos/**
+backups/
