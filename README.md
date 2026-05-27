@@ -95,34 +95,36 @@ sudo systemctl reload mariadb 2>/dev/null \
     || sudo mysqladmin --socket=/run/mysqld/mysqld.sock reload
 ```
 
-> **Nota — sparse-checkout y bind-mounts (WSL2):**
-> Git sparse-checkout es un mecanismo agresivo que materializa solo un
-> subconjunto de archivos en el working tree. Si el repo fue clonado con
-> sparse-checkout activo (p.ej. `!/backups` como cone exclusion), el
-> directorio `scripts/` puede no aparecer en el working tree aunque los
-> archivos existan en git.
->
-> **Diagnóstico:**
-> ```bash
-> git sparse-checkout list   # muestra el cone activo
-> git ls-files scripts/init-env.sh  # debe aparecer (existe en git)
-> ls scripts/init-env.sh            # puede fallar (no materializado)
-> ```
->
-> **Solución correcta — deshabilitar sparse-checkout:**
-> ```bash
-> git sparse-checkout disable
-> # Todos los archivos del repo se materializan en el working tree.
-> ```
->
-> **Alternativa — excluir backups/ solo localmente sin sparse-checkout:**
-> Si el objetivo era ignorar el directorio `backups/` por tamaño o
-> bind-mount, usa `.git/info/exclude` en su lugar:
-> ```bash
-> echo "backups/" >> .git/info/exclude
-> ```
-> Este archivo es local (no commiteable) y excluye `backups/` del
-> `git status` sin afectar qué archivos se materializan en el working tree.
+### Entornos con bind mount en backups/
+
+En entornos WSL2 con bind mount sobre `backups/`, **no usar sparse-checkout
+para excluir ese directorio**. Git sparse-checkout cone mode excluye
+subdirectorios enteros del working tree — si se usa `!/backups` como cone
+exclusion, los directorios `scripts/`, `utils/`, `provisioners/` y `tests/`
+también quedan excluidos aunque sus archivos existan en git.
+
+El mecanismo correcto para el bind mount de `backups/` es `.git/info/exclude`:
+
+```bash
+# Excluir backups/ del git status sin afectar el working tree
+echo "backups/" >> .git/info/exclude
+```
+
+`.git/info/exclude` es local (no commiteable) y elimina el ruido en
+`git status` sin materializar ni excluir archivos.
+
+**Si ya hay sparse-checkout activo, deshabilitarlo antes de ejecutar
+cualquier provisioner o script del repo:**
+
+```bash
+# Diagnóstico
+git sparse-checkout list           # muestra el cone activo
+git ls-files scripts/init-env.sh  # debe aparecer (existe en git)
+ls scripts/init-env.sh             # puede fallar si no está materializado
+
+# Solución: materializar todos los archivos
+git sparse-checkout disable
+```
 
 ### Version canónica de MariaDB
 
