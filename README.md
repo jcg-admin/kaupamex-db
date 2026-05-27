@@ -75,9 +75,14 @@ PracticaYoruba-db/
 git clone <repo>
 cd e-comerce-db
 
-# 2. Variables de entorno
-cp .env.example .env
-# Editar .env con las credenciales reales
+# 2. Variables de entorno — generación automática (recomendado)
+bash scripts/init-env.sh
+# El script genera .env con credenciales openssl y propaga los mismos
+# valores al .env de e-comerce-api/practicayoruba/ automáticamente.
+# Si los repos no son siblings, usa las flags explícitas:
+#   bash scripts/init-env.sh \
+#     --db-root /ruta/a/e-comerce-db \
+#     --api-root /ruta/a/e-comerce-api
 
 # 3. Instalar MariaDB 11.8 LTS (idempotente — no-op si ya está 11.8.x)
 sudo bash provisioners/mariadb/install.sh
@@ -89,6 +94,35 @@ sudo ln -sf "$(pwd)/config/mariadb/99-practicayoruba.cnf" \
 sudo systemctl reload mariadb 2>/dev/null \
     || sudo mysqladmin --socket=/run/mysqld/mysqld.sock reload
 ```
+
+> **Nota — sparse-checkout y bind-mounts (WSL2):**
+> Git sparse-checkout es un mecanismo agresivo que materializa solo un
+> subconjunto de archivos en el working tree. Si el repo fue clonado con
+> sparse-checkout activo (p.ej. `!/backups` como cone exclusion), el
+> directorio `scripts/` puede no aparecer en el working tree aunque los
+> archivos existan en git.
+>
+> **Diagnóstico:**
+> ```bash
+> git sparse-checkout list   # muestra el cone activo
+> git ls-files scripts/init-env.sh  # debe aparecer (existe en git)
+> ls scripts/init-env.sh            # puede fallar (no materializado)
+> ```
+>
+> **Solución correcta — deshabilitar sparse-checkout:**
+> ```bash
+> git sparse-checkout disable
+> # Todos los archivos del repo se materializan en el working tree.
+> ```
+>
+> **Alternativa — excluir backups/ solo localmente sin sparse-checkout:**
+> Si el objetivo era ignorar el directorio `backups/` por tamaño o
+> bind-mount, usa `.git/info/exclude` en su lugar:
+> ```bash
+> echo "backups/" >> .git/info/exclude
+> ```
+> Este archivo es local (no commiteable) y excluye `backups/` del
+> `git status` sin afectar qué archivos se materializan en el working tree.
 
 ### Version canónica de MariaDB
 
