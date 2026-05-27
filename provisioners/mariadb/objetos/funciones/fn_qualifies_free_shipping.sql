@@ -53,7 +53,7 @@ DELIMITER ;
 
 SELECT
     fn_qualifies_free_shipping(600.00, 500.00)  AS expected_1
-  , fn_qualifies_free_shipping(500.00, 500.00)  AS expected_1
+  , fn_qualifies_free_shipping(500.00, 500.00)  AS expected_1_exact
   , fn_qualifies_free_shipping(499.99, 500.00)  AS expected_0
   , fn_qualifies_free_shipping(0.00,   500.00)  AS expected_0
   , fn_qualifies_free_shipping(NULL,   500.00)  AS expected_0

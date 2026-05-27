@@ -82,9 +82,9 @@ VALUES
 
 -- ─── Productos de muestra ─────────────────────────────────────────────────────
 -- 12 productos con variedad de estados:
---   - Publicados y activos (visible en v_catalogo_publicado)
---   - Destacados (visible en v_productos_destacados)
---   - Stock bajo el umbral (visible en v_stock_critico y sp_rpt_stock_critico)
+--   - Publicados y activos (visible en v_published_catalog)
+--   - Destacados (visible en v_featured_products)
+--   - Stock bajo el umbral (visible en v_low_stock y sp_rpt_low_stock)
 --   - Agotados (stock=0)
 --   - No publicados (en proceso, no visibles al público)
 --
