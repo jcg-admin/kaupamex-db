@@ -50,7 +50,7 @@ fi
 
 DB_NAME="${DB_QA_NAME:-practicayoruba_qa}"
 DB_USER="${DB_QA_USER:-django_user}"
-DB_PASSWORD="${DB_QA_PASSWORD:-django_pass}"
+DB_PASSWORD="${DB_QA_PASSWORD:?DB_QA_PASSWORD must be set in environment or .env}"
 DB_HOST="${DB_QA_HOST:-127.0.0.1}"
 DB_PORT="${DB_QA_PORT:-3306}"
 
