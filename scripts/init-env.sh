@@ -183,9 +183,15 @@ SECRET_KEY="$(openssl rand -base64 50 | tr -d '\n')"
 SHARED_DB_PASSWORD="$(openssl rand -hex 16)"
 DB_PASSWORD="${SHARED_DB_PASSWORD}"
 DB_QA_PASSWORD="${SHARED_DB_PASSWORD}"
-echo "  SECRET_KEY    : generado (base64 50)"
-echo "  DB_PASSWORD   : generado (hex 16)"
-echo "  DB_QA_PASSWORD: igual a DB_PASSWORD (invariante django_user)"
+# Credenciales de seed E2E (iniciativa seed-usuarios-e2e).
+# Solo se usan en entornos QA/E2E. En produccion real, rotar manualmente.
+ADMIN_PASSWORD="$(openssl rand -hex 16)"
+QA_BUYER_PASSWORD="$(openssl rand -hex 16)"
+echo "  SECRET_KEY      : generado (base64 50)"
+echo "  DB_PASSWORD     : generado (hex 16)"
+echo "  DB_QA_PASSWORD  : igual a DB_PASSWORD (invariante django_user)"
+echo "  ADMIN_PASSWORD  : generado (hex 16)"
+echo "  QA_BUYER_PASSWORD: generado (hex 16)"
 echo ""
 
 # ── Función: sustituir credenciales en un .env ─────────────────────────────
@@ -195,6 +201,8 @@ _apply_creds() {
         -e "s|^SECRET_KEY=.*|SECRET_KEY=${SECRET_KEY}|" \
         -e "s|^DB_PASSWORD=.*|DB_PASSWORD=${DB_PASSWORD}|" \
         -e "s|^DB_QA_PASSWORD=.*|DB_QA_PASSWORD=${DB_QA_PASSWORD}|" \
+        -e "s|^ADMIN_PASSWORD=.*|ADMIN_PASSWORD=${ADMIN_PASSWORD}|" \
+        -e "s|^QA_BUYER_PASSWORD=.*|QA_BUYER_PASSWORD=${QA_BUYER_PASSWORD}|" \
         "$src" > "$dst"
 }
 
