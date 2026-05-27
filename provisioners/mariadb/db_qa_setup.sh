@@ -167,8 +167,12 @@ verify_connection() {
     log_header "PASO: Verificando conexion Django → QA"
 
     local result
-    result=$(_db_exec_quiet \
-        -u "$DB_USER" -p"${DB_PASSWORD}" \
+    # H-CICLO87-01: usar MYSQL_PWD en lugar de -p"${DB_PASSWORD}" para
+    # evitar que la contraseña quede expuesta en la lista de procesos
+    # (ps aux). db_setup.sh ya usaba este patron; db_qa_setup.sh no lo
+    # replicaba, creando una inconsistencia de seguridad.
+    result=$(MYSQL_PWD="${DB_PASSWORD}" _db_exec_quiet \
+        -u "$DB_USER" \
         -e "SELECT CONCAT(DATABASE(), ' @ ', USER());" \
         "$DB_NAME" 2>&1) || {
         log_error "No se pudo conectar como ${DB_USER} a ${DB_NAME}"
