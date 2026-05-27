@@ -45,7 +45,14 @@ source "${PROJECT_ROOT}/utils/database.sh"
 
 ENV_FILE="${PROJECT_ROOT}/.env"
 if [[ -f "$ENV_FILE" ]]; then
-    set -a; source "$ENV_FILE"; set +a
+    # Fuente condicional: solo exporta variables no definidas en el entorno.
+    # set -a; source sobreescribiría credenciales pasadas vía sudo env VAR=val,
+    # rompiendo el flujo CI/CD donde el caller inyecta valores sin tocar el disco.
+    while IFS='=' read -r key value; do
+        [[ "$key" =~ ^[A-Z_][A-Z0-9_]*$ ]] || continue
+        [[ -n "${!key+x}" ]] && continue
+        export "$key=$value"
+    done < <(grep -E '^[A-Z_][A-Z0-9_]*=' "$ENV_FILE")
 fi
 
 DB_NAME="${DB_NAME:-practicayoruba_db}"
