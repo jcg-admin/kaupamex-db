@@ -104,40 +104,41 @@ que pertenece a `svc-dbdata` (UID 997, nologin). `develop` no puede
 escribir ahí por diseño del modelo de aislamiento por clase.
 
 **`git sparse-checkout disable` falla en este entorno** con
-`Permission denied` porque git necesita materializar `backups/` en el
-working tree y no puede escribir en el bind mount. Este es el
-comportamiento correcto — no intentar `sudo chown` sobre
-`/srv/backups/database/` porque eso viola el modelo de aislamiento.
+`Permission denied` porque git intenta materializar `backups/` en el
+working tree. No intentar `sudo chown` sobre `/srv/backups/database/`
+— viola el modelo de aislamiento.
 
-**El flujo canónico para WSL2 con bind mount** es extraer scripts
-directamente desde git y ejecutarlos desde `/tmp`:
+**La solución correcta** es reconfigurar sparse-checkout en modo
+no-cone para incluir todos los directorios excepto `backups/`. Esto
+materializa `scripts/`, `utils/`, `provisioners/` y `tests/` sin
+tocar el bind mount:
 
 ```bash
-# Extraer y ejecutar sin deshabilitar sparse-checkout
-git -C /srv/repos/ecom/e-comerce-db \
-  show HEAD:scripts/init-env.sh > /tmp/init-env.sh
-chmod +x /tmp/init-env.sh
-bash /tmp/init-env.sh \
+# Modo no-cone: incluir todo excepto backups/
+# git no intenta escribir en backups/ porque ya está excluido
+git sparse-checkout set --no-cone '/*' '!/backups/'
+
+# Verificar que scripts/ ahora existe en el working tree
+ls scripts/init-env.sh
+
+# Ejecutar normalmente desde el repo
+bash scripts/init-env.sh \
   --db-root /srv/repos/ecom/e-comerce-db \
   --api-root /srv/repos/ecom/e-comerce-api
 ```
 
-Los flags `--db-root` y `--api-root` explícitos hacen al script
-independiente de su ubicación en disco — el repositorio clonado en
-`/srv/repos/ecom/e-comerce-db` es la fuente de verdad para los paths,
-no el directorio de trabajo del script.
+El patrón `'/*'` materializa todos los archivos en todos los
+subdirectorios; `'!/backups/'` excluye solo ese directorio. Git solo
+escribe en los directorios nuevos que necesita crear (`scripts/`,
+`utils/`, etc.) y no toca `backups/`.
 
-**Para el bind mount de `backups/`**, el mecanismo correcto es
-`.git/info/exclude` (no sparse-checkout):
+**Diagnóstico** si scripts/ no aparece tras el comando:
 
 ```bash
-# Excluir backups/ del git status sin afectar el working tree
-echo "backups/" >> .git/info/exclude
+git sparse-checkout list          # debe mostrar /* y !/backups/
+git ls-files scripts/init-env.sh # debe aparecer (existe en git)
+ls scripts/                       # debe existir tras la reconfiguración
 ```
-
-`.git/info/exclude` es local (no commiteable) y elimina el ruido en
-`git status`. Sparse-checkout excluiría también `scripts/`, `utils/`,
-`provisioners/` y `tests/` — por eso no es el mecanismo correcto aquí.
 
 ### Version canónica de MariaDB
 
