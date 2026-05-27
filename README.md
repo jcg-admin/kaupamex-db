@@ -97,13 +97,38 @@ sudo systemctl reload mariadb 2>/dev/null \
 
 ### Entornos con bind mount en backups/
 
-En entornos WSL2 con bind mount sobre `backups/`, **no usar sparse-checkout
-para excluir ese directorio**. Git sparse-checkout cone mode excluye
-subdirectorios enteros del working tree — si se usa `!/backups` como cone
-exclusion, los directorios `scripts/`, `utils/`, `provisioners/` y `tests/`
-también quedan excluidos aunque sus archivos existan en git.
+En entornos WSL2 según el
+**Procedimiento-Implementacion-Almacenamiento-WSL2-ecomerce-p001**,
+`backups/` está bind-montado sobre `/srv/backups/database/e-comerce-db`,
+que pertenece a `svc-dbdata` (UID 997, nologin). `develop` no puede
+escribir ahí por diseño del modelo de aislamiento por clase.
 
-El mecanismo correcto para el bind mount de `backups/` es `.git/info/exclude`:
+**`git sparse-checkout disable` falla en este entorno** con
+`Permission denied` porque git necesita materializar `backups/` en el
+working tree y no puede escribir en el bind mount. Este es el
+comportamiento correcto — no intentar `sudo chown` sobre
+`/srv/backups/database/` porque eso viola el modelo de aislamiento.
+
+**El flujo canónico para WSL2 con bind mount** es extraer scripts
+directamente desde git y ejecutarlos desde `/tmp`:
+
+```bash
+# Extraer y ejecutar sin deshabilitar sparse-checkout
+git -C /srv/repos/ecom/e-comerce-db \
+  show HEAD:scripts/init-env.sh > /tmp/init-env.sh
+chmod +x /tmp/init-env.sh
+bash /tmp/init-env.sh \
+  --db-root /srv/repos/ecom/e-comerce-db \
+  --api-root /srv/repos/ecom/e-comerce-api
+```
+
+Los flags `--db-root` y `--api-root` explícitos hacen al script
+independiente de su ubicación en disco — el repositorio clonado en
+`/srv/repos/ecom/e-comerce-db` es la fuente de verdad para los paths,
+no el directorio de trabajo del script.
+
+**Para el bind mount de `backups/`**, el mecanismo correcto es
+`.git/info/exclude` (no sparse-checkout):
 
 ```bash
 # Excluir backups/ del git status sin afectar el working tree
@@ -111,20 +136,8 @@ echo "backups/" >> .git/info/exclude
 ```
 
 `.git/info/exclude` es local (no commiteable) y elimina el ruido en
-`git status` sin materializar ni excluir archivos.
-
-**Si ya hay sparse-checkout activo, deshabilitarlo antes de ejecutar
-cualquier provisioner o script del repo:**
-
-```bash
-# Diagnóstico
-git sparse-checkout list           # muestra el cone activo
-git ls-files scripts/init-env.sh  # debe aparecer (existe en git)
-ls scripts/init-env.sh             # puede fallar si no está materializado
-
-# Solución: materializar todos los archivos
-git sparse-checkout disable
-```
+`git status`. Sparse-checkout excluiría también `scripts/`, `utils/`,
+`provisioners/` y `tests/` — por eso no es el mecanismo correcto aquí.
 
 ### Version canónica de MariaDB
 
