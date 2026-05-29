@@ -91,14 +91,15 @@ VALUES
 -- Las fechas created_at/updated_at no tienen DEFAULT en la tabla —
 -- deben especificarse explícitamente en INSERT (no son auto_now en SQL puro).
 
+-- UC-CAT-13: catalogue_product ya no tiene category_id (M2M).
+-- Paso 1 — insertar productos sin categoría.
 INSERT IGNORE INTO catalogue_product
     (name, slug, sku, short_description, description,
-     category_id, price, stock,
+     price, stock,
      is_featured, is_active, is_published,
      created_at, updated_at)
 SELECT
     p.name, p.slug, p.sku, p.short_desc, p.desc_larga,
-    (SELECT id FROM catalogue_category WHERE slug = p.cat_slug LIMIT 1),
     p.price, p.stock,
     p.is_featured, p.is_active, p.is_published,
     NOW(6), NOW(6)
@@ -226,8 +227,28 @@ FROM (
            'Presentación: 500g en frasco de vidrio.'
          , 'incienso-y-limpiezas'
          , 195.00, 0, 0, 1, 1    -- AGOTADO
-) p
-WHERE (SELECT id FROM catalogue_category WHERE slug = p.cat_slug LIMIT 1) IS NOT NULL;
+) p;
+
+-- UC-CAT-13 Paso 2 — asignar categorías vía tabla join M2M.
+-- INSERT IGNORE garantiza idempotencia.
+INSERT IGNORE INTO catalogue_product_categories (product_id, category_id)
+SELECT prod.id, cat.id
+FROM (
+    SELECT 'ELK-YEM-001' AS sku, 'collares-y-elekes'       AS cat_slug UNION ALL
+    SELECT 'ELK-OSH-001',        'collares-y-elekes'        UNION ALL
+    SELECT 'ELK-ELE-001',        'collares-y-elekes'        UNION ALL
+    SELECT 'SOP-YEM-001',        'soperas-y-receptaculos'   UNION ALL
+    SELECT 'CAL-OGG-001',        'soperas-y-receptaculos'   UNION ALL
+    SELECT 'OTN-SHA-001',        'soperas-y-receptaculos'   UNION ALL
+    SELECT 'HER-SHA-001',        'herramientas-y-atributos' UNION ALL
+    SELECT 'HER-OBA-001',        'herramientas-y-atributos' UNION ALL
+    SELECT 'LIB-MON-001',        'libros-y-aprendizaje'     UNION ALL
+    SELECT 'LIB-IFA-001',        'libros-y-aprendizaje'     UNION ALL
+    SELECT 'INC-OMI-001',        'incienso-y-limpiezas'     UNION ALL
+    SELECT 'INC-SAH-001',        'incienso-y-limpiezas'
+) lnk
+JOIN catalogue_product  prod ON prod.sku      = lnk.sku
+JOIN catalogue_category cat  ON cat.slug      = lnk.cat_slug;
 
 -- ─── Resumen del seed ─────────────────────────────────────────────────────────
 

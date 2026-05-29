@@ -2,7 +2,7 @@ SELECT 'PROCESO INICIO' AS evento, NOW() AS timestamp_inicio FROM DUAL;
 
 /********************************************************************************************
     Script          : sp_rpt_low_stock.sql
-    Version         : 2.0.0
+    Version         : 3.0.0
     Create          : MAYO/2026
     Engine          : MariaDB 11.8 LTS (ADR-009)
     Schema          : practicayoruba_db
@@ -47,7 +47,8 @@ BEGIN
       , p.price
       , p.is_published
     FROM catalogue_product   p
-    JOIN catalogue_category  c ON c.id = p.category_id
+    JOIN catalogue_product_categories pc ON pc.product_id = p.id
+    JOIN catalogue_category  c ON c.id = pc.category_id
     CROSS JOIN settings_sitesettings s
     WHERE p.stock < s.min_stock_threshold
       AND p.is_active = 1
