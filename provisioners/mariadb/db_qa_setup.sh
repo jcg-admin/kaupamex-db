@@ -45,12 +45,19 @@ source "${PROJECT_ROOT}/utils/database.sh"
 
 ENV_FILE="${PROJECT_ROOT}/.env"
 if [[ -f "$ENV_FILE" ]]; then
-    set -a; source "$ENV_FILE"; set +a
+    # Fuente condicional: solo exporta variables no definidas en el entorno.
+    # set -a; source sobreescribiría credenciales pasadas vía sudo env VAR=val,
+    # rompiendo el flujo CI/CD donde el caller inyecta valores sin tocar el disco.
+    while IFS='=' read -r key value; do
+        [[ "$key" =~ ^[A-Z_][A-Z0-9_]*$ ]] || continue
+        [[ -n "${!key+x}" ]] && continue
+        export "$key=$value"
+    done < <(grep -E '^[A-Z_][A-Z0-9_]*=' "$ENV_FILE")
 fi
 
 DB_NAME="${DB_QA_NAME:-practicayoruba_qa}"
 DB_USER="${DB_QA_USER:-django_user}"
-DB_PASSWORD="${DB_QA_PASSWORD:-django_pass}"
+DB_PASSWORD="${DB_QA_PASSWORD:?DB_QA_PASSWORD must be set in environment or .env}"
 DB_HOST="${DB_QA_HOST:-127.0.0.1}"
 DB_PORT="${DB_QA_PORT:-3306}"
 
@@ -167,8 +174,12 @@ verify_connection() {
     log_header "PASO: Verificando conexion Django → QA"
 
     local result
-    result=$(_db_exec_quiet \
-        -u "$DB_USER" -p"${DB_PASSWORD}" \
+    # H-CICLO87-01: usar MYSQL_PWD en lugar de -p"${DB_PASSWORD}" para
+    # evitar que la contraseña quede expuesta en la lista de procesos
+    # (ps aux). db_setup.sh ya usaba este patron; db_qa_setup.sh no lo
+    # replicaba, creando una inconsistencia de seguridad.
+    result=$(MYSQL_PWD="${DB_PASSWORD}" _db_exec_quiet \
+        -u "$DB_USER" \
         -e "SELECT CONCAT(DATABASE(), ' @ ', USER());" \
         "$DB_NAME" 2>&1) || {
         log_error "No se pudo conectar como ${DB_USER} a ${DB_NAME}"

@@ -64,11 +64,16 @@ DB_HOST="${DB_HOST:-127.0.0.1}"
 DB_PORT="${DB_PORT:-3306}"
 
 BACKUP_USER="${PY_BACKUP_USER:-py_backup_user}"
-BACKUP_PASS="${PY_BACKUP_PASSWORD:-changeme_backup_pass}"
+BACKUP_PASS="${PY_BACKUP_PASSWORD:?PY_BACKUP_PASSWORD must be set in environment or .env}"
 BACKUP_HOST="localhost"
 
 BACKUP_DIR="${BACKUP_DIR:-${PROJECT_ROOT}/backups}"
 BACKUP_REMOTE_DEST="${BACKUP_REMOTE_DEST:-}"
+# H-CICLO25-03: retención de backups.  Los archivos .sql.gz, .md5 y .log con
+# más de BACKUP_RETENTION_DAYS días se eliminan automáticamente al final de
+# cada ejecución.  Default: 30 días.  Sobreescribir con BACKUP_RETENTION_DAYS
+# en .env para ajustar la política de retención del entorno.
+BACKUP_RETENTION_DAYS="${BACKUP_RETENTION_DAYS:-30}"
 
 # Timestamp en zona horaria del proyecto (H-F1-004, H-F4-002)
 TS=$(TZ="America/Mexico_City" date +"%Y%m%d_%H%M%S")
@@ -192,18 +197,19 @@ _dump_schema() {
         --extended-insert
         --comments
         --set-charset
-        -u"${BACKUP_USER}" -p"${BACKUP_PASS}"
+        -u"${BACKUP_USER}"
         "${schema}"
     )
 
     local t_ini
     t_ini=$(date +%s)
 
+    # MYSQL_PWD avoids exposing the password in the process list (ps aux).
     if [[ -n "$sock" ]]; then
-        mysqldump --socket="$sock" "${dump_args[@]}" \
+        MYSQL_PWD="${BACKUP_PASS}" mysqldump --socket="$sock" "${dump_args[@]}" \
             2>"$stderr_file" | gzip -6 > "$dump_file"
     else
-        mysqldump -h "$DB_HOST" -P "$DB_PORT" "${dump_args[@]}" \
+        MYSQL_PWD="${BACKUP_PASS}" mysqldump -h "$DB_HOST" -P "$DB_PORT" "${dump_args[@]}" \
             2>"$stderr_file" | gzip -6 > "$dump_file"
     fi
 
@@ -240,6 +246,30 @@ _dump_schema() {
     log_success "  ${schema}: dump OK — MD5 verificado"
     log_info "    Dump: $(basename "$dump_file")  (${dump_size})"
     log_info "    MD5:  $(basename "$md5_file")"
+}
+
+# =============================================================================
+# H-CICLO25-03: Eliminar backups antiguos (retención)
+# =============================================================================
+_prune_old_backups() {
+    log_header "PASO: Retención de backups (>${BACKUP_RETENTION_DAYS} días)"
+
+    local count=0
+    # Buscar archivos de backup (.sql.gz, .md5, .log, .mysqldump.stderr)
+    # con más de BACKUP_RETENTION_DAYS días y eliminarlos.
+    while IFS= read -r -d '' f; do
+        log_info "  Eliminando: $(basename "$f")"
+        rm -f "$f"
+        (( count++ )) || true
+    done < <(find "$BACKUP_DIR" -maxdepth 1 \
+        \( -name "*.sql.gz" -o -name "*.md5" -o -name "*.log" -o -name "*.mysqldump.stderr" \) \
+        -mtime +"${BACKUP_RETENTION_DAYS}" -print0 2>/dev/null)
+
+    if [[ $count -eq 0 ]]; then
+        log_info "  Sin backups expirados (retención: ${BACKUP_RETENTION_DAYS} días)"
+    else
+        log_success "  ${count} archivo(s) expirado(s) eliminado(s)"
+    fi
 }
 
 # =============================================================================
@@ -318,6 +348,9 @@ _list_backups
 echo ""
 
 _sync_remote
+echo ""
+
+_prune_old_backups
 echo ""
 
 log_separator 60 "="

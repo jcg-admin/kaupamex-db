@@ -75,9 +75,14 @@ PracticaYoruba-db/
 git clone <repo>
 cd e-comerce-db
 
-# 2. Variables de entorno
-cp .env.example .env
-# Editar .env con las credenciales reales
+# 2. Variables de entorno — generación automática (recomendado)
+bash scripts/init-env.sh
+# El script genera .env con credenciales openssl y propaga los mismos
+# valores al .env de e-comerce-api/practicayoruba/ automáticamente.
+# Si los repos no son siblings, usa las flags explícitas:
+#   bash scripts/init-env.sh \
+#     --db-root /ruta/a/e-comerce-db \
+#     --api-root /ruta/a/e-comerce-api
 
 # 3. Instalar MariaDB 11.8 LTS (idempotente — no-op si ya está 11.8.x)
 sudo bash provisioners/mariadb/install.sh
@@ -88,6 +93,51 @@ sudo ln -sf "$(pwd)/config/mariadb/99-practicayoruba.cnf" \
             /etc/mysql/mariadb.conf.d/99-practicayoruba.cnf
 sudo systemctl reload mariadb 2>/dev/null \
     || sudo mysqladmin --socket=/run/mysqld/mysqld.sock reload
+```
+
+### Entornos con bind mount en backups/
+
+En entornos WSL2 según el
+**Procedimiento-Implementacion-Almacenamiento-WSL2-ecomerce-p001**,
+`backups/` está bind-montado sobre `/srv/backups/database/e-comerce-db`,
+que pertenece a `svc-dbdata` (UID 997, nologin). `develop` no puede
+escribir ahí por diseño del modelo de aislamiento por clase.
+
+**`git sparse-checkout disable` falla en este entorno** con
+`Permission denied` porque git intenta materializar `backups/` en el
+working tree. No intentar `sudo chown` sobre `/srv/backups/database/`
+— viola el modelo de aislamiento.
+
+**La solución correcta** es reconfigurar sparse-checkout en modo
+no-cone para incluir todos los directorios excepto `backups/`. Esto
+materializa `scripts/`, `utils/`, `provisioners/` y `tests/` sin
+tocar el bind mount:
+
+```bash
+# Modo no-cone: incluir todo excepto backups/
+# git no intenta escribir en backups/ porque ya está excluido
+git sparse-checkout set --no-cone '/*' '!/backups/'
+
+# Verificar que scripts/ ahora existe en el working tree
+ls scripts/init-env.sh
+
+# Ejecutar normalmente desde el repo
+bash scripts/init-env.sh \
+  --db-root /srv/repos/ecom/e-comerce-db \
+  --api-root /srv/repos/ecom/e-comerce-api
+```
+
+El patrón `'/*'` materializa todos los archivos en todos los
+subdirectorios; `'!/backups/'` excluye solo ese directorio. Git solo
+escribe en los directorios nuevos que necesita crear (`scripts/`,
+`utils/`, etc.) y no toca `backups/`.
+
+**Diagnóstico** si scripts/ no aparece tras el comando:
+
+```bash
+git sparse-checkout list          # debe mostrar /* y !/backups/
+git ls-files scripts/init-env.sh # debe aparecer (existe en git)
+ls scripts/                       # debe existir tras la reconfiguración
 ```
 
 ### Version canónica de MariaDB

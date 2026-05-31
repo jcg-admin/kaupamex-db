@@ -2,7 +2,7 @@ SELECT 'PROCESO INICIO' AS evento, NOW() AS timestamp_inicio FROM DUAL;
 
 /********************************************************************************************
     Script          : v_published_catalog.sql
-    Version         : 2.0.0
+    Version         : 3.0.0
     Create          : MAYO/2026
     Engine          : MariaDB 11.8 LTS (ADR-009)
     Schema          : practicayoruba_db
@@ -31,7 +31,8 @@ SELECT
   , c.name AS category_name
   , c.slug AS category_slug
 FROM catalogue_product  p
-JOIN catalogue_category c ON c.id = p.category_id
+JOIN catalogue_product_categories pc ON pc.product_id = p.id
+JOIN catalogue_category c ON c.id = pc.category_id
 WHERE p.is_published = 1
   AND p.is_active   = 1
   AND c.is_active   = 1;

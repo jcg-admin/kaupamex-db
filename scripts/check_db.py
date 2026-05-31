@@ -166,22 +166,22 @@ def _connect(host: str, port: int, user: str, password: str, db: str):
     )
 
 
-def _query_one(conn, sql: str):
+def _query_one(conn, sql: str, params=None):
     """Ejecuta una query y retorna el primer campo de la primera fila, o None."""
     with conn.cursor() as cur:
-        cur.execute(sql)
+        cur.execute(sql, params)
         row = cur.fetchone()
         return row[0] if row else None
 
 
 def _table_exists(conn, schema: str, table: str) -> bool:
     """Retorna True si la tabla existe en information_schema."""
-    result = _query_one(conn, f"""
-        SELECT COUNT(*)
-        FROM information_schema.TABLES
-        WHERE TABLE_SCHEMA = '{schema}'
-        AND TABLE_NAME = '{table}'
-    """)
+    result = _query_one(
+        conn,
+        "SELECT COUNT(*) FROM information_schema.TABLES "
+        "WHERE TABLE_SCHEMA = %s AND TABLE_NAME = %s",
+        (schema, table),
+    )
     return int(result or 0) > 0
 
 
@@ -347,6 +347,42 @@ def check_users_table() -> None:
 
 
 # =============================================================================
+# Tablas de aplicacion criticas en practicayoruba_db (H-CICLO66-10)
+#
+# django_migrations puede existir aunque las migraciones hayan fallado
+# a mitad de camino, dejando tablas de negocio ausentes.  Este check
+# verifica que las tablas mas criticas esten presentes para detectar
+# migraciones parciales antes de arrancar la aplicacion.
+# =============================================================================
+_REQUIRED_TABLES = [
+    "orders_order",
+    "orders_order_item",
+    "orders_order_value",
+    "payments_payment",
+    "cart_cart",
+    "catalogue_product",
+]
+
+
+def check_required_tables() -> None:
+    log.header(f"PASO: Tablas de aplicacion en {DB_NAME}")
+    log.info("  Verifica tablas criticas ausentes tras migraciones parciales")
+    try:
+        conn = _connect(DB_HOST, DB_PORT, DB_USER, DB_PASSWORD, DB_NAME)
+        for table in _REQUIRED_TABLES:
+            if _table_exists(conn, DB_NAME, table):
+                log.ok(f"{table} presente")
+            else:
+                log.err(
+                    f"{table} no encontrada — migracion incompleta. "
+                    f"Ejecuta: python manage.py migrate"
+                )
+        conn.close()
+    except MySQLdb.OperationalError as e:
+        log.warn(f"No se pudo verificar tablas de aplicacion: {e}")
+
+
+# =============================================================================
 # Privilegios DML en practicayoruba_db
 # =============================================================================
 def check_privs_db() -> None:
@@ -410,9 +446,10 @@ def main() -> None:
     if db_ok:
         check_migrations_db()
         check_users_table()
+        check_required_tables()
         check_privs_db()
     else:
-        log.warn("Migraciones, users_user y privilegios de DB omitidos — sin conexion a practicayoruba_db")
+        log.warn("Migraciones, users_user, tablas y privilegios de DB omitidos — sin conexion a practicayoruba_db")
 
     if qa_ok:
         check_privs_qa()

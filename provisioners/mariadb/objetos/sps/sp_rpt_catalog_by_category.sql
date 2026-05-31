@@ -2,7 +2,7 @@ SELECT 'PROCESO INICIO' AS evento, NOW() AS timestamp_inicio FROM DUAL;
 
 /********************************************************************************************
     Script          : sp_rpt_catalog_by_category.sql
-    Version         : 2.0.0
+    Version         : 3.0.0
     Create          : MAYO/2026
     Engine          : MariaDB 11.8 LTS (ADR-009)
     Schema          : practicayoruba_db
@@ -43,7 +43,8 @@ BEGIN
       , MAX(p.price)                                                  AS price_max
       , ROUND(AVG(p.price), 2)                                        AS price_avg
     FROM catalogue_category  c
-    LEFT JOIN catalogue_product p ON p.category_id = c.id
+    LEFT JOIN catalogue_product_categories pc ON pc.category_id = c.id
+    LEFT JOIN catalogue_product p ON p.id = pc.product_id
     WHERE c.is_active = 1
     GROUP BY c.id, c.name, c.slug
     ORDER BY total_products DESC, c.name ASC;

@@ -45,12 +45,19 @@ source "${PROJECT_ROOT}/utils/database.sh"
 
 ENV_FILE="${PROJECT_ROOT}/.env"
 if [[ -f "$ENV_FILE" ]]; then
-    set -a; source "$ENV_FILE"; set +a
+    # Fuente condicional: solo exporta variables no definidas en el entorno.
+    # set -a; source sobreescribiría credenciales pasadas vía sudo env VAR=val,
+    # rompiendo el flujo CI/CD donde el caller inyecta valores sin tocar el disco.
+    while IFS='=' read -r key value; do
+        [[ "$key" =~ ^[A-Z_][A-Z0-9_]*$ ]] || continue
+        [[ -n "${!key+x}" ]] && continue
+        export "$key=$value"
+    done < <(grep -E '^[A-Z_][A-Z0-9_]*=' "$ENV_FILE")
 fi
 
 DB_NAME="${DB_NAME:-practicayoruba_db}"
 DB_USER="${DB_USER:-django_user}"
-DB_PASSWORD="${DB_PASSWORD:-django_pass}"
+DB_PASSWORD="${DB_PASSWORD:?DB_PASSWORD must be set in environment or .env}"
 DB_HOST="${DB_HOST:-127.0.0.1}"
 DB_PORT="${DB_PORT:-3306}"
 
@@ -157,7 +164,7 @@ create_user() {
         exists=$(_db_exec_quiet -e \
             "SELECT COUNT(*) FROM mysql.user
              WHERE User = '${DB_USER}' AND Host = '${host}';" || echo "0")
-    exists="${exists##*$'\n'}"; exists="${exists:-0}"
+        exists="${exists##*$'\n'}"; exists="${exists:-0}"
 
         if [[ "$exists" -gt 0 ]]; then
             _db_exec -e \
@@ -177,18 +184,24 @@ create_user() {
 grant_privileges() {
     log_header "PASO: Otorgando privilegios: ${DB_USER} sobre ${DB_NAME}"
 
+    # H-CICLO26-03: principio de mínimo privilegio — el usuario Django de
+    # aplicación solo necesita DML + los permisos estructurales para
+    # que `migrate` funcione (CREATE TABLE, ALTER TABLE, DROP TABLE, INDEX,
+    # REFERENCES).  No necesita GRANT OPTION, SUPER, FILE, etc.
+    # Para la base de test, pytest requiere CREATE y DROP a nivel de schema.
+    local APP_GRANTS="SELECT, INSERT, UPDATE, DELETE, CREATE, ALTER, DROP, INDEX, REFERENCES"
     local test_db="test_${DB_NAME}"
 
     for host in "%" "localhost" "127.0.0.1"; do
         _db_exec -e \
-            "GRANT ALL PRIVILEGES ON \`${DB_NAME}\`.* TO '${DB_USER}'@'${host}';" > /dev/null
-        # pytest necesita crear y destruir test_<DB_NAME>
+            "GRANT ${APP_GRANTS} ON \`${DB_NAME}\`.* TO '${DB_USER}'@'${host}';" > /dev/null
+        # pytest necesita crear y destruir test_<DB_NAME> (CREATE/DROP DATABASE)
         _db_exec -e \
             "GRANT ALL PRIVILEGES ON \`${test_db}\`.* TO '${DB_USER}'@'${host}';" > /dev/null
     done
 
     _db_exec -e "FLUSH PRIVILEGES;" > /dev/null
-    log_success "Privilegios aplicados (incluye test_${DB_NAME} para pytest)"
+    log_success "Privilegios aplicados (${APP_GRANTS}; incluye test_${DB_NAME} para pytest)"
 }
 
 # =============================================================================
@@ -196,8 +209,8 @@ verify_connection() {
     log_header "PASO: Verificando conexion con credenciales Django"
 
     local result
-    result=$(_db_exec_quiet \
-        -u "$DB_USER" -p"${DB_PASSWORD}" \
+    result=$(MYSQL_PWD="${DB_PASSWORD}" _db_exec_quiet \
+        -u "$DB_USER" \
         -e "SELECT CONCAT(DATABASE(), ' @ ', USER());" \
         "$DB_NAME" 2>&1) || {
         log_error "No se pudo conectar como ${DB_USER} a ${DB_NAME}"

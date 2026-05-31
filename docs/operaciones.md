@@ -176,6 +176,19 @@ python3 scripts/check_db.py
 
 ## Backup
 
+### Activar cron automático (producción)
+
+```bash
+# Instala /etc/cron.d/practicayoruba-backup
+# Corre backup_db.sh daily a las 02:00 como svc-dbdata
+sudo bash scripts/setup_backup_cron.sh
+```
+
+Prerequisito: el bind mount `/srv/backups/database/e-comerce-db → backups/`
+debe estar activo antes de ejecutar el cron (ver sección "Bind mount Clase C").
+
+### Ejecutar backup manualmente
+
 ```bash
 # Backup de practicayoruba_db y practicayoruba_qa
 bash scripts/backup_db.sh
