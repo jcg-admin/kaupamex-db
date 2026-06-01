@@ -69,10 +69,12 @@ IMPORTANTE: antes de sembrar, arregla el valor sin comillas del .env
   # DB_QA_PASSWORD sin default (aborta si el .env esta roto).
   sudo bash $REPO_ROOT/e-comerce-api/scripts/provisioners/mysql/db_qa_setup.sh
 
-[develop] (corre las suites; pytest DESDE LA RAIZ del repo api)
-  source $REPO_ROOT/e-comerce-api/.venv/bin/activate
-  cd $REPO_ROOT/e-comerce-api      && python -m pytest --tb=no -q ; rc_api=\$?
-  cd $REPO_ROOT/e-comerce-ui       && npx jest                    ; rc_ui=\$?
+[develop] (corre las suites DESDE LA RAIZ del repo api; uv run, no pip/python pelados)
+  # 'uv run' fija el interprete del .venv del API: evita PEP 668
+  # (externally-managed) y el desajuste de interprete del enigma 1479.
+  # D-031/H-14: el equipo usa uv en todos los submodulos.
+  cd $REPO_ROOT/e-comerce-api      && uv run pytest --tb=no -q ; rc_api=\$?
+  cd $REPO_ROOT/e-comerce-ui       && npx jest                 ; rc_ui=\$?
   echo "API rc=\$rc_api  UI rc=\$rc_ui"
   if [ "\$rc_api" -eq 0 ] && [ "\$rc_ui" -eq 0 ]; then echo VERDE; else echo ROJO; fi
 
@@ -139,17 +141,23 @@ for r in "${REPOS[@]}"; do
     fi
 done
 
-# --- 2. Dependencias (opcional, develop-only: pip en venv + npm ci) --------
+# --- 2. Dependencias (opcional, develop-only: uv + npm ci) -----------------
+# D-031/H-14: el equipo usa uv en todos los submodulos. NUNCA pip pelado:
+# dispara PEP 668 (externally-managed) contra el Python del sistema.
 if [ "$WITH_DEPS" = 1 ]; then
-    echo "== Dependencias =="
-    venv="$REPO_ROOT/e-comerce-api/.venv/bin/activate"
-    if [ -f "$venv" ]; then
-        # shellcheck disable=SC1090
-        source "$venv"
-        pip install -q -r "$REPO_ROOT/e-comerce-api/requirements/development.txt" \
-            && echo "[api] deps reinstaladas (development.txt)"
+    echo "== Dependencias (uv, no pip pelado) =="
+    api="$REPO_ROOT/e-comerce-api"
+    if ! command -v uv >/dev/null 2>&1; then
+        echo "[api] uv no esta en PATH — instala: curl -LsSf https://astral.sh/uv/install.sh | sh"
+        echo "      (NO caer a pip pelado: PEP 668 lo bloquea en Ubuntu 24.04)"
+    elif [ -f "$api/pyproject.toml" ]; then
+        # Modelo-proyecto uv (pyproject.toml + uv.lock): reproducible.
+        ( cd "$api" && uv sync --quiet && echo "[api] uv sync OK (pyproject.toml + uv.lock)" )
     else
-        echo "[api] venv no encontrado en $venv — omito pip (ajusta ECOM_REPO_ROOT o crea el venv)"
+        # Aun sin pyproject/uv.lock (iniciativa migrar-api-a-uv-pyproject
+        # T-002/T-003 pendientes): uv como instalador sobre el .venv.
+        ( cd "$api" && uv pip install --quiet -r requirements/development.txt \
+            && echo "[api] uv pip install OK (requirements/development.txt)" )
     fi
     ( cd "$REPO_ROOT/e-comerce-ui" && npm ci --silent && echo "[ui] npm ci OK" )
 fi
