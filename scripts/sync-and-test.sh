@@ -58,9 +58,16 @@ print_test_steps() {
 El arranque y siembra de la BD requieren root: son paso de 'deploy', no de
 'develop'. Las suites corren como 'develop'. Captura el exit para gatear.
 
-[deploy]  (tiene sudo; arranca y siembra la BD de QA)
+IMPORTANTE: antes de sembrar, arregla el valor sin comillas del .env
+(linea ~53). Ambos seeders leen ese .env y abortan hasta que se entrecomille.
+
+[deploy]  (tiene sudo; arranca mariadbd y siembra la BD de QA)
   sudo bash $REPO_ROOT/e-comerce-db/scripts/start_db.sh
-  sudo bash $REPO_ROOT/e-comerce-db/provisioners/mariadb/db_qa_setup.sh
+  # Sembrar QA con el MISMO seeder que la auto-recuperacion de pytest
+  # re-ejecuta (e-comerce-api/tests/conftest.py::_restart_mariadb, linea 21).
+  # NO usar el de e-comerce-db: divergiria del que pytest usa y exige
+  # DB_QA_PASSWORD sin default (aborta si el .env esta roto).
+  sudo bash $REPO_ROOT/e-comerce-api/scripts/provisioners/mysql/db_qa_setup.sh
 
 [develop] (corre las suites; pytest DESDE LA RAIZ del repo api)
   source $REPO_ROOT/e-comerce-api/.venv/bin/activate
