@@ -11,8 +11,9 @@ SELECT 'PROCESO INICIO' AS evento, NOW() AS timestamp_inicio FROM DUAL;
     Notas           : p_umbral renombrado a p_threshold (v2.0.0). Recibe el threshold como parámetro — no lee settings_sitesettings
                       directamente porque las funciones DETERMINISTIC no pueden hacer SELECT.
                       El caller pasa settings_sitesettings.min_stock_threshold.
-                      Tres estados: AGOTADO (stock=0 o NULL) / BAJO_STOCK (0 < stock < umbral)
-                      / DISPONIBLE (stock >= umbral).
+                      Tres estados (enums en INGLES, canon de codigo): OUT_OF_STOCK
+                      (stock=0 o NULL) / LOW_STOCK (0 < stock < umbral) / AVAILABLE
+                      (stock >= umbral). El espanol es solo display de UI, no del enum.
 ********************************************************************************************/
 
 -- DEFINICIÓN
@@ -28,9 +29,9 @@ DELIMITER $$
 --   p_threshold  INT — stock threshold configurado (settings_sitesettings.min_stock_threshold)
 --
 -- Retorna:
---   'AGOTADO'    — stock es NULL o 0
---   'BAJO_STOCK' — 0 < stock < umbral
---   'DISPONIBLE' — stock >= umbral
+--   'OUT_OF_STOCK' — stock es NULL o 0
+--   'LOW_STOCK'    — 0 < stock < umbral
+--   'AVAILABLE'    — stock >= umbral
 --
 -- Uso:
 --   SELECT fn_stock_status(p.stock, s.min_stock_threshold)
@@ -43,17 +44,17 @@ CREATE OR REPLACE FUNCTION fn_stock_status(
 )
 RETURNS VARCHAR(20)
 DETERMINISTIC
-COMMENT 'Clasifica stock: AGOTADO | BAJO_STOCK | DISPONIBLE según umbral.'
+COMMENT 'Clasifica stock: OUT_OF_STOCK | LOW_STOCK | AVAILABLE según umbral.'
 BEGIN
     -- NULL se trata como agotado — el stock de un producto nunca debería ser NULL
     -- pero la función es defensiva para evitar retornar un valor inesperado.
     IF p_stock IS NULL OR p_stock = 0 THEN
-        RETURN 'AGOTADO';
+        RETURN 'OUT_OF_STOCK';
     END IF;
     IF p_threshold IS NULL OR p_stock >= p_threshold THEN
-        RETURN 'DISPONIBLE';
+        RETURN 'AVAILABLE';
     END IF;
-    RETURN 'BAJO_STOCK';
+    RETURN 'LOW_STOCK';
 END$$
 
 DELIMITER ;

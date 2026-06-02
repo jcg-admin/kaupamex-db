@@ -85,21 +85,27 @@ validate_python_version() {
 validate_mariadb_version() {
     local required_major="${1:-11}" required_minor="${2:-8}"
 
-    require_command mysql || {
-        log_error "mysql CLI no encontrado — MariaDB no está instalado"
+    # D-028: en MariaDB 11.x el binario CLI es 'mariadb' (no 'mysql'). Resolver
+    # el CLI disponible en vez de hardcodear 'mysql' — que no existe tras
+    # instalar 11.8 y hacia fallar la verificacion post-install en FATAL aunque
+    # la instalacion fuera correcta. (H-DB-01)
+    local cli
+    cli="$(command -v mariadb 2>/dev/null || command -v mysql 2>/dev/null || true)"
+    if [[ -z "$cli" ]]; then
+        log_error "CLI de MariaDB (mariadb/mysql) no encontrado — MariaDB no está instalado"
         return 1
-    }
+    fi
 
     # Obtener la cadena de versión del binario (no requiere servidor activo)
     local version_str
-    version_str=$(mysql --version 2>/dev/null \
+    version_str=$("$cli" --version 2>/dev/null \
         | grep -oE '[0-9]+\.[0-9]+\.[0-9]+-MariaDB' \
         | head -1)
 
     if [[ -z "$version_str" ]]; then
         # Puede ser MySQL (sin el sufijo -MariaDB)
         local raw
-        raw=$(mysql --version 2>/dev/null || echo "")
+        raw=$("$cli" --version 2>/dev/null || echo "")
         log_error "El motor instalado no es MariaDB o no se pudo leer la versión"
         log_error "  Salida: ${raw}"
         log_error "  Se requiere: MariaDB ${required_major}.${required_minor}.x (ADR-009)"
