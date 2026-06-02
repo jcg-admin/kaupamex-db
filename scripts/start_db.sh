@@ -32,6 +32,7 @@ SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 PROJECT_ROOT="$(cd "${SCRIPT_DIR}/.." && pwd)"
 
 source "${PROJECT_ROOT}/utils/logging.sh"
+source "${PROJECT_ROOT}/utils/network.sh"
 source "${PROJECT_ROOT}/utils/database.sh"
 
 # ─── Configuración ────────────────────────────────────────────────────────────
@@ -76,6 +77,7 @@ nohup su -s /bin/bash mysql -c \
      --datadir=/var/lib/mysql \
      --socket=${SOCKET} \
      --pid-file=${PID_FILE} \
+     --tmpdir=${MARIADB_TMPDIR:-/tmp} \
      --bind-address=127.0.0.1 \
      --port=3306" \
     > "${LOG_FILE}" 2>&1 &
@@ -83,7 +85,7 @@ nohup su -s /bin/bash mysql -c \
 # ─── 4. Espera activa — patrón IACT-db (max 20 × 1s) ─────────────────────────
 for i in $(seq 1 20); do
     sleep 1
-    if mysqladmin --socket="${SOCKET}" ping --silent 2>/dev/null; then
+    if "$(mariadb_admin_bin)" --socket="${SOCKET}" ping --silent 2>/dev/null; then
         log_success "MariaDB OK en ${i}s"
         break
     fi
