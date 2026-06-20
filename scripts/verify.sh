@@ -14,7 +14,7 @@
 # verdad es el conteo dinamico):
 #
 #   1. Variables requeridas en .env
-#   2. Herramientas CLI disponibles (mysql, mysqladmin)
+#   2. Herramientas CLI disponibles (mariadb, mariadb-admin)
 #   3. MariaDB instalado y versión correcta (11.8.x — ADR-009)
 #   4. MariaDB responde (socket Unix primero, luego TCP)
 #   5. Schema practicayoruba_db existe y tiene django_migrations
@@ -88,17 +88,17 @@ fail() { log_error   "  [ERR]  $1"; _ERR=$(( _ERR + 1 ));  }
 _root_exec() {
     local sock=""
     for s in "${_MARIADB_SOCKETS[@]}"; do
-        if [[ -S "$s" ]] && mysqladmin --socket="$s" ping --silent >/dev/null 2>&1; then
+        if [[ -S "$s" ]] && ${MARIADB_ADM} --socket="$s" ping --silent >/dev/null 2>&1; then
             sock="$s"
             break
         fi
     done
     if [[ -n "$sock" ]]; then
-        mysql --socket="$sock" \
+        ${MARIADB_CLI} --socket="$sock" \
             --batch --silent --skip-column-names \
             "$@" 2>/dev/null
     else
-        mysql -h "$DB_HOST" -P "$DB_PORT" \
+        ${MARIADB_CLI} -h "$DB_HOST" -P "$DB_PORT" \
             --batch --silent --skip-column-names \
             "$@" 2>/dev/null
     fi
@@ -112,18 +112,18 @@ _user_exec() {
     shift 3
     local sock=""
     for s in "${_MARIADB_SOCKETS[@]}"; do
-        if [[ -S "$s" ]] && mysqladmin --socket="$s" ping --silent >/dev/null 2>&1; then
+        if [[ -S "$s" ]] && ${MARIADB_ADM} --socket="$s" ping --silent >/dev/null 2>&1; then
             sock="$s"
             break
         fi
     done
     if [[ -n "$sock" ]]; then
-        mysql --socket="$sock" \
+        ${MARIADB_CLI} --socket="$sock" \
             -u "$user" -p"${pass}" \
             --batch --silent --skip-column-names \
             "$schema" "$@" 2>/dev/null
     else
-        mysql -h "$DB_HOST" -P "$DB_PORT" \
+        ${MARIADB_CLI} -h "$DB_HOST" -P "$DB_PORT" \
             -u "$user" -p"${pass}" \
             --batch --silent --skip-column-names \
             "$schema" "$@" 2>/dev/null
@@ -170,9 +170,9 @@ check_tools() {
     log_header "PASO: Herramientas CLI"
 
     local tools=(
-        "mysql:cliente SQL MariaDB"
-        "mysqladmin:health check MariaDB"
-        "mysqldump:backup MariaDB"
+        "mariadb:cliente SQL MariaDB"
+        "mariadb-admin:health check MariaDB"
+        "mariadb-dump:backup MariaDB"
     )
 
     for entry in "${tools[@]}"; do
@@ -192,15 +192,15 @@ check_tools() {
 check_mariadb_version() {
     log_header "PASO: MariaDB instalado y versión"
 
-    if ! command_exists mysql; then
-        fail "mysql CLI no encontrado — MariaDB no está instalado"
+    if [[ -z "${MARIADB_CLI}" ]]; then
+        fail "mariadb CLI no encontrado — MariaDB no está instalado"
         log_error "  Instala con: sudo bash provisioners/mariadb/install.sh"
         return
     fi
 
     if validate_mariadb_version 11 8; then
         local version_str
-        version_str=$(mysql --version 2>/dev/null \
+        version_str=$(${MARIADB_CLI} --version 2>/dev/null \
             | grep -oE '[0-9]+\.[0-9]+\.[0-9]+-MariaDB' | head -1)
         ok "MariaDB ${version_str} instalado (serie 11.8.x — ADR-009)"
     else
@@ -218,7 +218,7 @@ check_mariadb_running() {
     # Intentar socket Unix primero (H-F3-002)
     for sock in "${_MARIADB_SOCKETS[@]}"; do
         if [[ -S "$sock" ]] && \
-           mysqladmin --socket="$sock" ping --silent >/dev/null 2>&1; then
+           ${MARIADB_ADM} --socket="$sock" ping --silent >/dev/null 2>&1; then
             ok "MariaDB activo via socket: ${sock}"
             return 0
         fi
@@ -241,8 +241,8 @@ check_mariadb_running() {
 check_schema_db() {
     log_header "PASO: Schema ${DB_NAME}: existencia y migraciones"
 
-    if ! command_exists mysql; then
-        warn "mysql CLI no disponible — check omitido"
+    if [[ -z "${MARIADB_CLI}" ]]; then
+        warn "mariadb CLI no disponible — check omitido"
         return
     fi
 
@@ -283,8 +283,8 @@ check_schema_db() {
 check_schema_qa() {
     log_header "PASO: Schema ${DB_QA_NAME}: existencia y migraciones"
 
-    if ! command_exists mysql; then
-        warn "mysql CLI no disponible — check omitido"
+    if [[ -z "${MARIADB_CLI}" ]]; then
+        warn "mariadb CLI no disponible — check omitido"
         return
     fi
 
@@ -323,8 +323,8 @@ check_schema_qa() {
 check_privs_db() {
     log_header "PASO: Privilegios ${DB_USER} en ${DB_NAME}"
 
-    if ! command_exists mysql; then
-        warn "mysql CLI no disponible — check omitido"
+    if [[ -z "${MARIADB_CLI}" ]]; then
+        warn "mariadb CLI no disponible — check omitido"
         return
     fi
 
@@ -357,8 +357,8 @@ check_privs_db() {
 check_privs_qa() {
     log_header "PASO: Privilegios ${DB_QA_USER} en ${DB_QA_NAME}"
 
-    if ! command_exists mysql; then
-        warn "mysql CLI no disponible — check omitido"
+    if [[ -z "${MARIADB_CLI}" ]]; then
+        warn "mariadb CLI no disponible — check omitido"
         return
     fi
 

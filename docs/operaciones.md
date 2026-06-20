@@ -253,12 +253,40 @@ sudo mariadb-admin reload
 
 ---
 
+## Compatibilidad Ubuntu 26.04 (Resolute)
+
+A partir de Ubuntu 26.04, los alias legacy `mysql`, `mysqladmin` y
+`mysqldump` ya no existen. Los scripts usan ahora exclusivamente los
+binarios canónicos de MariaDB 11.x:
+
+| Legacy (≤ Ubuntu 24.04 con MariaDB ≤ 10.11) | Canónico (MariaDB 11.x, Ubuntu 24.04+) |
+|---|---|
+| `mysql` | `mariadb` |
+| `mysqladmin` | `mariadb-admin` |
+| `mysqldump` | `mariadb-dump` |
+
+**Cambios aplicados:**
+
+- `scripts/verify.sh` — `_root_exec`, `_user_exec` y `check_mariadb_running`
+  usan `${MARIADB_CLI}` / `${MARIADB_ADM}`, resueltos por `utils/database.sh`
+  al sourcear (prefiere el canónico, cae al legacy si existe).
+- `scripts/verify.sh` — `check_tools()` verifica `mariadb`, `mariadb-admin`,
+  `mariadb-dump` en lugar de los nombres legacy.
+- `scripts/verify.sh` — `check_mariadb_version()` y los cuatro guards de
+  checks de schema/privilegios usan `${MARIADB_CLI}` en vez de `mysql`.
+- `utils/validation.sh` — `validate_ubuntu()` tiene default `"26.04"` en
+  lugar de `"24.04"`. El parámetro posicional sigue aceptando cualquier
+  prefijo explícito.
+
+---
+
 ## Diagnóstico
 
-> **MariaDB 11.x (Ubuntu 24.04 noble) — D-028:** los binarios
-> ``mysql`` / ``mysqladmin`` ya NO se instalan. Usar ``mariadb`` y
-> ``mariadb-admin``. Si convives con MariaDB <=10.11 los nombres
-> legacy todavia existen como aliases en el paquete.
+> **MariaDB 11.x (Ubuntu 24.04 noble / 26.04 resolute) — D-028:** los
+> binarios ``mysql`` / ``mysqladmin`` / ``mysqldump`` ya NO se instalan.
+> Usar ``mariadb``, ``mariadb-admin`` y ``mariadb-dump``. Si convives con
+> MariaDB <=10.11 los nombres legacy todavia existen como aliases en el
+> paquete.
 
 ```bash
 # Log de errores de MariaDB
