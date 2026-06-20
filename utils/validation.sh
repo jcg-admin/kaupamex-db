@@ -33,7 +33,7 @@ validate_root() {
 #   Default: "24.04"
 # -----------------------------------------------------------------------------
 validate_ubuntu() {
-    local required_prefix="${1:-24.04}"
+    local required_prefix="${1:-26.04}"
     local os_release="/etc/os-release"
 
     [[ -f "$os_release" ]] || { log_error "No se encontro ${os_release}"; return 1; }
