@@ -99,13 +99,13 @@ sudo systemctl reload mariadb 2>/dev/null \
 
 En entornos WSL2 según el
 **Procedimiento-Implementacion-Almacenamiento-WSL2-ecomerce-p001**,
-`backups/` está bind-montado sobre `/srv/backups/database/e-comerce-db`,
+`backups/` está bind-montado sobre `/opt/practicayoruba/backups/database`,
 que pertenece a `svc-dbdata` (UID 997, nologin). `develop` no puede
 escribir ahí por diseño del modelo de aislamiento por clase.
 
 **`git sparse-checkout disable` falla en este entorno** con
 `Permission denied` porque git intenta materializar `backups/` en el
-working tree. No intentar `sudo chown` sobre `/srv/backups/database/`
+working tree. No intentar `sudo chown` sobre `/opt/practicayoruba/backups/database/`
 — viola el modelo de aislamiento.
 
 **La solución correcta** es reconfigurar sparse-checkout en modo
@@ -123,8 +123,8 @@ ls scripts/init-env.sh
 
 # Ejecutar normalmente desde el repo
 bash scripts/init-env.sh \
-  --db-root /srv/repos/ecom/e-comerce-db \
-  --api-root /srv/repos/ecom/e-comerce-api
+  --db-root /opt/practicayoruba/db \
+  --api-root /opt/practicayoruba/api
 ```
 
 El patrón `'/*'` materializa todos los archivos en todos los

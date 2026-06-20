@@ -11,7 +11,7 @@
 #   - backup_db.sh existe en el repo (scripts/backup_db.sh)
 #   - El usuario svc-dbdata existe en el sistema
 #   - .env en el directorio raíz del repo con BACKUP_* configurado
-#   - El bind mount /srv/backups/database/e-comerce-db está activo
+#   - El bind mount /opt/practicayoruba/backups/database está activo
 #     (operaciones.md — sección "Bind mount Clase C → repo")
 #
 # Uso:
@@ -58,7 +58,7 @@ fi
 BACKUPS_DIR="${REPO_DIR}/backups"
 if [[ ! -d "${BACKUPS_DIR}" ]]; then
     log_warn "El directorio backups/ no existe o no está montado."
-    log_warn "Verificar bind mount /srv/backups/database/e-comerce-db → ${BACKUPS_DIR}"
+    log_warn "Verificar bind mount /opt/practicayoruba/backups/database → ${BACKUPS_DIR}"
     log_warn "El cron se instalará pero fallará si el mount no está activo."
 fi
 
@@ -67,7 +67,7 @@ log_info "Instalando cron de backup en ${CRON_FILE} ..."
 
 # El cron file usa la ruta absoluta al repo para ser independiente del cwd.
 # Corre como root via sudo -u svc-dbdata para que el output quede en
-# /srv/backups/database/e-comerce-db (propiedad de svc-dbdata).
+# /opt/practicayoruba/backups/database (propiedad de svc-dbdata).
 # La variable REPO_DIR se expande en tiempo de instalación — no en tiempo
 # de ejecución del cron — para que el path sea fijo.
 
