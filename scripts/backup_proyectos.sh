@@ -30,7 +30,7 @@ MANIFEST="${BACKUP_DIR}/${TIMESTAMP}_MANIFEST.txt"
 
 # Nombres de directorio de repos hermanos — configurable via BACKUP_REPOS en .env
 # Default: nombres reales de los repos en GitHub (resultado de git clone sin destino)
-BACKUP_REPOS_DEFAULT="e-comerce-api e-comerce-docs e-comerce-ui"
+BACKUP_REPOS_DEFAULT="e-commerce-api e-commerce-docs e-commerce-ui"
 
 # Cargar .env si existe
 ENV_FILE="${REPO_ROOT}/.env"
