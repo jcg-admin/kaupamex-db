@@ -63,14 +63,14 @@ done
 # Resolucion de API_ROOT
 # -----------------------------------------------------------------------------
 # Estrategia: si el operador no la pasa, probar layouts conocidos:
-#   1. Monorepo (jcg-admin/e-comerce): <parent>/api/
+#   1. Monorepo (jcg-admin/e-commerce): <parent>/api/
 #   2. Sibling clone:                  <parent>/PracticaYoruba-api/
-#   3. Sibling clone variante:         <parent>/e-comerce-api/
+#   3. Sibling clone variante:         <parent>/e-commerce-api/
 # Si ninguno existe, error 2 con sugerencia.
 # -----------------------------------------------------------------------------
 if [[ -z "$API_ROOT" ]]; then
     PARENT="$(cd "${DB_ROOT}/.." && pwd)"
-    for cand in "${PARENT}/api" "${PARENT}/PracticaYoruba-api" "${PARENT}/e-comerce-api"; do
+    for cand in "${PARENT}/api" "${PARENT}/PracticaYoruba-api" "${PARENT}/e-commerce-api"; do
         if [[ -f "${cand}/practicayoruba/.env.example" ]]; then
             API_ROOT="$cand"
             break

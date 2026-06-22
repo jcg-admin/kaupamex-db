@@ -35,7 +35,7 @@
 #   La contrasena definida aqui DEBE ser identica a la usada en
 #   configure_db_vm_schema_prod.sh. Contrasenas distintas causan
 #   "Access denied" al verificar la conexion QA.
-#   Ver .env.example de e-comerce-db: INVARIANTE DB_QA_PASSWORD = DB_PASSWORD.
+#   Ver .env.example de e-commerce-db: INVARIANTE DB_QA_PASSWORD = DB_PASSWORD.
 #
 # Privilegios QA (ALL PRIVILEGES):
 #   pytest necesita CREATE DATABASE / DROP DATABASE para test_practicayoruba_qa.
