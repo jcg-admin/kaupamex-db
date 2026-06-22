@@ -36,9 +36,9 @@
 #   bash scripts/init-env.sh
 #
 #   # Desde cualquier ruta (bind-mount, /tmp, etc.):
-#   bash /srv/repos/ecom/e-comerce-db/scripts/init-env.sh \
-#     --db-root /srv/repos/ecom/e-comerce-db \
-#     --api-root /srv/repos/ecom/e-comerce-api
+#   bash /opt/practicayoruba/db/scripts/init-env.sh \
+#     --db-root /opt/practicayoruba/db \
+#     --api-root /opt/practicayoruba/api
 # =============================================================================
 set -euo pipefail
 

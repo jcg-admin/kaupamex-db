@@ -1,0 +1,6 @@
+# Logs generados por los scripts
+logs/
+*.log
+
+# Credenciales reales — nunca al repo
+.env

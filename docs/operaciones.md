@@ -184,7 +184,7 @@ python3 scripts/check_db.py
 sudo bash scripts/setup_backup_cron.sh
 ```
 
-Prerequisito: el bind mount `/srv/backups/database/e-comerce-db → backups/`
+Prerequisito: el bind mount `/opt/practicayoruba/backups/database → backups/`
 debe estar activo antes de ejecutar el cron (ver sección "Bind mount Clase C").
 
 ### Ejecutar backup manualmente
@@ -329,9 +329,9 @@ relación cross-user es crítico.
 
 | Recurso | Propietario | Perms | Quién más lee |
 |---|---|---|---|
-| `/srv/repos/ecom/e-comerce-db/` (código) | `develop:develop` | 755/644 | Todos via "other" (incluido `www-data`) |
-| `/srv/backups/database/` (dumps) | `svc-dbdata:svc-dbdata` | 755 | Solo `svc-dbdata` y root |
-| `/srv/backups/project/` (backups proyecto) | `svc-backups:svc-backups` | 755 | Solo `svc-backups` y root |
+| `/opt/practicayoruba/db/` (código) | `develop:develop` | 755/644 | Todos via "other" (incluido `www-data`) |
+| `/opt/practicayoruba/backups/database/` (dumps) | `svc-dbdata:svc-dbdata` | 755 | Solo `svc-dbdata` y root |
+| `/opt/practicayoruba/backups/project/` (backups proyecto) | `svc-backups:svc-backups` | 755 | Solo `svc-backups` y root |
 | `/var/lib/mysql/` (MariaDB datadir) | `mysql:mysql` | 700 | Solo `mysql` y root |
 | `/etc/ssl/practicayoruba/cert.pem` (post-D-029) | `root:root` | 644 | Todos (cert público) |
 | `/etc/ssl/practicayoruba/key.pem` | `root:root` | 600 | Solo root |
@@ -361,15 +361,15 @@ Los repos `e-comerce-db` y `e-comerce-server` tienen un directorio
 accidental destruyan dumps:
 
 ```
-/srv/backups/database/e-comerce-db     → /srv/repos/ecom/e-comerce-db/backups
-/srv/backups/database/e-comerce-server → /srv/repos/ecom/e-comerce-server/backups
+/opt/practicayoruba/backups/database/e-comerce-db     → /opt/practicayoruba/db/backups
+/opt/practicayoruba/backups/database/e-comerce-server → /opt/practicayoruba/server/backups
 ```
 
 Configuración fstab en el procedimiento de provisioning, NO en este
 script. Si haces dumps manuales:
 
 ```bash
-sudo -u svc-dbdata mariadb-dump practicayoruba_db > /srv/repos/ecom/e-comerce-db/backups/dump-$(date -u +%Y-%m-%dT%H-%M-%SZ).sql
+sudo -u svc-dbdata mariadb-dump practicayoruba_db > /opt/practicayoruba/db/backups/dump-$(date -u +%Y-%m-%dT%H-%M-%SZ).sql
 ```
 
 El dump aparece dentro del checkout git pero `git status` lo ignora
@@ -383,7 +383,7 @@ saca del árbol real.
 | `mariadb -e "..."` como deploy → "Access denied" | Falta `sudo` (auth via socket requiere root) |
 | Django responde 500 + `OperationalError: Permission denied` en logs | `www-data` no puede leer SSL cert (post-D-029 ya no aplica) o el `.env` del api no es readable por `www-data` |
 | `mariadb-dump` falla con "Can't read dir of '/etc/mysql/'" | `mariadb-dump` corre como root via `sudo -u mysql`; chequear `--defaults-file` |
-| Apache `Could not open WSGI script /srv/repos/ecom/...wsgi.py` | Probable repo no clonado en `API_ROOT`, o perms del repo distintos de `755 develop:develop` |
+| Apache `Could not open WSGI script /opt/practicayoruba/api/...wsgi.py` | Probable repo no clonado en `API_ROOT`, o perms del repo distintos de `755 develop:develop` |
 
 ---
 

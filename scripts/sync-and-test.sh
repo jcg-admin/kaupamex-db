@@ -4,7 +4,7 @@
 # (fast-forward only) y, opcionalmente, reinstala dependencias.
 # Pensado para el entorno WSL2 `Ubuntu-ecomerce-p001`.
 #
-# Correr SIEMPRE como el usuario `develop` (dueno de Clase A /srv/repos/ecom).
+# Correr SIEMPRE como el usuario `develop` (dueno de Clase A /opt/practicayoruba).
 # NO usar `safe.directory` para `deploy`: rompe el aislamiento de Clase A.
 #
 # Uso:
@@ -14,7 +14,7 @@
 #                                                 #   de pruebas (no lo corre)
 #
 # Variables:
-#   ECOM_REPO_ROOT   raiz de los repos (default: /srv/repos/ecom)
+#   ECOM_REPO_ROOT   raiz de los repos (default: /opt/practicayoruba)
 #
 # Barandas de seguridad:
 #   - Aborta si no se corre como `develop`.
@@ -48,7 +48,7 @@ if [ "${_SAT_STABLE:-}" != "1" ]; then
     exec bash "$_tmp" "$@"
 fi
 
-REPO_ROOT="${ECOM_REPO_ROOT:-/srv/repos/ecom}"
+REPO_ROOT="${ECOM_REPO_ROOT:-/opt/practicayoruba}"
 REPOS=(e-comerce-api e-comerce-db e-comerce-docs e-comerce-server e-comerce-ui)
 
 print_test_steps() {

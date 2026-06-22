@@ -14,7 +14,7 @@
 # Un restore completo requiere AMBOS.
 #
 # MEDIA_ROOT por entorno (api/config/settings):
-#   producción → /srv/data/practicayoruba/media   (production.py:127)
+#   producción → /opt/practicayoruba/media   (production.py:127)
 #   desarrollo → BASE_DIR/media
 #
 # Genera por ejecución:
@@ -38,7 +38,7 @@
 #   bash scripts/backup_media.sh
 #
 # Variables del entorno / .env:
-#   MEDIA_ROOT             ruta del árbol media (default /srv/data/practicayoruba/media)
+#   MEDIA_ROOT             ruta del árbol media (default /opt/practicayoruba/media)
 #   BACKUP_DIR            destino de los backups (default ${PROJECT_ROOT}/backups)
 #   BACKUP_RETENTION_DAYS días de retención (default 30)
 # =============================================================================
@@ -80,7 +80,7 @@ fi
 # =============================================================================
 # Configuración
 # =============================================================================
-MEDIA_ROOT="${MEDIA_ROOT:-/srv/data/practicayoruba/media}"
+MEDIA_ROOT="${MEDIA_ROOT:-/opt/practicayoruba/media}"
 BACKUP_DIR="${BACKUP_DIR:-${PROJECT_ROOT}/backups}"
 # H-CICLO25-03: retención de backups.  Los archivos _media.tar.gz, _media.md5
 # y _media.log con más de BACKUP_RETENTION_DAYS días se eliminan al final de
