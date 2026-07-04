@@ -1,0 +1,85 @@
+#!/bin/bash
+# =============================================================================
+# .githooks/pre-commit — gate de calidad bash para el repo db
+# =============================================================================
+# Adaptado del framework THYROX. A diferencia del pre-commit de api/
+# (que valida .py de la app Django: lazy imports + canon-idioma), este
+# repo es bash-first (provisioners/, scripts/, utils/ en MariaDB) y NO
+# tiene superficie Python de aplicacion. Por eso el gate se ajusta al
+# contenido real del repo.
+#
+# Gate activo:
+#
+#   1. `set -euo pipefail` en todo *.sh staged con shebang bash/sh.
+#      Todos los scripts del repo declaran `set -euo pipefail` (ver
+#      scripts/start_db.sh, provisioners/mariadb/db_setup.sh, ...).
+#      Un script nuevo sin strict mode es un bug de robustez: falla
+#      silenciosa ante comandos que erroran, variables sin setear, o
+#      pipes rotos. El gate lo bloquea antes del commit.
+#
+# Nota: shellcheck no esta instalado en este entorno; cuando lo este,
+# este gate puede extenderse para correr `shellcheck` sobre los *.sh
+# staged (ver bloque comentado al final).
+#
+# Activacion:
+#   cd /home/user/e-commerce-db
+#   bash scripts/install-hooks.sh   # o: git config core.hooksPath .githooks
+#
+# Skip manual: 'git commit --no-verify' (solo emergencias documentadas).
+# =============================================================================
+set -euo pipefail
+
+EXIT_CODE=0
+
+# Recolectar *.sh staged (Added/Copied/Modified).
+STAGED_SH=()
+while IFS= read -r line; do
+    [[ -z "$line" ]] && continue
+    STAGED_SH+=("$line")
+done < <(
+    git diff --cached --name-only --diff-filter=ACM -- '*.sh' 2>/dev/null || true
+)
+
+if [[ "${#STAGED_SH[@]}" -eq 0 ]]; then
+    exit 0
+fi
+
+# ─── Gate 1: strict mode en scripts bash/sh ──────────────────────────────────
+for f in "${STAGED_SH[@]}"; do
+    [[ -f "$f" ]] || continue   # borrados ya filtrados, pero por si acaso
+
+    # Solo aplica a shebang bash/sh.
+    FIRST_LINE="$(head -1 "$f" 2>/dev/null || true)"
+    case "$FIRST_LINE" in
+        '#!'*bash*|'#!'*/sh|'#!'*' sh') ;;
+        *) continue ;;
+    esac
+
+    # Buscar 'set -euo pipefail' (o equivalente con las 3 flags en
+    # cualquier orden) en las primeras 40 lineas.
+    if head -40 "$f" | grep -Eq '^[[:space:]]*set[[:space:]]+-[a-z]*e[a-z]*u[a-z]*o[[:space:]]+pipefail|^[[:space:]]*set[[:space:]]+-euo[[:space:]]+pipefail'; then
+        continue
+    fi
+    # Fallback: aceptar 'set -e', 'set -u' y 'set -o pipefail' en lineas
+    # separadas.
+    if head -40 "$f" | grep -q 'set -e' \
+        && head -40 "$f" | grep -q 'set -u' \
+        && head -40 "$f" | grep -q 'set -o pipefail'; then
+        continue
+    fi
+
+    echo "" >&2
+    echo "ERROR pre-commit: $f no declara 'set -euo pipefail'" >&2
+    echo "  Todos los scripts del repo usan strict mode. Agregalo tras" >&2
+    echo "  el shebang. Skip con --no-verify solo si esta justificado." >&2
+    EXIT_CODE=1
+done
+
+# ─── Gate 2 (futuro): shellcheck ─────────────────────────────────────────────
+# Cuando shellcheck este disponible en el entorno, descomentar:
+#
+# if command -v shellcheck >/dev/null 2>&1; then
+#     shellcheck "${STAGED_SH[@]}" || EXIT_CODE=1
+# fi
+
+exit "$EXIT_CODE"
