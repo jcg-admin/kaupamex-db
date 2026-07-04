@@ -1,0 +1,85 @@
+#!/bin/bash
+# =============================================================================
+# .githooks/commit-msg — valida convencion Tim Pope para commit messages
+# =============================================================================
+# Adaptado del framework THYROX (referencia .claude/ de los submodulos
+# api/ui/docs de e-comerce). Este submodulo db se saltó en la adopcion
+# previa; este hook cierra esa brecha.
+#
+# Cargado via 'git config core.hooksPath .githooks' (ver
+# scripts/install-hooks.sh). Mantiene el repo consistente con la
+# convencion Tim Pope documentada en la gobernanza de e-comerce
+# (../e-comerce/.claude/rules/commit-conventions.md — ver CLAUDE.md).
+#
+# Reglas validadas (las 4 mas mecanicas; el body es responsabilidad
+# del autor — demasiado heuristico):
+#
+#   1. Subject <= 72 caracteres (limite absoluto; recomendado <=50).
+#   2. Subject empieza con mayuscula.
+#   3. Subject NO termina con punto.
+#   4. Subject en imperativo (heuristica: primer verbo no termina en
+#      'ed' o 'ing').
+#
+# Excepciones (no se valida):
+#   - Merge commits ("Merge ...").
+#   - Revert commits ("Revert ...").
+#   - Fixup/squash autogenerados ("fixup!", "squash!", "amend!").
+#
+# Para skip manual: 'git commit --no-verify' (NO usar salvo emergencia
+# documentada).
+# =============================================================================
+set -euo pipefail
+
+COMMIT_MSG_FILE="$1"
+[[ -f "$COMMIT_MSG_FILE" ]] || exit 0
+
+# Primera linea no-vacia (subject).
+SUBJECT="$(grep -m1 -v '^$' "$COMMIT_MSG_FILE" || true)"
+[[ -n "$SUBJECT" ]] || exit 0
+
+# Excepciones — auto-generados por git.
+case "$SUBJECT" in
+    "Merge "*|"Revert "*|"fixup! "*|"squash! "*|"amend! "*)
+        exit 0
+        ;;
+esac
+
+EXIT=0
+fail() {
+    echo "" >&2
+    echo "ERROR commit-msg: $*" >&2
+    echo "  Subject: '$SUBJECT'" >&2
+    echo "  Ver: CLAUDE.md (Gobernanza) — commit-conventions Tim Pope" >&2
+    EXIT=1
+}
+
+# 1) Largo del subject (limite absoluto 72 ch).
+LEN="${#SUBJECT}"
+if (( LEN > 72 )); then
+    fail "subject de $LEN caracteres excede el limite de 72"
+fi
+
+# 2) Empieza con mayuscula (letra A-Z).
+FIRST_CHAR="${SUBJECT:0:1}"
+if ! [[ "$FIRST_CHAR" =~ [A-Z] ]]; then
+    fail "subject debe empezar con mayuscula (encontrado: '$FIRST_CHAR')"
+fi
+
+# 3) No termina con punto.
+LAST_CHAR="${SUBJECT: -1}"
+if [[ "$LAST_CHAR" == "." ]]; then
+    fail "subject no debe terminar con punto"
+fi
+
+# 4) Heuristica imperativa: la primera palabra (donde vive el verbo en
+# imperativo: "Add", "Fix", "Remove", ...) no debe terminar en 'ed' o
+# 'ing'. Las palabras siguientes pueden terminar asi legitimamente.
+LOWER_SUBJECT="$(echo "$SUBJECT" | tr '[:upper:]' '[:lower:]')"
+FIRST_WORD="${LOWER_SUBJECT%% *}"
+case "$FIRST_WORD" in
+    *ing|*ed)
+        fail "subject parece no-imperativo (primer verbo: '$FIRST_WORD'). Usar imperativo (Add, Fix, Remove, ...)"
+        ;;
+esac
+
+exit "$EXIT"
