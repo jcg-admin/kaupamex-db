@@ -52,7 +52,7 @@ Orden obligatorio. Un error en cualquier paso bloquea los siguientes.
 
 ```bash
 # ── En PracticaYoruba-db ────────────────────────────────────────────
-cd e-comerce-db
+cd e-commerce-db
 cp .env.example .env
 # Editar .env con las credenciales reales
 
@@ -85,7 +85,7 @@ DJANGO_SETTINGS_MODULE=config.settings.testing \
 
 # 6. Verificar BD desde PracticaYoruba-db (script reporta N checks
 #    dinamicamente en el header — DEC-DB-4, sin magic number).
-cd e-comerce-db
+cd e-commerce-db
 bash scripts/verify.sh
 
 # 7. Verificar BD + ORM desde PracticaYoruba-db (Python; ver check_db.py
@@ -174,7 +174,7 @@ nohup su -s /bin/bash mysql -c \
 ### `check_db.py` falla con `ImportError`
 
 ```bash
-cd e-comerce-db
+cd e-commerce-db
 pip install -r requirements.txt
 # Ubuntu requiere el paquete del sistema:
 # sudo apt-get install libmysqlclient-dev
