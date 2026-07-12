@@ -3,7 +3,7 @@
 ## `sepomex-codigos-postales.txt`
 
 **Catálogo Nacional de Códigos Postales** de México (SEPOMEX / Correos de
-México). Es la **fuente de verdad** para poblar la tabla `catalog_postal_code`
+México). Es la **fuente de verdad** para poblar la tabla `geo_catalog_postal_code`
 (modelo Django en `api`, iniciativa `crear-modelo-usuario-party`, DEC-02) y
 también alimenta el trabajo de direcciones de envío / zonas.
 
@@ -30,7 +30,7 @@ durante los tests E2E.
 d_codigo|d_asenta|d_tipo_asenta|D_mnpio|d_estado|d_ciudad|d_CP|c_estado|c_oficina|c_CP|c_tipo_asenta|c_mnpio|id_asenta_cpcons|d_zona|c_cve_ciudad
 ```
 
-Mapeo a campos en inglés del modelo `catalog_postal_code`: ver la decisión
+Mapeo a campos en inglés del modelo `CatalogPostalCode` (tabla `geo_catalog_postal_code`): ver la decisión
 DEC-02 en
 `docs/source/gestion/pm/api/iniciativas/crear-modelo-usuario-party/decisiones-crear-modelo-usuario-party.rst`.
 
