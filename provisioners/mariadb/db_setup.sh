@@ -20,7 +20,7 @@
 #     'sudo: a password is required'.
 #
 # Variables leidas desde .env en la raiz del repositorio (con defaults):
-#   DB_NAME      (default: practicayoruba_db)
+#   DB_NAME      (default: kaupamex_db)
 #   DB_USER      (default: django_user)
 #   DB_PASSWORD  (default: django_pass)
 #   DB_HOST      (default: 127.0.0.1)
@@ -55,7 +55,7 @@ if [[ -f "$ENV_FILE" ]]; then
     done < <(grep -E '^[A-Z_][A-Z0-9_]*=' "$ENV_FILE")
 fi
 
-DB_NAME="${DB_NAME:-practicayoruba_db}"
+DB_NAME="${DB_NAME:-kaupamex_db}"
 DB_USER="${DB_USER:-django_user}"
 DB_PASSWORD="${DB_PASSWORD:?DB_PASSWORD must be set in environment or .env}"
 DB_HOST="${DB_HOST:-127.0.0.1}"

@@ -8,7 +8,7 @@
 #   ./inspect-flow.sh all          — ambos
 #
 # Variables consumidas (.env o entorno):
-#   DB_NAME   default: practicayoruba_db
+#   DB_NAME   default: kaupamex_db
 #   DB_USER   default: django_user
 #   DB_HOST   default: 127.0.0.1
 #   DB_PORT   default: 3306
@@ -33,7 +33,7 @@ if [[ -f "$REPO_ROOT/.env" ]]; then
     set +a
 fi
 
-DB_NAME="${DB_NAME:-practicayoruba_db}"
+DB_NAME="${DB_NAME:-kaupamex_db}"
 DB_USER="${DB_USER:-django_user}"
 DB_HOST="${DB_HOST:-127.0.0.1}"
 DB_PORT="${DB_PORT:-3306}"

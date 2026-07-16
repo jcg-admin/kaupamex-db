@@ -5,9 +5,9 @@ SELECT 'PROCESO INICIO' AS evento, NOW() AS timestamp_inicio FROM DUAL;
     Version         : 2.0.0
     Create          : MAYO/2026
     Engine          : MariaDB 11.8 LTS (ADR-009)
-    Schema          : practicayoruba_db
+    Schema          : kaupamex_db
     Prerequisito    : v_published_catalog — desplegar antes que esta vista
-    Despliegue      : mysql --socket=/run/mysqld/mysqld.sock practicayoruba_db < v_featured_products.sql
+    Despliegue      : mysql --socket=/run/mysqld/mysqld.sock kaupamex_db < v_featured_products.sql
     Notas           : Renombrada de v_productos_destacados (v1.0.0) a v_featured_products (v2.0.0).
                       Subconjunto de v_published_catalog donde is_featured=1.
                       El orden de despliegue es obligatorio:

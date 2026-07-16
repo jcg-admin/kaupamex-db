@@ -1,7 +1,7 @@
 # scripts/mapping/ — Mapeo de tablas por flujo funcional
 
 Este directorio contiene scripts que, contra la base
-`practicayoruba_db`, inspeccionan las tablas reales involucradas en
+`kaupamex_db`, inspeccionan las tablas reales involucradas en
 flujos funcionales claves del e-commerce. No modifica datos: solo
 lee schema (`SHOW CREATE TABLE`, `INFORMATION_SCHEMA`) y conteos.
 

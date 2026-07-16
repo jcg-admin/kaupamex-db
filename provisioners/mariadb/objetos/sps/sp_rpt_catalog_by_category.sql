@@ -5,9 +5,9 @@ SELECT 'PROCESO INICIO' AS evento, NOW() AS timestamp_inicio FROM DUAL;
     Version         : 3.0.0
     Create          : MAYO/2026
     Engine          : MariaDB 11.8 LTS (ADR-009)
-    Schema          : practicayoruba_db
+    Schema          : kaupamex_db
     Prerequisito    : Migraciones Django aplicadas (catalogue_product, catalogue_category)
-    Despliegue      : mysql --socket=/run/mysqld/mysqld.sock practicayoruba_db < sp_rpt_catalog_by_category.sql
+    Despliegue      : mysql --socket=/run/mysqld/mysqld.sock kaupamex_db < sp_rpt_catalog_by_category.sql
     Notas           : Renombrado de sp_rpt_catalogo_por_categoria (v1.0.0) a sp_rpt_catalog_by_category (v2.0.0).
                       Sin parámetros — retorna el estado actual del catálogo.
                       LEFT JOIN para incluir categorías sin productos (total_products=0).

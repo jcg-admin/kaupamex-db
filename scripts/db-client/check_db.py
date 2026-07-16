@@ -13,7 +13,7 @@ Checks realizados:
   2. Conectividad SSL con practicayoruba_app (DML)
   3. SSL activo en la conexión (Ssl_cipher no vacío)
   4. require_secure_transport rechaza conexión sin SSL
-  5. Schemas existentes: practicayoruba_db, practicayoruba_qa
+  5. Schemas existentes: kaupamex_db, kaupamex_qa
   6. Permisos readonly: SELECT sí, INSERT no
   7. Permisos app en prod: DML sí, DROP no
   8. Permisos app en QA: ALL sí
@@ -238,7 +238,7 @@ def check_ssl_rechaza_sin_ssl(cfg_readonly: dict, log: Logger) -> bool:
 
 
 def check_schemas(cfg_app: dict, log: Logger) -> bool:
-    """Check 5: schemas practicayoruba_db y practicayoruba_qa existen."""
+    """Check 5: schemas kaupamex_db y kaupamex_qa existen."""
     try:
         cfg = {**cfg_app, 'database': None}
         cnx = connect(cfg)
@@ -248,7 +248,7 @@ def check_schemas(cfg_app: dict, log: Logger) -> bool:
         log.info(f"Schemas encontrados: {schemas}")
 
         ok = True
-        for s in ['practicayoruba_db', 'practicayoruba_qa']:
+        for s in ['kaupamex_db', 'kaupamex_qa']:
             if s in schemas:
                 log.ok(f"Schema {s} existe")
             else:
@@ -263,15 +263,15 @@ def check_schemas(cfg_app: dict, log: Logger) -> bool:
 def check_permisos_readonly(cfg_readonly: dict, log: Logger) -> bool:
     """Check 6: readonly puede SELECT, no puede INSERT."""
     ok = True
-    cfg = {**cfg_readonly, 'database': 'practicayoruba_db'}
+    cfg = {**cfg_readonly, 'database': 'kaupamex_db'}
     try:
         cnx = connect(cfg)
 
         # SELECT debe funcionar (en tabla de sistema)
         try:
             query_one(cnx, "SELECT COUNT(*) FROM information_schema.tables "
-                           "WHERE table_schema='practicayoruba_db'")
-            log.ok("readonly: SELECT en practicayoruba_db OK")
+                           "WHERE table_schema='kaupamex_db'")
+            log.ok("readonly: SELECT en kaupamex_db OK")
         except MySQLError as e:
             log.error(f"readonly: SELECT falla — {e}")
             ok = False
@@ -294,15 +294,15 @@ def check_permisos_readonly(cfg_readonly: dict, log: Logger) -> bool:
 
 
 def check_permisos_app_prod(cfg_app: dict, log: Logger) -> bool:
-    """Check 7: app puede DML en practicayoruba_db, no puede DROP DATABASE.
+    """Check 7: app puede DML en kaupamex_db, no puede DROP DATABASE.
 
     practicayoruba_app tiene solo DML (SELECT, INSERT, UPDATE, DELETE) en
-    practicayoruba_db — no tiene CREATE TABLE permanente. Se usa
+    kaupamex_db — no tiene CREATE TABLE permanente. Se usa
     CREATE TEMPORARY TABLE que no requiere privilegio CREATE y solo
     existe en la sesion actual.
     """
     ok = True
-    cfg = {**cfg_app, 'database': 'practicayoruba_db'}
+    cfg = {**cfg_app, 'database': 'kaupamex_db'}
     try:
         cnx = connect(cfg)
         cur = cnx.cursor()
@@ -325,7 +325,7 @@ def check_permisos_app_prod(cfg_app: dict, log: Logger) -> bool:
 
             # SELECT funcional
             cur.execute("SELECT COUNT(*) FROM information_schema.tables "
-                        "WHERE table_schema = 'practicayoruba_db'")
+                        "WHERE table_schema = 'kaupamex_db'")
             cur.fetchall()  # consumir resultados antes del siguiente query
             log.ok("app prod: SELECT funcional OK")
         except MySQLError as e:
@@ -334,7 +334,7 @@ def check_permisos_app_prod(cfg_app: dict, log: Logger) -> bool:
 
         # DROP DATABASE debe ser rechazado
         try:
-            cur.execute("DROP DATABASE practicayoruba_db")
+            cur.execute("DROP DATABASE kaupamex_db")
             log.error("app prod: DROP DATABASE aceptado — permisos excesivos")
             ok = False
         except MySQLError:
@@ -349,9 +349,9 @@ def check_permisos_app_prod(cfg_app: dict, log: Logger) -> bool:
 
 
 def check_permisos_app_qa(cfg_app_qa: dict, log: Logger) -> bool:
-    """Check 8: app puede ALL PRIVILEGES en practicayoruba_qa."""
+    """Check 8: app puede ALL PRIVILEGES en kaupamex_qa."""
     ok = True
-    cfg = {**cfg_app_qa, 'database': 'practicayoruba_qa'}
+    cfg = {**cfg_app_qa, 'database': 'kaupamex_qa'}
     try:
         cnx = connect(cfg)
         cur = cnx.cursor()
@@ -390,21 +390,21 @@ def main():
         'host': host, 'port': port,
         'user': env.get('DB_READONLY_USER', 'practicayoruba_readonly'),
         'password': env.get('DB_READONLY_PASSWORD', ''),
-        'database': env.get('DB_NAME', 'practicayoruba_db'),
+        'database': env.get('DB_NAME', 'kaupamex_db'),
         'ssl_ca': ssl_ca,
     }
     cfg_app = {
         'host': host, 'port': port,
         'user': env.get('DB_USER', 'practicayoruba_app'),
         'password': env.get('DB_PASSWORD', ''),
-        'database': env.get('DB_NAME', 'practicayoruba_db'),
+        'database': env.get('DB_NAME', 'kaupamex_db'),
         'ssl_ca': ssl_ca,
     }
     cfg_app_qa = {
         'host': host, 'port': port,
         'user': env.get('DB_QA_USER', 'practicayoruba_app'),
         'password': env.get('DB_QA_PASSWORD', ''),
-        'database': env.get('DB_QA_NAME', 'practicayoruba_qa'),
+        'database': env.get('DB_QA_NAME', 'kaupamex_qa'),
         'ssl_ca': ssl_ca,
     }
 
@@ -418,7 +418,7 @@ def main():
             lambda: check_ssl_cifrado(cfg_readonly, log)),
         (3, 8, "Conexión sin SSL rechazada (require_secure_transport)",
             lambda: check_ssl_rechaza_sin_ssl(cfg_readonly, log)),
-        (4, 8, "Schemas practicayoruba_db y practicayoruba_qa existen",
+        (4, 8, "Schemas kaupamex_db y kaupamex_qa existen",
             lambda: check_schemas(cfg_app, log)),
         (5, 8, "Permisos readonly: SELECT sí, CREATE TABLE no",
             lambda: check_permisos_readonly(cfg_readonly, log)),

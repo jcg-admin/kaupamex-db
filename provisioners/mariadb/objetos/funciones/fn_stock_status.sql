@@ -5,9 +5,9 @@ SELECT 'PROCESO INICIO' AS evento, NOW() AS timestamp_inicio FROM DUAL;
     Version         : 2.0.0
     Create          : MAYO/2026
     Engine          : MariaDB 11.8 LTS (ADR-009)
-    Schema          : practicayoruba_db
+    Schema          : kaupamex_db
     Prerequisito    : Ninguno — clasificación pura sin dependencias externas
-    Despliegue      : mysql --socket=/run/mysqld/mysqld.sock practicayoruba_db < fn_stock_status.sql
+    Despliegue      : mysql --socket=/run/mysqld/mysqld.sock kaupamex_db < fn_stock_status.sql
     Notas           : p_umbral renombrado a p_threshold (v2.0.0). Recibe el threshold como parámetro — no lee settings_sitesettings
                       directamente porque las funciones DETERMINISTIC no pueden hacer SELECT.
                       El caller pasa settings_sitesettings.min_stock_threshold.
