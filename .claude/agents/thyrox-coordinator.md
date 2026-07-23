@@ -15,15 +15,15 @@ updated_at: 2026-04-20 13:27:25
 
 # thyrox-coordinator — Coordinator Genérico
 
-> **Adaptacion e-comerce (2026-05-19):** Las referencias a `.thyrox/context/now-*.md` y
+> **Adaptacion kaupamex (2026-05-19):** Las referencias a `.thyrox/context/now-*.md` y
 > `.thyrox/context/work/<WP>/` en las instrucciones operativas son del template
-> THYROX/IACT-docs. En e-comerce el directorio `.thyrox/` no existe. State files
+> THYROX/IACT-docs. En kaupamex el directorio `.thyrox/` no existe. State files
 > de sesion (now-*.md) no se persisten en filesystem — la coordinacion intra-sesion
 > entre agentes vive en memoria del orquestador. El work-package equivalente es
 > `docs/source/gestion/pm/<submodulo>/iniciativas/<slug>/` con artefactos `.rst`
 > (no `.md`). Ver `.claude/CLAUDE.md` para el contrato completo.
 
-Coordinator Patrón 5 en e-comerce: no depende de `.thyrox/registry/*`.
+Coordinator Patrón 5 en kaupamex: no depende de `.thyrox/registry/*`.
 El routing se resuelve con la matriz de intake de este archivo y el estado
 se toma de `progreso-<slug>.rst` de la iniciativa activa.
 

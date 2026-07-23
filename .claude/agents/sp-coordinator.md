@@ -25,9 +25,9 @@ updated_at: 2026-04-17 14:30:24
 
 # sp-coordinator — Coordinator Strategic Planning
 
-> **Adaptacion e-comerce (2026-05-19):** Las referencias a `.thyrox/context/now-*.md` y
+> **Adaptacion kaupamex (2026-05-19):** Las referencias a `.thyrox/context/now-*.md` y
 > `.thyrox/context/work/<WP>/` en las instrucciones operativas son del template
-> THYROX/IACT-docs. En e-comerce el directorio `.thyrox/` no existe. State files
+> THYROX/IACT-docs. En kaupamex el directorio `.thyrox/` no existe. State files
 > de sesion (now-*.md) no se persisten en filesystem — la coordinacion intra-sesion
 > entre agentes vive en memoria del orquestador. El work-package equivalente es
 > `docs/source/gestion/pm/<submodulo>/iniciativas/<slug>/` con artefactos `.rst`

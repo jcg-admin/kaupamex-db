@@ -22,7 +22,7 @@
 # staged (ver bloque comentado al final).
 #
 # Activacion:
-#   cd /home/user/e-commerce-db
+#   cd /home/user/kaupamex-db
 #   bash scripts/install-hooks.sh   # o: git config core.hooksPath .githooks
 #
 # Skip manual: 'git commit --no-verify' (solo emergencias documentadas).

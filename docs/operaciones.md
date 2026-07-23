@@ -4,16 +4,16 @@ Runbook de operaciones para PracticaYoruba-db.
 
 > **Naming — producto vs repo (T-E3, H-05, DEC-DB-8):**
 > Este runbook usa indistintamente "PracticaYoruba-db" y
-> "e-commerce-db". Son la misma cosa vista desde dos angulos:
+> "kaupamex-db". Son la misma cosa vista desde dos angulos:
 >
 > - **PracticaYoruba** es el nombre del **producto** (e-commerce
 >   de productos Yoruba). Se usa internamente en el codigo
 >   (schemas `practicayoruba_db`, `practicayoruba_qa`, usuario
 >   `django_user`, archivo `99-practicayoruba.cnf`, mensajes de
 >   log).
-> - **e-commerce-db** es el nombre del **repositorio** en GitHub
->   (`jcg-admin/e-commerce-db`). Forma parte del monorepo
->   `jcg-admin/e-commerce` junto a `e-commerce-{api,ui,server,docs}`.
+> - **kaupamex-db** es el nombre del **repositorio** en GitHub
+>   (`jcg-admin/kaupamex-db`). Forma parte del monorepo
+>   `jcg-admin/kaupamex` junto a `kaupamex-{api,ui,server,docs}`.
 >
 > No renombrar uno al otro sin decision explicita de producto
 > (CLAUDE.md lo marca como Locked Decision). Las 11 referencias
@@ -27,7 +27,7 @@ Runbook de operaciones para PracticaYoruba-db.
 ```bash
 # 1. Clonar el repositorio
 git clone <repo>
-cd e-commerce-db
+cd kaupamex-db
 
 # 2. Crear .env desde la plantilla
 cp .env.example .env
@@ -142,7 +142,7 @@ El fixture `mariadb_keepalive` vive en
 Para una sesión nueva, el punto de entrada correcto es:
 
 ```bash
-cd e-commerce-db
+cd kaupamex-db
 bash scripts/start_db.sh
 
 # Luego provisionar QA si es la primera vez:
@@ -347,7 +347,7 @@ relación cross-user es crítico.
   `/var/lib/mysql/`.
 - **Django ORM (vía Apache mod-wsgi)**: como `www-data`. Conecta a
   MariaDB con credenciales `django_user`/`django_pass` definidas en
-  `e-commerce-api/practicayoruba/.env`. NO usa el socket de unix; usa
+  `kaupamex-api/practicayoruba/.env`. NO usa el socket de unix; usa
   TCP a `127.0.0.1:3306`.
 - **Backups manuales / scripts cron**: deberían correr como
   `svc-dbdata` (pero `nologin` impide invocación interactiva — se
@@ -355,14 +355,14 @@ relación cross-user es crítico.
 
 ### Bind mount Clase C → repo
 
-Los repos `e-commerce-db` y `e-commerce-server` tienen un directorio
+Los repos `kaupamex-db` y `kaupamex-server` tienen un directorio
 `backups/` que vive físicamente fuera del checkout git (Clase C, owner
 `svc-dbdata`). Esto previene que `git clean -fdx` o un `git checkout`
 accidental destruyan dumps:
 
 ```
-/opt/practicayoruba/backups/database/e-commerce-db     → /opt/practicayoruba/db/backups
-/opt/practicayoruba/backups/database/e-commerce-server → /opt/practicayoruba/server/backups
+/opt/practicayoruba/backups/database/kaupamex-db     → /opt/practicayoruba/db/backups
+/opt/practicayoruba/backups/database/kaupamex-server → /opt/practicayoruba/server/backups
 ```
 
 Configuración fstab en el procedimiento de provisioning, NO en este

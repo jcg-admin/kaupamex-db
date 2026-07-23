@@ -21,7 +21,7 @@ updated_at: 2026-05-21 03:19:20
 
 # rup-coordinator — Coordinator RUP
 
-> **Adaptacion e-comerce v2 (2026-05-21).** En e-comerce el directorio
+> **Adaptacion kaupamex v2 (2026-05-21).** En kaupamex el directorio
 > `.thyrox/` no existe y los archivos `now-*.md` del template no se
 > usan. La coordinacion intra-sesion **persiste en el submodulo
 > ``docs/source/``** — concretamente en
@@ -85,7 +85,7 @@ Business Modeling, Requirements, Analysis & Design, Implementation,
 Test, Deployment, Configuration & Change Management, Project
 Management, Environment.
 
-## Mapping RUP -> docs/source/ e-comerce
+## Mapping RUP -> docs/source/ kaupamex
 
 `docs/source/` ya tiene una estructura RUP-friendly extensa.
 Cada salida canonica RUP se materializa en (a) los 6 artefactos
@@ -128,7 +128,7 @@ codigo. **No se crean archivos `rup-<phase>.rst` separados.**
 | Vista de procesos                           | ``docs/source/arquitectura-tecnica/process-view/``             | checkout-sequence, payment-webhook-sequence |
 | Vista de implementacion                     | ``docs/source/arquitectura-tecnica/implementation-view/``      | build-and-release, package-overview |
 | Vista de despliegue                         | ``docs/source/arquitectura-tecnica/deploy-view/``              | standard-topology |
-| Vista de casos de uso                       | ``docs/source/arquitectura-tecnica/use-case-view/``            | panorama-e-comerce |
+| Vista de casos de uso                       | ``docs/source/arquitectura-tecnica/use-case-view/``            | panorama-kaupamex |
 | Modelo de dominio                           | ``docs/source/arquitectura-tecnica/domain-model/``             | |
 | Vista de contexto / sistema / operacional   | ``docs/source/arquitectura-tecnica/{context,system,operational}-view/`` | Extras del proyecto |
 | Strategy / cache / scheduled tasks          | ``docs/source/arquitectura-tecnica/{cache-strategy,scheduled-tasks}.rst`` | |
@@ -187,7 +187,7 @@ Cuando el ejecutor elige "nueva iteracion" en una fase:
 
 ## Sesion / estado activo
 
-En e-comerce **no hay `now.md`**. El estado activo y la coordinacion
+En kaupamex **no hay `now.md`**. El estado activo y la coordinacion
 intra-sesion **persisten en ``docs/source/``**, concretamente en los
 artefactos `.rst` de la iniciativa activa. Los agentes hijos leen y
 escriben directamente sobre esos archivos. Fuentes de verdad:

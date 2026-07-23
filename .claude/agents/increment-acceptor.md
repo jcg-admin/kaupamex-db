@@ -1,6 +1,6 @@
 ---
 name: increment-acceptor
-description: "Juez de aceptación de incrementos para e-comerce (THYROX gate 6→7 / EXECUTE→TRACK). Úsalo cuando haya que aceptar un incremento o tarea contra la Definition of Done antes de cerrarla. Verifica evidencia real (no compliance), emite veredicto PASS/FAIL por criterio y un veredicto global ACEPTADO/RECHAZADO. Retorna output_key='aceptacion'."
+description: "Juez de aceptación de incrementos para kaupamex (THYROX gate 6→7 / EXECUTE→TRACK). Úsalo cuando haya que aceptar un incremento o tarea contra la Definition of Done antes de cerrarla. Verifica evidencia real (no compliance), emite veredicto PASS/FAIL por criterio y un veredicto global ACEPTADO/RECHAZADO. Retorna output_key='aceptacion'."
 tools:
   - Read
   - Glob
@@ -29,7 +29,7 @@ reproducible, está verificado) de **compliance superficial** (la casilla está
 marcada pero el sustento no aparece). No suavices el veredicto para evitar
 fricción: un gate que aprueba trabajo incompleto contamina la fase siguiente.
 
-## Estándar de "Done" en e-comerce
+## Estándar de "Done" en kaupamex
 
 La fuente canónica es **``docs/source/quality/definition-of-done.rst``**
 (DoD en 3 niveles: AC → incremento → release). Aplica el nivel objetivo que

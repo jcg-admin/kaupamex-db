@@ -3,7 +3,7 @@ type: Convención de Proyecto
 category: Operación del agente — selección de modelo para subagentes
 version: 1.0.0
 created_at: 2026-07-05T00:56:41
-applies_to: e-comerce v1.0.0+
+applies_to: kaupamex v1.0.0+
 origen: directiva ejecutor 2026-07-05 ("no es necesario que ejecutes solo
   agentes del modelo Opus; usa Fable 5 / Sonnet 5 / Haiku 4.5 para
   equilibrar el gasto de tokens")
