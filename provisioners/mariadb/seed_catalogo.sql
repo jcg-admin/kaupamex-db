@@ -11,10 +11,10 @@
 --   - catalogue_category:    slug UNIQUE
 --   - catalogue_product:     sku UNIQUE
 --
--- Prerequisito: Migraciones Django aplicadas en practicayoruba_db.
+-- Prerequisito: Migraciones Django aplicadas en kaupamex_db.
 --
 -- Uso:
---   mysql --socket=/run/mysqld/mysqld.sock practicayoruba_db < seed_catalogo.sql
+--   mysql --socket=/run/mysqld/mysqld.sock kaupamex_db < seed_catalogo.sql
 -- =============================================================================
 
 SELECT 'PROCESO INICIO' AS evento, NOW() AS timestamp_inicio FROM DUAL;

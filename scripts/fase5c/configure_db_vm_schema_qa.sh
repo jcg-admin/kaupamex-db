@@ -1,7 +1,7 @@
 #!/bin/bash
 # =============================================================================
 # configure_db_vm_schema_qa.sh
-# Crea el schema de QA (practicayoruba_qa) y el usuario practicayoruba_app
+# Crea el schema de QA (kaupamex_qa) y el usuario practicayoruba_app
 # en MariaDB 11.8 en ecom-db-vm.
 #
 # Ejecutar DENTRO de ecom-db-vm como:
@@ -20,10 +20,10 @@
 #   - Socket /run/mysqld/mysqld.sock disponible
 #
 # Qué crea:
-#   Schema:  practicayoruba_qa  (utf8mb4 / utf8mb4_unicode_ci)
+#   Schema:  kaupamex_qa  (utf8mb4 / utf8mb4_unicode_ci)
 #   Usuario: practicayoruba_app (hosts: %, localhost, 127.0.0.1)
-#   GRANTs:  ALL PRIVILEGES en practicayoruba_qa.*
-#            ALL PRIVILEGES en test_practicayoruba_qa.*  (pytest)
+#   GRANTs:  ALL PRIVILEGES en kaupamex_qa.*
+#            ALL PRIVILEGES en test_kaupamex_qa.*  (pytest)
 #
 # Naming: practicayoruba_app = nombre_producto + rol (app)
 #   Convencion confirmada: nombre del proyecto + rol.
@@ -38,7 +38,7 @@
 #   Ver .env.example de e-commerce-db: INVARIANTE DB_QA_PASSWORD = DB_PASSWORD.
 #
 # Privilegios QA (ALL PRIVILEGES):
-#   pytest necesita CREATE DATABASE / DROP DATABASE para test_practicayoruba_qa.
+#   pytest necesita CREATE DATABASE / DROP DATABASE para test_kaupamex_qa.
 #   En QA no aplica PoLP estricto -- es el entorno de pruebas.
 #   En produccion los privilegios son DML limitados (ver configure_db_vm_schema_prod.sh).
 #
@@ -48,7 +48,7 @@
 #   GRANTs ya aplicados -> no-op (GRANT es idempotente en MariaDB)
 #
 # Hallazgos producidos:
-#   H-C6a-1-VM3 -- practicayoruba_qa creado (utf8mb4_unicode_ci)
+#   H-C6a-1-VM3 -- kaupamex_qa creado (utf8mb4_unicode_ci)
 #   H-C6a-2-VM3 -- practicayoruba_app creado (3 hosts, conexion verificada)
 #
 # Analisis de referencia: analisis-tarea-5C-6a-schema-qa-ecom-db-vm-v1_0_0.md
@@ -71,7 +71,7 @@ VERSION="v1.0.1"
 # CONFIGURACION
 # =============================================================================
 
-readonly DB_QA_NAME="practicayoruba_qa"
+readonly DB_QA_NAME="kaupamex_qa"
 readonly DB_APP_USER="practicayoruba_app"
 readonly DB_CHARSET="utf8mb4"
 readonly DB_COLLATION="utf8mb4_unicode_ci"
@@ -239,7 +239,7 @@ auditar_estado_actual() {
 }
 
 # =============================================================================
-# PASO 2 -- Crear schema practicayoruba_qa
+# PASO 2 -- Crear schema kaupamex_qa
 # =============================================================================
 
 crear_schema_qa() {
@@ -302,7 +302,7 @@ crear_usuario() {
 }
 
 # =============================================================================
-# PASO 4 -- Otorgar privilegios en practicayoruba_qa
+# PASO 4 -- Otorgar privilegios en kaupamex_qa
 # =============================================================================
 
 otorgar_privilegios_qa() {
@@ -318,7 +318,7 @@ otorgar_privilegios_qa() {
                  TO '${DB_APP_USER}'@'${host}';" > /dev/null
         log_ok "  GRANT ALL PRIVILEGES ON ${DB_QA_NAME}.* TO ${DB_APP_USER}@${host}"
 
-        # test_practicayoruba_qa -- pytest crea/destruye este schema
+        # test_kaupamex_qa -- pytest crea/destruye este schema
         db_exec "GRANT ALL PRIVILEGES ON \`${test_db}\`.*
                  TO '${DB_APP_USER}'@'${host}';" > /dev/null
         log_ok "  GRANT ALL PRIVILEGES ON ${test_db}.* TO ${DB_APP_USER}@${host}"
@@ -412,7 +412,7 @@ print_summary() {
     printf '  en configure_db_vm_schema_prod.sh.\n'
     printf '%s\n' "$sep"
     printf 'Tarea 5.C.6a [VM3] completada.\n'
-    printf 'Proxima tarea: 5.C.6b [VM3] -- Schema practicayoruba_db (configure_db_vm_schema_prod.sh)\n'
+    printf 'Proxima tarea: 5.C.6b [VM3] -- Schema kaupamex_db (configure_db_vm_schema_prod.sh)\n'
     printf '%s\n\n' "$sep"
 }
 

@@ -1,7 +1,7 @@
 #!/bin/bash
 # =============================================================================
 # configure_db_vm_schema_prod.sh
-# Crea el schema de produccion (practicayoruba_db), otorga privilegios DML
+# Crea el schema de produccion (kaupamex_db), otorga privilegios DML
 # limitados a practicayoruba_app, y crea el usuario practicayoruba_readonly
 # (SELECT only) para Claude Code web y analiticas via DNAT.
 #
@@ -26,16 +26,16 @@
 #   - Socket /run/mysqld/mysqld.sock disponible
 #
 # Que crea:
-#   Schema:  practicayoruba_db  (utf8mb4 / utf8mb4_unicode_ci)
+#   Schema:  kaupamex_db  (utf8mb4 / utf8mb4_unicode_ci)
 #
 #   practicayoruba_app (hosts %, localhost, 127.0.0.1):
-#     GRANT SELECT, INSERT, UPDATE, DELETE ON practicayoruba_db.*
+#     GRANT SELECT, INSERT, UPDATE, DELETE ON kaupamex_db.*
 #     PoLP estricto -- Django no necesita DDL en produccion.
 #
 #   practicayoruba_readonly (host % -- DNAT externo):
-#     GRANT SELECT ON practicayoruba_db.*
+#     GRANT SELECT ON kaupamex_db.*
 #     Solo lectura -- para Claude Code web y analiticas via DNAT Host:3306.
-#     Sin acceso a practicayoruba_qa.
+#     Sin acceso a kaupamex_qa.
 #
 # Invariante de contrasena:
 #   PRACTICAYORUBA_APP_PASSWORD DEBE ser identica a la usada en 5.C.6a.
@@ -47,9 +47,9 @@
 #   GRANTs ya aplicados -> no-op (GRANT es idempotente en MariaDB)
 #
 # Hallazgos producidos:
-#   H-C6b-1-VM3 -- practicayoruba_db creado (utf8mb4_unicode_ci)
-#   H-C6b-2-VM3 -- practicayoruba_app: DML en practicayoruba_db
-#   H-C6b-3-VM3 -- practicayoruba_readonly: SELECT only en practicayoruba_db
+#   H-C6b-1-VM3 -- kaupamex_db creado (utf8mb4_unicode_ci)
+#   H-C6b-2-VM3 -- practicayoruba_app: DML en kaupamex_db
+#   H-C6b-3-VM3 -- practicayoruba_readonly: SELECT only en kaupamex_db
 #   H-C6b-4-VM3 -- Conexion readonly verificada
 #
 # Analisis de referencia: analisis-tarea-5C-6b-schema-prod-ecom-db-vm-v1_0_0.md
@@ -59,7 +59,7 @@
 # -----------------------------------------------------------------------------
 # v1.0.0   2026-06-20   Nestor Monroy <46802445+NestorMonroy    Version inicial.
 #                       @users.noreply.github.com>               Schema prod
-#                                                                practicayoruba_db.
+#                                                                kaupamex_db.
 #                                                                DML limitado
 #                                                                practicayoruba_app.
 #                                                                practicayoruba_readonly
@@ -75,8 +75,8 @@ VERSION="v1.0.0"
 # CONFIGURACION
 # =============================================================================
 
-readonly DB_PROD_NAME="practicayoruba_db"
-readonly DB_QA_NAME="practicayoruba_qa"
+readonly DB_PROD_NAME="kaupamex_db"
+readonly DB_QA_NAME="kaupamex_qa"
 readonly DB_APP_USER="practicayoruba_app"
 readonly DB_READONLY_USER="practicayoruba_readonly"
 readonly DB_CHARSET="utf8mb4"
@@ -235,7 +235,7 @@ auditar_estado_actual() {
 }
 
 # =============================================================================
-# PASO 2 -- Crear schema practicayoruba_db
+# PASO 2 -- Crear schema kaupamex_db
 # =============================================================================
 
 crear_schema_prod() {

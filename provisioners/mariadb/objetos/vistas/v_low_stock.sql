@@ -5,9 +5,9 @@ SELECT 'PROCESO INICIO' AS evento, NOW() AS timestamp_inicio FROM DUAL;
     Version         : 3.0.0
     Create          : MAYO/2026
     Engine          : MariaDB 11.8 LTS (ADR-009)
-    Schema          : practicayoruba_db
+    Schema          : kaupamex_db
     Prerequisito    : Migraciones Django aplicadas — settings_sitesettings con al menos 1 fila
-    Despliegue      : mysql --socket=/run/mysqld/mysqld.sock practicayoruba_db < v_low_stock.sql
+    Despliegue      : mysql --socket=/run/mysqld/mysqld.sock kaupamex_db < v_low_stock.sql
     Notas           : Renombrada de v_stock_critico (v1.0.0) a v_low_stock (v2.0.0).
                       CROSS JOIN con settings_sitesettings (singleton) lee el threshold directamente.
                       Si settings_sitesettings está vacío la vista retorna 0 filas.

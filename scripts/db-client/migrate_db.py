@@ -9,10 +9,10 @@ de base de datos apuntando a db.practicayoruba.com:3306 via SSL.
 Verifica antes de migrar:
   1. Conectividad SSL a MariaDB
   2. manage.py existe en la ruta configurada
-  3. Schema practicayoruba_db accesible con el usuario app
+  3. Schema kaupamex_db accesible con el usuario app
 
 Después de migrar verifica:
-  4. Tablas Django creadas en practicayoruba_db
+  4. Tablas Django creadas en kaupamex_db
 
 Uso:
   cd scripts/db-client
@@ -270,8 +270,8 @@ def main():
     parser = argparse.ArgumentParser(
         description='Django migrate hacia db.practicayoruba.com')
     parser.add_argument('--schema', choices=['prod', 'qa'], default='prod',
-                        help='Schema destino: prod=practicayoruba_db, '
-                             'qa=practicayoruba_qa (default: prod)')
+                        help='Schema destino: prod=kaupamex_db, '
+                             'qa=kaupamex_qa (default: prod)')
     parser.add_argument('--check', action='store_true',
                         help='Solo verificar conectividad sin migrar')
     parser.add_argument('--list', action='store_true',
@@ -282,8 +282,8 @@ def main():
     env = load_env()
 
     schema_map = {
-        'prod': env.get('DB_NAME', 'practicayoruba_db'),
-        'qa':   env.get('DB_QA_NAME', 'practicayoruba_qa'),
+        'prod': env.get('DB_NAME', 'kaupamex_db'),
+        'qa':   env.get('DB_QA_NAME', 'kaupamex_qa'),
     }
     schema = schema_map[args.schema]
     manage_py = os.path.abspath(

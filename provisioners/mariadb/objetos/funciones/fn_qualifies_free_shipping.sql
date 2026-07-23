@@ -5,9 +5,9 @@ SELECT 'PROCESO INICIO' AS evento, NOW() AS timestamp_inicio FROM DUAL;
     Version         : 2.0.0
     Create          : MAYO/2026
     Engine          : MariaDB 11.8 LTS (ADR-009)
-    Schema          : practicayoruba_db
+    Schema          : kaupamex_db
     Prerequisito    : Ninguno — predicado puro sin dependencias externas
-    Despliegue      : mysql --socket=/run/mysqld/mysqld.sock practicayoruba_db < fn_qualifies_free_shipping.sql
+    Despliegue      : mysql --socket=/run/mysqld/mysqld.sock kaupamex_db < fn_qualifies_free_shipping.sql
     Notas           : Renombrada de fn_aplica_envio_gratis (v1.0.0) a fn_qualifies_free_shipping (v2.0.0).
                       Recibe el umbral como parámetro — no lee settings_sitesettings
                       directamente porque las funciones DETERMINISTIC no pueden hacer SELECT.

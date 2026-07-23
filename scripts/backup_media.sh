@@ -4,7 +4,7 @@
 # Backup del árbol de media (uploads) de PracticaYoruba
 # =============================================================================
 # Cierra la brecha H-KRU-02 (diseño Kruchten K2): backup_db.sh respalda SOLO
-# los schemas MariaDB (practicayoruba_db, practicayoruba_qa); los archivos
+# los schemas MariaDB (kaupamex_db, kaupamex_qa); los archivos
 # subidos por usuarios (imágenes de producto, etc.) viven en MEDIA_ROOT y NO
 # se respaldaban.  Un restore de solo-BD perdería todos los uploads.
 #

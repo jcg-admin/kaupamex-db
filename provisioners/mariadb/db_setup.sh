@@ -20,7 +20,7 @@
 #     'sudo: a password is required'.
 #
 # Variables leidas desde .env en la raiz del repositorio (con defaults):
-#   DB_NAME      (default: practicayoruba_db)
+#   DB_NAME      (default: kaupamex_db)
 #   DB_USER      (default: django_user)
 #   DB_PASSWORD  (default: django_pass)
 #   DB_HOST      (default: 127.0.0.1)
@@ -55,7 +55,7 @@ if [[ -f "$ENV_FILE" ]]; then
     done < <(grep -E '^[A-Z_][A-Z0-9_]*=' "$ENV_FILE")
 fi
 
-DB_NAME="${DB_NAME:-practicayoruba_db}"
+DB_NAME="${DB_NAME:-kaupamex_db}"
 DB_USER="${DB_USER:-django_user}"
 DB_PASSWORD="${DB_PASSWORD:?DB_PASSWORD must be set in environment or .env}"
 DB_HOST="${DB_HOST:-127.0.0.1}"
@@ -192,16 +192,25 @@ grant_privileges() {
     local APP_GRANTS="SELECT, INSERT, UPDATE, DELETE, CREATE, ALTER, DROP, INDEX, REFERENCES"
     local test_db="test_${DB_NAME}"
 
+    # SOL-091 (T-091-01): provisioning multi-DB DB-per-company. El aprovisionador
+    # crea/destruye bases `company_<N>_db` (Odoo exp_create_database/exp_drop
+    # adaptado). Mínimo privilegio: solo el patrón `company\_%`, NO `*.*`. El
+    # patrón `company\_%` incluye CREATE/DROP DATABASE para bases que matchean.
+    local PROV_GRANTS="SELECT, INSERT, UPDATE, DELETE, CREATE, ALTER, DROP, INDEX, REFERENCES"
+
     for host in "%" "localhost" "127.0.0.1"; do
         _db_exec -e \
             "GRANT ${APP_GRANTS} ON \`${DB_NAME}\`.* TO '${DB_USER}'@'${host}';" > /dev/null
         # pytest necesita crear y destruir test_<DB_NAME> (CREATE/DROP DATABASE)
         _db_exec -e \
             "GRANT ALL PRIVILEGES ON \`${test_db}\`.* TO '${DB_USER}'@'${host}';" > /dev/null
+        # provisioning multi-DB: CREATE/DROP DATABASE company_<N>_db (patrón)
+        _db_exec -e \
+            "GRANT ${PROV_GRANTS} ON \`company\\_%\`.* TO '${DB_USER}'@'${host}';" > /dev/null
     done
 
     _db_exec -e "FLUSH PRIVILEGES;" > /dev/null
-    log_success "Privilegios aplicados (${APP_GRANTS}; incluye test_${DB_NAME} para pytest)"
+    log_success "Privilegios aplicados (${APP_GRANTS}; test_${DB_NAME} pytest; company\\_%% provisioning SOL-091)"
 }
 
 # =============================================================================

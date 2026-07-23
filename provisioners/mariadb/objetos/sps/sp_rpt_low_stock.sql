@@ -5,10 +5,10 @@ SELECT 'PROCESO INICIO' AS evento, NOW() AS timestamp_inicio FROM DUAL;
     Version         : 3.0.0
     Create          : MAYO/2026
     Engine          : MariaDB 11.8 LTS (ADR-009)
-    Schema          : practicayoruba_db
+    Schema          : kaupamex_db
     Prerequisito    : fn_stock_status — desplegada antes que este SP
                       settings_sitesettings con al menos 1 fila
-    Despliegue      : mysql --socket=/run/mysqld/mysqld.sock practicayoruba_db < sp_rpt_low_stock.sql
+    Despliegue      : mysql --socket=/run/mysqld/mysqld.sock kaupamex_db < sp_rpt_low_stock.sql
     Notas           : Renombrado de sp_rpt_stock_critico (v1.0.0) a sp_rpt_low_stock (v2.0.0).
                       Sin parámetros — lee el threshold actual de settings_sitesettings.
                       Usa fn_stock_status para mostrar OUT_OF_STOCK vs LOW_STOCK de forma clara.

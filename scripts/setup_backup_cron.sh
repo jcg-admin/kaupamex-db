@@ -73,7 +73,7 @@ log_info "Instalando cron de backup en ${CRON_FILE} ..."
 
 cat > "${CRON_FILE}" <<EOF
 # /etc/cron.d/practicayoruba-backup
-# Backup automático de practicayoruba_db + practicayoruba_qa.
+# Backup automático de kaupamex_db + kaupamex_qa.
 # Instalado por: setup_backup_cron.sh
 # Repositorio: ${REPO_DIR}
 #
