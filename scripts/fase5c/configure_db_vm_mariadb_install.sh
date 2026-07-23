@@ -24,7 +24,7 @@
 #
 # Script autonomo: no invoca repositorios externos. Toda la logica
 # de instalacion esta incluida directamente en este script.
-# El repo e-commerce-db fue usado como referencia para: version MariaDB
+# El repo kaupamex-db fue usado como referencia para: version MariaDB
 # (11.8 LTS), CDN activo (dlm.mariadb.com), plugin providers necesarios,
 # y configuracion 99-practicayoruba.cnf.
 #

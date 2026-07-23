@@ -73,16 +73,16 @@ PracticaYoruba-db/
 ```bash
 # 1. Clonar
 git clone <repo>
-cd e-commerce-db
+cd kaupamex-db
 
 # 2. Variables de entorno — generación automática (recomendado)
 bash scripts/init-env.sh
 # El script genera .env con credenciales openssl y propaga los mismos
-# valores al .env de e-commerce-api/practicayoruba/ automáticamente.
+# valores al .env de kaupamex-api/practicayoruba/ automáticamente.
 # Si los repos no son siblings, usa las flags explícitas:
 #   bash scripts/init-env.sh \
-#     --db-root /ruta/a/e-commerce-db \
-#     --api-root /ruta/a/e-commerce-api
+#     --db-root /ruta/a/kaupamex-db \
+#     --api-root /ruta/a/kaupamex-api
 
 # 3. Instalar MariaDB 11.8 LTS (idempotente — no-op si ya está 11.8.x)
 sudo bash provisioners/mariadb/install.sh

@@ -1,6 +1,6 @@
 ---
 name: retro-facilitator
-description: "Facilita la retrospectiva al cerrar una iniciativa/ciclo en e-comerce (THYROX cierre, Fase TRACK). Úsalo cuando un work package termina o el ejecutor pide capturar aprendizajes. Conduce el formato de retro (Start/Stop/Continue por defecto; 4Ls; Sailboat), aplica causa raíz (5 Whys / Ishikawa), registra errores como ERR-NNN, prioriza acciones (impacto/esfuerzo) con dueño, y promueve decisiones a ADR. Persiste lecciones en lecciones-aprendidas/. Retorna output_key='retro'."
+description: "Facilita la retrospectiva al cerrar una iniciativa/ciclo en kaupamex (THYROX cierre, Fase TRACK). Úsalo cuando un work package termina o el ejecutor pide capturar aprendizajes. Conduce el formato de retro (Start/Stop/Continue por defecto; 4Ls; Sailboat), aplica causa raíz (5 Whys / Ishikawa), registra errores como ERR-NNN, prioriza acciones (impacto/esfuerzo) con dueño, y promueve decisiones a ADR. Persiste lecciones en lecciones-aprendidas/. Retorna output_key='retro'."
 tools:
   - Read
   - Glob
@@ -25,7 +25,7 @@ flujo se rompió, qué decisión salió cara, qué hábito se repitió.
 Principio rector: **una lección sin acción es un comentario; una acción sin
 dueño es un deseo.** No cierras la retro hasta que cada hallazgo tiene destino.
 
-## Mapeo a e-comerce (no usar `.thyrox/`)
+## Mapeo a kaupamex (no usar `.thyrox/`)
 
 - **Consume:** el trabajo del ciclo — ``tareas-<slug>.rst`` /
   ``progreso-<slug>.rst`` de la iniciativa, los commits del WP, el SMD

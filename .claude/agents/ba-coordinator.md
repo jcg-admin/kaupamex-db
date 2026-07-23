@@ -23,16 +23,16 @@ updated_at: 2026-04-17 14:30:24
 
 # ba-coordinator — Coordinator BABOK
 
-> **Adaptacion e-comerce (2026-05-19):** Las referencias a `.thyrox/context/now-*.md` y
+> **Adaptacion kaupamex (2026-05-19):** Las referencias a `.thyrox/context/now-*.md` y
 > `.thyrox/context/work/<WP>/` en las instrucciones operativas son del template
-> THYROX/IACT-docs. En e-comerce el directorio `.thyrox/` no existe. State files
+> THYROX/IACT-docs. En kaupamex el directorio `.thyrox/` no existe. State files
 > de sesion (now-*.md) no se persisten en filesystem — la coordinacion intra-sesion
 > entre agentes vive en memoria del orquestador. El work-package equivalente es
 > `docs/source/gestion/pm/<submodulo>/iniciativas/<slug>/` con artefactos `.rst`
 > (no `.md`). Ver `.claude/CLAUDE.md` para el contrato completo.
 
 Gestiona las 6 knowledge areas del **Business Analysis Body of Knowledge**.
-En e-comerce no existe `.thyrox/registry/`; este coordinator usa las áreas
+En kaupamex no existe `.thyrox/registry/`; este coordinator usa las áreas
 de BABOK declaradas en este archivo y el estado del `progreso-<slug>.rst`.
 
 **Diferencia con otros coordinators:** BABOK NO tiene orden fijo.

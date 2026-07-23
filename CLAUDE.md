@@ -1,6 +1,6 @@
-# CLAUDE.md — e-commerce-db
+# CLAUDE.md — kaupamex-db
 
-Submódulo **db** del monorepo PracticaYoruba (repo GitHub `jcg-admin/e-commerce-db`).
+Submódulo **db** del monorepo PracticaYoruba (repo GitHub `jcg-admin/kaupamex-db`).
 Base de datos de PracticaYoruba sobre **MariaDB 11.8 LTS**, provisionada con bash +
 python-dotenv (sin Vagrant, sin PostgreSQL). Cheat-sheet local — no duplica el gobierno
 del padre.
@@ -9,8 +9,8 @@ del padre.
 
 Las reglas no negociables viven en el superproyecto, no aquí:
 
-- `../e-commerce/.claude/CLAUDE.md` — contexto persistente (Level 2).
-- `../e-commerce/.claude/rules/` — reglas cargadas en cada sesión. En particular:
+- `../kaupamex/.claude/CLAUDE.md` — contexto persistente (Level 2).
+- `../kaupamex/.claude/rules/` — reglas cargadas en cada sesión. En particular:
   - `commit-conventions.md` — **Tim Pope**: subject imperativo ≤50 ch, capitalizado,
     sin punto; body explica QUÉ y POR QUÉ.
   - `timestamps-iso8601-obligatorios.md` — nunca escribir timestamps a mano:

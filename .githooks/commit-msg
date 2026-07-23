@@ -3,13 +3,13 @@
 # .githooks/commit-msg — valida convencion Tim Pope para commit messages
 # =============================================================================
 # Adaptado del framework THYROX (referencia .claude/ de los submodulos
-# api/ui/docs de e-comerce). Este submodulo db se saltó en la adopcion
+# api/ui/docs de kaupamex). Este submodulo db se saltó en la adopcion
 # previa; este hook cierra esa brecha.
 #
 # Cargado via 'git config core.hooksPath .githooks' (ver
 # scripts/install-hooks.sh). Mantiene el repo consistente con la
-# convencion Tim Pope documentada en la gobernanza de e-comerce
-# (../e-comerce/.claude/rules/commit-conventions.md — ver CLAUDE.md).
+# convencion Tim Pope documentada en la gobernanza de kaupamex
+# (../kaupamex/.claude/rules/commit-conventions.md — ver CLAUDE.md).
 #
 # Reglas validadas (las 4 mas mecanicas; el body es responsabilidad
 # del autor — demasiado heuristico):
