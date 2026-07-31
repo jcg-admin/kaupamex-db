@@ -6,22 +6,22 @@
 #   bash scripts/init-env.sh [--db-root <path>] [--api-root <path>]
 #
 # Opciones:
-#   --db-root <path>   Ruta absoluta al repo e-commerce-db.
+#   --db-root <path>   Ruta absoluta al repo kaupamex-db.
 #                      Default: detectado por contenido (.env.example) desde
 #                      el directorio del script.
-#   --api-root <path>  Ruta absoluta al repo e-commerce-api.
+#   --api-root <path>  Ruta absoluta al repo kaupamex-api.
 #                      Default: autodetectado como sibling de db-root.
 #
 # El script detecta si .env ya existe y lo preserva sin sobrescribir.
 # Propaga DB_PASSWORD, DB_QA_PASSWORD y SECRET_KEY a tres destinos en orden:
 #
-#   1. e-commerce/db/.env  ← FUENTE DE VERDAD PRIMARIA
+#   1. kaupamex/db/.env  ← FUENTE DE VERDAD PRIMARIA
 #      Los provisioners db_setup.sh / db_qa_setup.sh leen de aquí.
-#      (PROJECT_ROOT = SCRIPT_DIR/../.. resuelve a e-commerce/db/)
+#      (PROJECT_ROOT = SCRIPT_DIR/../.. resuelve a kaupamex/db/)
 #
-#   2. e-commerce-db/.env  ← copia derivada (repo standalone)
+#   2. kaupamex-db/.env  ← copia derivada (repo standalone)
 #
-#   3. e-commerce-api/practicayoruba/.env  ← copia derivada (API Django)
+#   3. kaupamex-api/practicayoruba/.env  ← copia derivada (API Django)
 #      bootstrap.sh lee DB_PASSWORD desde aquí.
 #
 # Invariante crítica — DB_PASSWORD == DB_QA_PASSWORD:
@@ -78,9 +78,9 @@ else
         if [[ -f "${CANDIDATE}/.env.example" ]]; then
             DB_REPO_ROOT="${CANDIDATE}"
         else
-            echo "ERROR: No se pudo detectar el repo root de e-commerce-db." >&2
+            echo "ERROR: No se pudo detectar el repo root de kaupamex-db." >&2
             echo "  Asegúrate de ejecutar desde dentro del repo, o pasa --db-root:" >&2
-            echo "    bash scripts/init-env.sh --db-root /ruta/a/e-commerce-db" >&2
+            echo "    bash scripts/init-env.sh --db-root /ruta/a/kaupamex-db" >&2
             exit 1
         fi
     fi
@@ -88,23 +88,23 @@ fi
 
 if [[ ! -f "${DB_REPO_ROOT}/.env.example" ]]; then
     echo "ERROR: ${DB_REPO_ROOT}/.env.example no encontrado." >&2
-    echo "  El path --db-root no apunta al repo e-commerce-db." >&2
+    echo "  El path --db-root no apunta al repo kaupamex-db." >&2
     exit 1
 fi
 
 DB_ENV="${DB_REPO_ROOT}/.env"
 DB_ENV_EXAMPLE="${DB_REPO_ROOT}/.env.example"
 
-# ── Resolver MONOREPO_DB_ROOT (e-commerce/db/) ──────────────────────────────
+# ── Resolver MONOREPO_DB_ROOT (kaupamex/db/) ──────────────────────────────
 # Los provisioners db_setup.sh / db_qa_setup.sh calculan:
-#   PROJECT_ROOT = SCRIPT_DIR/../..  →  e-commerce/db/
+#   PROJECT_ROOT = SCRIPT_DIR/../..  →  kaupamex/db/
 # y leen credenciales de ${PROJECT_ROOT}/.env. Esta ruta es la fuente de
 # verdad primaria y debe actualizarse antes que los repos standalone.
 PARENT="$(cd "${DB_REPO_ROOT}/.." && pwd)"
 MONOREPO_DB_ROOT=""
 for cand in \
-    "${PARENT}/e-commerce/db" \
-    "${PARENT}/../e-commerce/db"; do
+    "${PARENT}/kaupamex/db" \
+    "${PARENT}/../kaupamex/db"; do
     if [[ -f "${cand}/.env.example" ]]; then
         MONOREPO_DB_ROOT="$(cd "$cand" && pwd)"
         break
@@ -120,7 +120,7 @@ if [[ -n "$API_ROOT_ARG" ]]; then
 else
     API_REPO_ROOT=""
     for cand in \
-        "${PARENT}/e-commerce-api" \
+        "${PARENT}/kaupamex-api" \
         "${PARENT}/PracticaYoruba-api"; do
         [[ -d "$cand/practicayoruba" ]] && { API_REPO_ROOT="$cand"; break; }
     done
@@ -132,7 +132,7 @@ API_ENV_EXAMPLE="${API_REPO_ROOT:+${API_REPO_ROOT}/practicayoruba/.env.example}"
 echo "=== PracticaYoruba — init-env.sh ==="
 echo ""
 echo "  db-root     : ${DB_REPO_ROOT}"
-echo "  monorepo-db : ${MONOREPO_DB_ROOT:-(no detectado — provisioners usarán e-commerce/db/)}"
+echo "  monorepo-db : ${MONOREPO_DB_ROOT:-(no detectado — provisioners usarán kaupamex/db/)}"
 echo "  api-root    : ${API_REPO_ROOT:-(no detectado)}"
 echo ""
 
@@ -206,7 +206,7 @@ _apply_creds() {
         "$src" > "$dst"
 }
 
-# ── 1. Monorepo e-commerce/db/.env (fuente de verdad primaria) ─────────────
+# ── 1. Monorepo kaupamex/db/.env (fuente de verdad primaria) ─────────────
 if [[ -n "$MONOREPO_DB_ENV" ]]; then
     if [[ "$MONOREPO_DB_ENV_EXISTED" == "false" ]]; then
         if [[ -f "$MONOREPO_DB_ENV_EXAMPLE" ]]; then
@@ -224,20 +224,20 @@ if [[ -n "$MONOREPO_DB_ENV" ]]; then
         echo "  Actualizado: ${MONOREPO_DB_ENV}  ← fuente de verdad primaria"
     fi
 else
-    echo "  AVISO: monorepo e-commerce/db/ no detectado."
-    echo "  Los provisioners db_setup.sh / db_qa_setup.sh leen de e-commerce/db/.env."
-    echo "  Crea e-commerce/db/.env manualmente con las mismas credenciales"
+    echo "  AVISO: monorepo kaupamex/db/ no detectado."
+    echo "  Los provisioners db_setup.sh / db_qa_setup.sh leen de kaupamex/db/.env."
+    echo "  Crea kaupamex/db/.env manualmente con las mismas credenciales"
     echo "  o ejecuta init-env.sh desde el directorio padre del monorepo."
 fi
 echo ""
 
-# ── 2. Standalone e-commerce-db/.env ───────────────────────────────────────
+# ── 2. Standalone kaupamex-db/.env ───────────────────────────────────────
 echo "  Creando ${DB_ENV} ..."
 _apply_creds "$DB_ENV_EXAMPLE" "$DB_ENV"
 echo "  Creado: ${DB_ENV}"
 echo ""
 
-# ── 3. API e-commerce-api/practicayoruba/.env ──────────────────────────────
+# ── 3. API kaupamex-api/practicayoruba/.env ──────────────────────────────
 if [[ -n "$API_ENV" ]]; then
     if [[ "$API_ENV_EXISTED" == "false" ]]; then
         if [[ -f "$API_ENV_EXAMPLE" ]]; then
@@ -255,9 +255,9 @@ if [[ -n "$API_ENV" ]]; then
         echo "  Actualizado: ${API_ENV}"
     fi
 else
-    echo "  AVISO: repo hermano e-commerce-api no detectado."
+    echo "  AVISO: repo hermano kaupamex-api no detectado."
     echo "  Pasa --api-root si los repos no son siblings:"
-    echo "    bash scripts/init-env.sh --api-root /ruta/a/e-commerce-api"
+    echo "    bash scripts/init-env.sh --api-root /ruta/a/kaupamex-api"
 fi
 
 echo ""
@@ -269,5 +269,5 @@ echo "  ${DB_ENV}"
 [[ -n "$API_ENV" && -f "$API_ENV" ]] && echo "  ${API_ENV}"
 echo ""
 echo "Siguiente paso para WSL2:"
-echo "  cd ${API_REPO_ROOT:-../e-commerce-api}"
+echo "  cd ${API_REPO_ROOT:-../kaupamex-api}"
 echo "  sudo bash scripts/bootstrap.sh"

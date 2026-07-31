@@ -1,13 +1,13 @@
 #!/bin/bash
 # =============================================================================
 # scripts/backup_db.sh
-# Backup completo de practicayoruba_db y practicayoruba_qa (MariaDB 11.8)
+# Backup completo de kaupamex_db y kaupamex_qa (MariaDB 11.8)
 # =============================================================================
 # Genera por ejecución (un par por schema):
-#   backups/<timestamp>_practicayoruba_db.sql.gz    dump comprimido (gzip -6)
-#   backups/<timestamp>_practicayoruba_db.md5        checksum MD5
-#   backups/<timestamp>_practicayoruba_qa.sql.gz
-#   backups/<timestamp>_practicayoruba_qa.md5
+#   backups/<timestamp>_kaupamex_db.sql.gz    dump comprimido (gzip -6)
+#   backups/<timestamp>_kaupamex_db.md5        checksum MD5
+#   backups/<timestamp>_kaupamex_qa.sql.gz
+#   backups/<timestamp>_kaupamex_qa.md5
 #   backups/<timestamp>.log                          log de operación
 #
 # El timestamp usa TZ America/Mexico_City (zona horaria del proyecto).
@@ -58,8 +58,8 @@ set -a; source "$ENV_FILE"; set +a
 # =============================================================================
 # Configuración
 # =============================================================================
-DB_PROD="${DB_NAME:-practicayoruba_db}"
-DB_QA="${DB_QA_NAME:-practicayoruba_qa}"
+DB_PROD="${DB_NAME:-kaupamex_db}"
+DB_QA="${DB_QA_NAME:-kaupamex_qa}"
 DB_HOST="${DB_HOST:-127.0.0.1}"
 DB_PORT="${DB_PORT:-3306}"
 

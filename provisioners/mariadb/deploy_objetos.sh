@@ -1,7 +1,7 @@
 #!/bin/bash
 # =============================================================================
 # provisioners/mariadb/deploy_objetos.sh
-# Despliega objetos SQL y seed del catálogo en practicayoruba_db
+# Despliega objetos SQL y seed del catálogo en kaupamex_db
 # =============================================================================
 # IDEMPOTENTE: usa CREATE OR REPLACE en funciones, vistas y SPs.
 #              seed_catalogo.sql usa INSERT IGNORE.
@@ -21,7 +21,7 @@
 #   5. Seed del catálogo
 #
 # NOTA sobre GRANT EXECUTE:
-#   db_setup.sh ya ejecuta GRANT ALL PRIVILEGES ON practicayoruba_db.* que
+#   db_setup.sh ya ejecuta GRANT ALL PRIVILEGES ON kaupamex_db.* que
 #   incluye EXECUTE sobre todas las rutinas. Sin GRANT adicional requerido.
 #
 # Uso:
@@ -39,7 +39,7 @@ source "${PROJECT_ROOT}/utils/database.sh"
 ENV_FILE="${PROJECT_ROOT}/.env"
 [[ -f "$ENV_FILE" ]] && { set -a; source "$ENV_FILE"; set +a; }
 
-DB_NAME="${DB_NAME:-practicayoruba_db}"
+DB_NAME="${DB_NAME:-kaupamex_db}"
 DB_HOST="${DB_HOST:-127.0.0.1}"
 DB_PORT="${DB_PORT:-3306}"
 

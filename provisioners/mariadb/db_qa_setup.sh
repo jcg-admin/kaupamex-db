@@ -19,7 +19,7 @@
 #     infra; 'sudo bash db_qa_setup.sh' como infra falla.
 #
 # Variables leidas desde .env en la raiz del repositorio (con defaults):
-#   DB_QA_NAME      (default: practicayoruba_qa)
+#   DB_QA_NAME      (default: kaupamex_qa)
 #   DB_QA_USER      (default: django_user)
 #   DB_QA_PASSWORD  (default: django_pass)
 #   DB_QA_HOST      (default: 127.0.0.1)
@@ -55,7 +55,7 @@ if [[ -f "$ENV_FILE" ]]; then
     done < <(grep -E '^[A-Z_][A-Z0-9_]*=' "$ENV_FILE")
 fi
 
-DB_NAME="${DB_QA_NAME:-practicayoruba_qa}"
+DB_NAME="${DB_QA_NAME:-kaupamex_qa}"
 DB_USER="${DB_QA_USER:-django_user}"
 DB_PASSWORD="${DB_QA_PASSWORD:?DB_QA_PASSWORD must be set in environment or .env}"
 DB_HOST="${DB_QA_HOST:-127.0.0.1}"

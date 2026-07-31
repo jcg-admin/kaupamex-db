@@ -16,8 +16,8 @@ CREATE, CREATE USER y GRANT OPTION. Si no los tienen, el script
 reportará exactamente qué pasos no pudo ejecutar.
 
 Estado objetivo en VM3:
-  Schemas: practicayoruba_db (utf8mb4/utf8mb4_unicode_ci)
-           practicayoruba_qa (utf8mb4/utf8mb4_unicode_ci)
+  Schemas: kaupamex_db (utf8mb4/utf8mb4_unicode_ci)
+           kaupamex_qa (utf8mb4/utf8mb4_unicode_ci)
 
   Usuarios:
     practicayoruba_app@%            → DML en db, ALL en qa
@@ -178,7 +178,7 @@ def setup_schemas(cnx, log: Logger, dry_run: bool) -> bool:
     log.step(1, 5, "Crear schemas")
     ok = True
 
-    for schema in ['practicayoruba_db', 'practicayoruba_qa']:
+    for schema in ['kaupamex_db', 'kaupamex_qa']:
         exists = row_exists(cnx,
             f"SELECT SCHEMA_NAME FROM information_schema.SCHEMATA "
             f"WHERE SCHEMA_NAME='{schema}'")
@@ -254,23 +254,23 @@ def setup_grants(cnx, log: Logger, dry_run: bool) -> bool:
 
     grants = [
         # app — DML en prod (3 hosts)
-        ("SELECT, INSERT, UPDATE, DELETE", "practicayoruba_db.*",
+        ("SELECT, INSERT, UPDATE, DELETE", "kaupamex_db.*",
          "practicayoruba_app", "%"),
-        ("SELECT, INSERT, UPDATE, DELETE", "practicayoruba_db.*",
+        ("SELECT, INSERT, UPDATE, DELETE", "kaupamex_db.*",
          "practicayoruba_app", "localhost"),
-        ("SELECT, INSERT, UPDATE, DELETE", "practicayoruba_db.*",
+        ("SELECT, INSERT, UPDATE, DELETE", "kaupamex_db.*",
          "practicayoruba_app", "127.0.0.1"),
 
         # app — ALL en QA (3 hosts)
-        ("ALL PRIVILEGES", "practicayoruba_qa.*",
+        ("ALL PRIVILEGES", "kaupamex_qa.*",
          "practicayoruba_app", "%"),
-        ("ALL PRIVILEGES", "practicayoruba_qa.*",
+        ("ALL PRIVILEGES", "kaupamex_qa.*",
          "practicayoruba_app", "localhost"),
-        ("ALL PRIVILEGES", "practicayoruba_qa.*",
+        ("ALL PRIVILEGES", "kaupamex_qa.*",
          "practicayoruba_app", "127.0.0.1"),
 
         # readonly — SELECT en prod
-        ("SELECT", "practicayoruba_db.*",
+        ("SELECT", "kaupamex_db.*",
          "practicayoruba_readonly", "%"),
     ]
 

@@ -38,7 +38,7 @@
 set -uo pipefail
 
 # --- Re-exec desde copia estable -------------------------------------------
-# Este script vive en e-commerce-db, que el propio script pull-ea. Si el pull
+# Este script vive en kaupamex-db, que el propio script pull-ea. Si el pull
 # actualiza este archivo a mitad de ejecucion, bash podria leer lineas
 # inconsistentes. Nos copiamos a /tmp y re-ejecutamos desde ahi una sola vez.
 if [ "${_SAT_STABLE:-}" != "1" ]; then
@@ -49,7 +49,7 @@ if [ "${_SAT_STABLE:-}" != "1" ]; then
 fi
 
 REPO_ROOT="${ECOM_REPO_ROOT:-/opt/practicayoruba}"
-REPOS=(e-commerce-api e-commerce-db e-commerce-docs e-commerce-server e-commerce-ui)
+REPOS=(kaupamex-api kaupamex-db kaupamex-docs kaupamex-server kaupamex-ui)
 
 print_test_steps() {
     cat <<EOF
@@ -62,19 +62,19 @@ IMPORTANTE: antes de sembrar, arregla el valor sin comillas del .env
 (linea ~53). Ambos seeders leen ese .env y abortan hasta que se entrecomille.
 
 [deploy]  (tiene sudo; arranca mariadbd y siembra la BD de QA)
-  sudo bash $REPO_ROOT/e-commerce-db/scripts/start_db.sh
+  sudo bash $REPO_ROOT/kaupamex-db/scripts/start_db.sh
   # Sembrar QA con el MISMO seeder que la auto-recuperacion de pytest
-  # re-ejecuta (e-commerce-api/tests/conftest.py::_restart_mariadb, linea 21).
-  # NO usar el de e-commerce-db: divergiria del que pytest usa y exige
+  # re-ejecuta (kaupamex-api/tests/conftest.py::_restart_mariadb, linea 21).
+  # NO usar el de kaupamex-db: divergiria del que pytest usa y exige
   # DB_QA_PASSWORD sin default (aborta si el .env esta roto).
-  sudo bash $REPO_ROOT/e-commerce-api/scripts/provisioners/mysql/db_qa_setup.sh
+  sudo bash $REPO_ROOT/kaupamex-api/scripts/provisioners/mysql/db_qa_setup.sh
 
 [develop] (corre las suites DESDE LA RAIZ del repo api; uv run, no pip/python pelados)
   # 'uv run' fija el interprete del .venv del API: evita PEP 668
   # (externally-managed) y el desajuste de interprete del enigma 1479.
   # D-031/H-14: el equipo usa uv en todos los submodulos.
-  cd $REPO_ROOT/e-commerce-api      && uv run pytest --tb=no -q ; rc_api=\$?
-  cd $REPO_ROOT/e-commerce-ui       && npx jest                 ; rc_ui=\$?
+  cd $REPO_ROOT/kaupamex-api      && uv run pytest --tb=no -q ; rc_api=\$?
+  cd $REPO_ROOT/kaupamex-ui       && npx jest                 ; rc_ui=\$?
   echo "API rc=\$rc_api  UI rc=\$rc_ui"
   if [ "\$rc_api" -eq 0 ] && [ "\$rc_ui" -eq 0 ]; then echo VERDE; else echo ROJO; fi
 
@@ -146,7 +146,7 @@ done
 # dispara PEP 668 (externally-managed) contra el Python del sistema.
 if [ "$WITH_DEPS" = 1 ]; then
     echo "== Dependencias (uv, no pip pelado) =="
-    api="$REPO_ROOT/e-commerce-api"
+    api="$REPO_ROOT/kaupamex-api"
     if ! command -v uv >/dev/null 2>&1; then
         echo "[api] uv no esta en PATH — instala: curl -LsSf https://astral.sh/uv/install.sh | sh"
         echo "      (NO caer a pip pelado: PEP 668 lo bloquea en Ubuntu 24.04)"
@@ -159,7 +159,7 @@ if [ "$WITH_DEPS" = 1 ]; then
         ( cd "$api" && uv pip install --quiet -r requirements/development.txt \
             && echo "[api] uv pip install OK (requirements/development.txt)" )
     fi
-    ( cd "$REPO_ROOT/e-commerce-ui" && npm ci --silent && echo "[ui] npm ci OK" )
+    ( cd "$REPO_ROOT/kaupamex-ui" && npm ci --silent && echo "[ui] npm ci OK" )
 fi
 
 # --- Cierre ----------------------------------------------------------------

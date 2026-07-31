@@ -5,10 +5,10 @@ SELECT 'PROCESO INICIO' AS evento, NOW() AS timestamp_inicio FROM DUAL;
     Version         : 2.0.0
     Create          : MAYO/2026
     Engine          : MariaDB 11.8 LTS (ADR-009)
-    Schema          : practicayoruba_db
+    Schema          : kaupamex_db
     Prerequisito    : Migraciones Django aplicadas
                       settings_sitesettings con al menos 1 fila
-    Despliegue      : mysql --socket=/run/mysqld/mysqld.sock practicayoruba_db < sp_rpt_catalog_summary.sql
+    Despliegue      : mysql --socket=/run/mysqld/mysqld.sock kaupamex_db < sp_rpt_catalog_summary.sql
     Notas           : Renombrado de sp_rpt_resumen_catalogo (v1.0.0) a sp_rpt_catalog_summary (v2.0.0).
                       Sin parámetros — dashboard ejecutivo en una sola fila.
                       CROSS JOIN con settings_sitesettings (singleton) para incluir
