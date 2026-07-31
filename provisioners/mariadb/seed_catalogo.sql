@@ -24,61 +24,75 @@ SELECT 'PROCESO INICIO' AS evento, NOW() AS timestamp_inicio FROM DUAL;
 -- El seed lo inserta directamente para que las vistas y SPs que leen
 -- settings_sitesettings tengan datos al momento del despliegue.
 
+-- Valores tomados de los defaults del modelo en api
+-- (src/addons/base/models/res_config_settings.py). Las columnas
+-- avatar_max_size_mb y max_addresses_per_user ya no existen en el
+-- schema; las de referral/contacto son NOT NULL sin DEFAULT en SQL
+-- puro (el default de Django solo aplica via ORM), asi que el seed
+-- debe darlas explicitamente.
+
 INSERT IGNORE INTO settings_sitesettings
     (id, site_name, iva_rate, currency,
-     order_timeout_minutes, max_return_days,
+     payment_timeout_minutes, order_timeout_minutes, max_return_days,
      free_shipping_threshold, min_stock_threshold,
-     avatar_max_size_mb, max_addresses_per_user,
-     updated_at)
+     referral_active, referral_welcome_discount, referral_reward_discount,
+     support_email, phone, address, social_links,
+     created_at, updated_at)
 VALUES
     (1, 'PracticaYoruba', 0.1600, 'MXN',
-     30, 30,
+     30, 30, 30,
      500.00, 5,
-     5, 5,
-     NOW(6));
+     0, 50.00, 50.00,
+     '', '', '', '{}',
+     NOW(6), NOW(6));
 
 -- ─── Categorías ───────────────────────────────────────────────────────────────
 -- 6 categorías de productos Yoruba. parent_id=NULL (categorías raíz).
 -- INSERT IGNORE: si el slug ya existe, no hace nada.
 
+-- created_at/updated_at y order son NOT NULL sin DEFAULT en SQL puro:
+-- el default del modelo (order=0) solo aplica via ORM. order=0 en todas
+-- deja el ordenamiento efectivo por nombre (Meta.ordering = ['order', 'name']).
+
 INSERT IGNORE INTO catalogue_category
-    (name, slug, description, is_active, parent_id)
+    (name, slug, description, is_active, parent_id,
+     created_at, updated_at, `order`)
 VALUES
     ('Collares y Elekes',
      'collares-y-elekes',
      'Collares de cuentas (elekes) consagrados para cada Orisha. '
      'Usados como protección espiritual y como marca de iniciación.',
-     1, NULL),
+     1, NULL, NOW(6), NOW(6), 0),
 
     ('Soperas y Receptáculos',
      'soperas-y-receptaculos',
      'Soperas, cazuelas y otanes para guardar las fundamentos de los Orishas. '
      'Fabricados en cerámica, madera y metal según el Orisha.',
-     1, NULL),
+     1, NULL, NOW(6), NOW(6), 0),
 
     ('Herramientas y Atributos',
      'herramientas-y-atributos',
      'Atributos sagrados propios de cada Orisha: espadas, orishas, coronas, '
      'abanicos, cuernos y demás implementos rituales.',
-     1, NULL),
+     1, NULL, NOW(6), NOW(6), 0),
 
     ('Libros y Aprendizaje',
      'libros-y-aprendizaje',
      'Textos de referencia sobre la Regla de Ocha, Ifá, Palo Monte y '
      'tradiciones afrocubanas. Para estudiantes y practicantes.',
-     1, NULL),
+     1, NULL, NOW(6), NOW(6), 0),
 
     ('Ropa y Vestimenta',
      'ropa-y-vestimenta',
      'Ropa ritual para ceremonias, iniciaciones y ebós. '
      'Colores y telas asociados a cada Orisha.',
-     1, NULL),
+     1, NULL, NOW(6), NOW(6), 0),
 
     ('Incienso y Limpiezas',
      'incienso-y-limpiezas',
      'Plantas medicinales, resinas, omiero, sahumadores y todo lo necesario '
      'para limpiezas espirituales y purificaciones.',
-     1, NULL);
+     1, NULL, NOW(6), NOW(6), 0);
 
 -- ─── Productos de muestra ─────────────────────────────────────────────────────
 -- 12 productos con variedad de estados:
@@ -93,15 +107,17 @@ VALUES
 
 -- UC-CAT-13: catalogue_product ya no tiene category_id (M2M).
 -- Paso 1 — insertar productos sin categoría.
+-- is_deleted viene del SoftDeleteMixin (default False via ORM); en SQL
+-- puro es NOT NULL sin DEFAULT, asi que se da explicitamente como 0.
 INSERT IGNORE INTO catalogue_product
     (name, slug, sku, short_description, description,
      price, stock,
-     is_featured, is_active, is_published,
+     is_featured, is_active, is_published, is_deleted,
      created_at, updated_at)
 SELECT
     p.name, p.slug, p.sku, p.short_desc, p.desc_larga,
     p.price, p.stock,
-    p.is_featured, p.is_active, p.is_published,
+    p.is_featured, p.is_active, p.is_published, 0,
     NOW(6), NOW(6)
 FROM (
     -- ── Collares y Elekes ────────────────────────────────────────────────
