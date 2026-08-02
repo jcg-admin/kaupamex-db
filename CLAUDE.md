@@ -29,20 +29,17 @@ Esquema socket-primero, fallback TCP `127.0.0.1:3306`.
   con `nohup su mysql`, espera activa máx. 20×1s y corre `verify.sh`. `--no-verify`
   arranca sin verificar.
 - `bash scripts/verify.sh` — verificación del entorno. El total de checks se calcula
-  dinámicamente (`grep -c` sobre el propio script): hoy **11 checks** (`.env`, CLI,
+  dinámicamente (`grep -c` sobre el propio script): hoy **8 checks** (`.env`, CLI,
   versión 11.8, MariaDB responde, schemas db/qa + django_migrations, privilegios DML
-  django_user en db/qa, funciones/vistas/SPs SQL). Imprime resumen `OK: N`,
+  django_user en db/qa). Imprime resumen `OK: N`,
   `Advertencias: N`, `Errores: N`; exit 1 si hay errores.
 - `bash scripts/backup_db.sh` — dump comprimido (gzip -6) de ambos schemas con
   checksum MD5 y retención (`BACKUP_RETENTION_DAYS`, default 30). Usa `py_backup_user`
   (no root) con privilegios mínimos, creado idempotente. Timestamp TZ `America/Mexico_City`.
 - `python3 scripts/check_db.py` — verificación Python (mysqlclient + python-dotenv) de
   conectividad y privilegios DML de django_user en ambos schemas, y de
-  `django_migrations` / `users_user`. Requiere `pip install -r requirements.txt`
+  `django_migrations` / `res_users`. Requiere `pip install -r requirements.txt`
   (mysqlclient==2.2.1) y `libmysqlclient-dev`.
-- `bash provisioners/mariadb/deploy_objetos.sh` — despliega 3 funciones + 3 vistas +
-  3 SPs + seed en `practicayoruba_db` (idempotente, `CREATE OR REPLACE` / `INSERT IGNORE`;
-  migra nombres español→inglés). Requiere migraciones Django ya aplicadas.
 - `bash provisioners/mariadb/db_setup.sh` / `db_qa_setup.sh` — crean schema + django_user
   (idempotente). `install.sh` instala/pinea MariaDB 11.8.x.
 
@@ -60,12 +57,10 @@ Esquema socket-primero, fallback TCP `127.0.0.1:3306`.
 ## Estructura
 
 ```
-provisioners/mariadb/   db_setup.sh, db_qa_setup.sh, install.sh, deploy_objetos.sh,
-                        seed_catalogo.sql
-  objetos/funciones/    fn_price_with_tax, fn_stock_status, fn_qualifies_free_shipping
-  objetos/vistas/       v_published_catalog, v_featured_products, v_low_stock
-  objetos/sps/          sp_rpt_catalog_by_category, sp_rpt_low_stock, sp_rpt_catalog_summary
+provisioners/mariadb/   db_setup.sh, db_qa_setup.sh, install.sh
+  data/                 sepomex-codigos-postales.txt
 scripts/                start_db.sh, verify.sh, backup_db.sh, check_db.py, …
+  db-client/            verificación SSL/privilegios contra la VM de producción
 utils/                  core.sh, database.sh, logging.sh, network.sh, validation.sh
 config/mariadb/         99-practicayoruba.cnf
 ```
@@ -76,3 +71,22 @@ config/mariadb/         99-practicayoruba.cnf
 - `practicayoruba_qa` — testing.
 - `django_user` — usuario de aplicación; en db recibe `SELECT, INSERT, UPDATE, DELETE,
   CREATE, ALTER, DROP, INDEX, REFERENCES` (más `ALL` sobre `test_practicayoruba_db` para pytest).
+
+## Lo que este submódulo NO lleva (y por qué)
+
+Los objetos SQL de negocio —3 funciones, 3 vistas, 3 stored procedures,
+`deploy_objetos.sh` y `seed_catalogo.sql`— se **eliminaron**, no se archivaron.
+Medido sobre `odoo-tools@622ddc2a`: la referencia tiene **0**
+`CREATE PROCEDURE`/`FUNCTION` en sus 78 `.sql`, y declara sus vistas como
+**modelo Python** con `_auto = False` + `_table_query` (39 archivos; el
+`CREATE VIEW` lo emite el ORM, `odoo/addons/base/models/res_device.py:233`).
+No estaban desactualizados: su **forma** contradice la referencia, así que
+archivarlos los dejaría como tentación de reintroducirlos.
+
+Servían al addon `reports` de `api`, borrado en `api@115d219`; a HEAD tenían
+**0 consumidores** en `src/`. Igual se eliminaron `scripts/mapping/` (leía 18
+tablas, todas de familias muertas) y `scripts/fase5c/` (provisioning de una VM
+concreta, 0 invocadores). El git log conserva los tres. Ver H-DB-01.
+
+**Si vuelve a hacer falta una vista de reporte:** se declara como modelo Python
+en el addon dueño con `_auto = False`, no como `.sql` versionado aquí.
