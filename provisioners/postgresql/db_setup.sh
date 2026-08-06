@@ -55,8 +55,16 @@ source "${PROJECT_ROOT}/utils/postgresql.sh"
 
 ENV_FILE="${PROJECT_ROOT}/.env"
 if [[ -f "$ENV_FILE" ]]; then
-    # shellcheck disable=SC1090
-    set -a; source "$ENV_FILE"; set +a
+    # Fuente condicional: solo exporta lo que NO viene ya del entorno.
+    # ``set -a; source`` pisaría las credenciales inyectadas por el caller
+    # (``sudo env VAR=val``, CI/CD), que es exactamente al revés de 12-factor.
+    # Copiado del provisioner de MariaDB, que ya lo tenía resuelto; escribirlo
+    # con ``set -a`` fue una regresión frente al hermano. Ver H-DB-04.
+    while IFS='=' read -r key value; do
+        [[ "$key" =~ ^[A-Z_][A-Z0-9_]*$ ]] || continue
+        [[ -n "${!key+x}" ]] && continue
+        export "$key=$value"
+    done < <(grep -E '^[A-Z_][A-Z0-9_]*=' "$ENV_FILE")
 fi
 
 IS_QA=false
@@ -113,7 +121,7 @@ _pg_exists() {
 #   IF NOT EXISTS`` de MariaDB), así que la idempotencia se construye: se
 #   consulta ``pg_roles`` y se crea o se actualiza la contraseña.
 # -----------------------------------------------------------------------------
-log_step 1 4 "Rol ${TARGET_USER}"
+log_step 1 5 "Rol ${TARGET_USER}"
 if _pg_exists "SELECT 1 FROM pg_roles WHERE rolname = '${TARGET_USER}'"; then
     _pg "ALTER ROLE \\\"${TARGET_USER}\\\" WITH LOGIN PASSWORD '${TARGET_PASSWORD}'" >/dev/null
     log_success "Rol ya existía — contraseña actualizada"
@@ -134,7 +142,7 @@ fi
 #   distintos de los de ``template1``; sin él, ``CREATE DATABASE`` los hereda
 #   y rechaza el override.
 # -----------------------------------------------------------------------------
-log_step 2 4 "Base ${TARGET_DB}"
+log_step 2 5 "Base ${TARGET_DB}"
 if _pg_exists "SELECT 1 FROM pg_database WHERE datname = '${TARGET_DB}'"; then
     log_success "Base ya existía — no se toca"
 else
@@ -152,15 +160,51 @@ fi
 #   Es la diferencia con MariaDB que más fácil pasa desapercibida, porque el
 #   error aparece en la primera migración, no aquí.
 # -----------------------------------------------------------------------------
-log_step 3 4 "Privilegios sobre el schema public"
+log_step 3 5 "Privilegios sobre el schema public"
 su postgres -c "psql -v ON_ERROR_STOP=1 -tAX -d '${TARGET_DB}' -c \
     \"GRANT ALL ON SCHEMA public TO \\\"${TARGET_USER}\\\"\"" >/dev/null
 log_success "GRANT aplicado"
 
 # -----------------------------------------------------------------------------
+# Autenticación por socket — pg_hba.conf
+#   La convención del proyecto es conectar por socket Unix. En MariaDB eso
+#   salía gratis: el usuario se autentica con contraseña venga por socket o
+#   por TCP. En PostgreSQL NO: el pg_hba por defecto de Debian trae
+#
+#       local   all   all   peer
+#
+#   y ``peer`` exige que el usuario del SISTEMA operativo se llame igual que
+#   el rol. Como la aplicación corre con otro usuario, la conexión por socket
+#   falla con "Peer authentication failed for user" — mientras que la misma
+#   credencial por TCP funciona, porque ahí el default sí es scram.
+#
+#   Se añade una regla de socket para ESTE rol, por encima de la genérica,
+#   con el mismo método que ya usa el TCP local. No se toca la línea de
+#   ``postgres``: su ``peer`` es lo que permite administrar sin contraseña.
+#   Ver H-DB-05.
+# -----------------------------------------------------------------------------
+log_step 4 5 "Autenticación por socket para ${TARGET_USER}"
+HBA="$(su postgres -c 'psql -tAX -c "SHOW hba_file"')"
+REGLA="local   all             ${TARGET_USER}                            scram-sha-256"
+if grep -qE "^local[[:space:]]+all[[:space:]]+${TARGET_USER}[[:space:]]" "$HBA"; then
+    log_success "Regla de socket ya presente — no se toca"
+else
+    # Insertar ANTES de la primera regla genérica ``local all all``: pg_hba se
+    # evalúa en orden y la primera coincidencia gana. Ponerla después no
+    # tendría efecto alguno.
+    awk -v regla="$REGLA" '
+        !hecho && /^local[[:space:]]+all[[:space:]]+all[[:space:]]/ { print regla; hecho = 1 }
+        { print }
+    ' "$HBA" > "${HBA}.nuevo" && mv "${HBA}.nuevo" "$HBA"
+    chown postgres:postgres "$HBA"; chmod 640 "$HBA"
+    su postgres -c "psql -tAX -c 'SELECT pg_reload_conf()'" >/dev/null
+    log_success "Regla añadida y configuración recargada"
+fi
+
+# -----------------------------------------------------------------------------
 # Verificación — no se declara hecho sin leer el estado resultante
 # -----------------------------------------------------------------------------
-log_step 4 4 "Verificación"
+log_step 5 5 "Verificación"
 _pg_exists "SELECT 1 FROM pg_database WHERE datname = '${TARGET_DB}'" \
     || log_fatal "La base ${TARGET_DB} no existe tras crearla"
 _pg_exists "SELECT 1 FROM pg_roles WHERE rolname = '${TARGET_USER}' AND rolcanlogin" \

@@ -77,8 +77,12 @@ source "${PROJECT_ROOT}/utils/postgresql.sh"
 
 ENV_FILE="${PROJECT_ROOT}/.env"
 if [[ -f "$ENV_FILE" ]]; then
-    # shellcheck disable=SC1090
-    set -a; source "$ENV_FILE"; set +a
+    # Fuente condicional — el entorno gana sobre el archivo (ver H-DB-04).
+    while IFS='=' read -r key value; do
+        [[ "$key" =~ ^[A-Z_][A-Z0-9_]*$ ]] || continue
+        [[ -n "${!key+x}" ]] && continue
+        export "$key=$value"
+    done < <(grep -E '^[A-Z_][A-Z0-9_]*=' "$ENV_FILE")
 fi
 
 POSTGRES_MIN_MAJOR="${POSTGRES_MIN_MAJOR:-14}"
