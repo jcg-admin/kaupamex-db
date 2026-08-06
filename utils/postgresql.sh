@@ -200,3 +200,52 @@ postgres_start() {
 
     return 1
 }
+
+# -----------------------------------------------------------------------------
+# postgres_ensure_hba_socket <rol>
+#   Garantiza que <rol> pueda autenticar con contraseña POR SOCKET.
+#   Idempotente: si la regla ya está, no toca nada. Requiere root.
+#
+#   Por qué existe como función y no inline en el provisioner: el mismo
+#   problema aparece para CADA rol que conecte por socket, no sólo para el de
+#   la aplicación. ``backup_postgres.sh --setup-user`` creó su rol sin la
+#   regla y pg_dump falló con "Peer authentication failed" — el mismo H-DB-05
+#   una segunda vez, en otro script. Un rol nuevo sin regla es el modo de
+#   fallo por defecto de este motor en Debian, así que la cura vive junto a la
+#   creación de roles, no copiada en cada consumidor. Ver H-DB-08.
+#
+#   El pg_hba de Debian trae ``local all all peer``; ``peer`` exige que el
+#   usuario del SISTEMA se llame igual que el rol. La regla nueva va POR
+#   ENCIMA de esa: pg_hba se evalúa en orden y la primera coincidencia gana,
+#   así que ponerla después no tendría efecto.
+#
+#   NO se toca la línea de ``postgres``: su ``peer`` es lo que permite
+#   administrar el motor sin contraseña.
+# -----------------------------------------------------------------------------
+postgres_ensure_hba_socket() {
+    local rol="$1"
+    local hba regla
+
+    hba="$(su postgres -c 'psql -tAX -c "SHOW hba_file"' 2>/dev/null | tr -d '[:space:]')"
+    if [[ -z "$hba" || ! -f "$hba" ]]; then
+        echo "No se pudo localizar pg_hba.conf"
+        return 1
+    fi
+
+    if grep -qE "^local[[:space:]]+all[[:space:]]+${rol}[[:space:]]" "$hba"; then
+        echo "Regla de socket ya presente para ${rol}"
+        return 0
+    fi
+
+    regla="local   all             ${rol}                            scram-sha-256"
+    awk -v regla="$regla" '
+        !hecho && /^local[[:space:]]+all[[:space:]]+all[[:space:]]/ { print regla; hecho = 1 }
+        { print }
+    ' "$hba" > "${hba}.nuevo" && mv "${hba}.nuevo" "$hba"
+    chown postgres:postgres "$hba"
+    chmod 640 "$hba"
+    su postgres -c "psql -tAX -c 'SELECT pg_reload_conf()'" >/dev/null 2>&1
+
+    echo "Regla de socket añadida para ${rol} y configuración recargada"
+    return 0
+}

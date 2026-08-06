@@ -132,7 +132,7 @@ _pg_exists() {
 #   ``company\_%`` de MariaDB, y se acepta porque la alternativa —que el rol de
 #   aplicación sea superusuario, o que un humano cree cada base a mano— es
 #   peor. Ver H-DB-06.
-log_step 1 5 "Rol ${TARGET_USER}"
+log_step 1 6 "Rol ${TARGET_USER}"
 if _pg_exists "SELECT 1 FROM pg_roles WHERE rolname = '${TARGET_USER}'"; then
     _pg "ALTER ROLE \\\"${TARGET_USER}\\\" WITH LOGIN CREATEDB PASSWORD '${TARGET_PASSWORD}'" >/dev/null
     log_success "Rol ya existía — contraseña y CREATEDB actualizados"
@@ -153,7 +153,7 @@ fi
 #   distintos de los de ``template1``; sin él, ``CREATE DATABASE`` los hereda
 #   y rechaza el override.
 # -----------------------------------------------------------------------------
-log_step 2 5 "Base ${TARGET_DB}"
+log_step 2 6 "Base ${TARGET_DB}"
 if _pg_exists "SELECT 1 FROM pg_database WHERE datname = '${TARGET_DB}'"; then
     log_success "Base ya existía — no se toca"
 else
@@ -171,10 +171,35 @@ fi
 #   Es la diferencia con MariaDB que más fácil pasa desapercibida, porque el
 #   error aparece en la primera migración, no aquí.
 # -----------------------------------------------------------------------------
-log_step 3 5 "Privilegios sobre el schema public"
+log_step 3 6 "Privilegios sobre el schema public"
 su postgres -c "psql -v ON_ERROR_STOP=1 -tAX -d '${TARGET_DB}' -c \
     \"GRANT ALL ON SCHEMA public TO \\\"${TARGET_USER}\\\"\"" >/dev/null
 log_success "GRANT aplicado"
+
+# -----------------------------------------------------------------------------
+# Extensiones
+#   Las mismas dos que la referencia instala al crear cada base:
+#   ``odoo19c: odoo/service/db.py::_create_empty_database`` ejecuta
+#   ``CREATE EXTENSION IF NOT EXISTS`` sobre ``unaccent`` y ``pg_trgm``.
+#
+#   Van AQUÍ y no sólo en el aprovisionamiento por empresa: las dos bases L0
+#   (``kaupamex_db`` y ``kaupamex_qa``) las crea este script, así que sin este
+#   paso quedaban sin extensiones mientras las bases por empresa sí las tenían
+#   — la búsqueda por similitud habría funcionado por empresa y no en L0.
+#   Detectado por ``scripts/verify_postgres.sh`` (H-DB-07).
+#
+#   Requiere superusuario: ``CREATE EXTENSION`` no lo puede el owner de la
+#   base. Por eso corre como ``postgres`` y no como el rol de aplicación.
+# -----------------------------------------------------------------------------
+log_step 4 6 "Extensiones (unaccent, pg_trgm)"
+for _ext in unaccent pg_trgm; do
+    if su postgres -c "psql -v ON_ERROR_STOP=1 -tAX -d '${TARGET_DB}' -c \
+        \"CREATE EXTENSION IF NOT EXISTS ${_ext}\"" >/dev/null 2>&1; then
+        log_success "${_ext} instalada"
+    else
+        log_warn "${_ext} no se pudo instalar — ¿falta postgresql-contrib?"
+    fi
+done
 
 # -----------------------------------------------------------------------------
 # Autenticación por socket — pg_hba.conf
@@ -194,28 +219,16 @@ log_success "GRANT aplicado"
 #   ``postgres``: su ``peer`` es lo que permite administrar sin contraseña.
 #   Ver H-DB-05.
 # -----------------------------------------------------------------------------
-log_step 4 5 "Autenticación por socket para ${TARGET_USER}"
-HBA="$(su postgres -c 'psql -tAX -c "SHOW hba_file"')"
-REGLA="local   all             ${TARGET_USER}                            scram-sha-256"
-if grep -qE "^local[[:space:]]+all[[:space:]]+${TARGET_USER}[[:space:]]" "$HBA"; then
-    log_success "Regla de socket ya presente — no se toca"
-else
-    # Insertar ANTES de la primera regla genérica ``local all all``: pg_hba se
-    # evalúa en orden y la primera coincidencia gana. Ponerla después no
-    # tendría efecto alguno.
-    awk -v regla="$REGLA" '
-        !hecho && /^local[[:space:]]+all[[:space:]]+all[[:space:]]/ { print regla; hecho = 1 }
-        { print }
-    ' "$HBA" > "${HBA}.nuevo" && mv "${HBA}.nuevo" "$HBA"
-    chown postgres:postgres "$HBA"; chmod 640 "$HBA"
-    su postgres -c "psql -tAX -c 'SELECT pg_reload_conf()'" >/dev/null
-    log_success "Regla añadida y configuración recargada"
-fi
+#   La mecánica vive en ``postgres_ensure_hba_socket`` (utils/postgresql.sh)
+#   porque el mismo problema aplica a CUALQUIER rol que conecte por socket,
+#   no sólo al de la aplicación — ver H-DB-08.
+log_step 5 6 "Autenticación por socket para ${TARGET_USER}"
+log_success "$(postgres_ensure_hba_socket "${TARGET_USER}")"
 
 # -----------------------------------------------------------------------------
 # Verificación — no se declara hecho sin leer el estado resultante
 # -----------------------------------------------------------------------------
-log_step 5 5 "Verificación"
+log_step 6 6 "Verificación"
 _pg_exists "SELECT 1 FROM pg_database WHERE datname = '${TARGET_DB}'" \
     || log_fatal "La base ${TARGET_DB} no existe tras crearla"
 _pg_exists "SELECT 1 FROM pg_roles WHERE rolname = '${TARGET_USER}' AND rolcanlogin" \

@@ -36,7 +36,33 @@ Las reglas no negociables viven en el superproyecto, no aquí:
 ## Comandos
 
 Todos leen variables desde `.env` en la raíz del repo (copiar de `.env.example`).
-Esquema socket-primero, fallback TCP `127.0.0.1:3306`.
+Esquema socket-primero, fallback TCP.
+
+### PostgreSQL — el motor en uso
+
+Nombres explícitos, no genéricos: `start_db.sh`/`verify.sh`/`backup_db.sh` se
+quedan con MariaDB porque están citados en docs, reglas y el runbook E2E de `ui`.
+Mismo criterio que `utils/postgresql.sh` junto a `utils/database.sh`.
+
+- `bash scripts/start_postgres.sh` — arranque idempotente. Si ya responde,
+  informa y sale. Si no, arranca el **cluster** (systemd si está; si no,
+  `pg_ctlcluster`) y **verifica el mínimo efectivo (14)** antes de seguir:
+  Django 6 aborta la conexión por debajo, no avisa. `--no-verify` omite el
+  verify. NO replica el `nohup mariadbd` — en Debian se opera por cluster, y
+  `initdb`/`pg_ctl` no están en `PATH` a propósito.
+- `bash scripts/verify_postgres.sh` — **9 checks** (conteo dinámico): `.env`,
+  CLI, servidor responde, mínimo efectivo, ambas bases + `django_migrations`,
+  rol `LOGIN`+`CREATEDB`, **autenticación por socket** y extensiones. El check
+  de socket es el que atrapa H-DB-05: un fallo de credenciales y uno de método
+  de autenticación se ven idénticos desde la aplicación.
+- `bash scripts/backup_postgres.sh` — `pg_dump -Fc` (comprimido nativo, sin
+  `| gzip`) de ambas bases + SHA-256, verificado con `pg_restore --list` — un
+  archivo íntegro puede no ser un dump válido, y el checksum solo no distingue
+  esos dos casos. Retención `BACKUP_RETENTION_DAYS` (30).
+  `sudo bash scripts/backup_postgres.sh --setup-user` crea el rol de respaldo
+  con `pg_read_all_data` (PG 14+) — lectura de todo, escritura de nada.
+
+### MariaDB — motor de producción hasta el corte
 
 - `bash scripts/start_db.sh` — arranque de MariaDB **sin systemd** (idempotente).
   Si ya responde, informa y sale. Si no: limpia pid/sock stale, arranca `mariadbd`
@@ -97,7 +123,8 @@ referencia del motor que sigue corriendo en producción hasta el corte.
 provisioners/mariadb/   db_setup.sh, db_qa_setup.sh, install.sh
   data/                 sepomex-codigos-postales.txt
 provisioners/postgresql/ install.sh, db_setup.sh (--qa para la base de pruebas)
-scripts/                start_db.sh, verify.sh, backup_db.sh, check_db.py, …
+scripts/                start_postgres.sh, verify_postgres.sh, backup_postgres.sh
+                        start_db.sh, verify.sh, backup_db.sh (MariaDB), check_db.py, …
   db-client/            verificación SSL/privilegios contra la VM de producción
 utils/                  core.sh, database.sh (MariaDB), postgresql.sh, logging.sh,
                         network.sh, validation.sh
