@@ -1,15 +1,23 @@
 # CLAUDE.md — kaupamex-db
 
 Submódulo **db** del monorepo PracticaYoruba (repo GitHub `jcg-admin/kaupamex-db`).
-Base de datos de PracticaYoruba, provisionada con bash + python-dotenv (sin Vagrant).
+Base de datos, provisionada con bash + python-dotenv (sin Vagrant).
 Cheat-sheet local — no duplica el gobierno del padre.
 
-**Dos motores en el repo, y no es indecisión.** `provisioners/mariadb/` sigue siendo
-el motor en uso; `provisioners/postgresql/` existe porque la referencia adapta contra
-PostgreSQL (SQL crudo, `Query`/`SQL()`, índices GIN, operadores de arreglo) y el
-costo de esa divergencia ya está medido — ver `analisis-postgres-only-vs-mariadb.rst`
-y `reporte-costo-mariadb-vs-postgres-2026-08-06.rst` en docs. Tener el provisioning
-listo no decide la migración: la habilita para cuando se decida.
+**El motor es PostgreSQL** (`docs: source/backend/adr/adr-028-postgresql.rst`,
+supersede ADR-009). Mínimo efectivo **14** — el mayor de los dos mínimos que atan al
+proyecto: la referencia declara 13 (`odoo19c: odoo/release.py:41`, que avisa) y
+Django 6 declara 14 (`django/db/backends/postgresql/features.py:10`, que **aborta**
+la conexión). Bases `kaupamex_db` (prod/dev) y `kaupamex_qa` (tests), rol
+`django_user`. Desarrollo y pruebas ya corren ahí: suite api **2 235 passed,
+5 skipped, 0 failed** contra PostgreSQL 16.13 (2026-08-06).
+
+**`provisioners/mariadb/` sigue en el repo, y no es indecisión.** **Producción
+sigue en MariaDB** hasta que se ejecute el corte, que es una iniciativa de
+operaciones aparte; hasta entonces el provisioner del motor viejo describe lo que
+hay en la VM. El análisis que fundó el cambio:
+`analisis-postgres-only-vs-mariadb.rst` y
+`reporte-costo-mariadb-vs-postgres-2026-08-06.rst` en docs.
 
 ## Gobernanza
 
@@ -64,12 +72,17 @@ Esquema socket-primero, fallback TCP `127.0.0.1:3306`.
 (database vs schema vs rol), los 33 binarios y por qué `initdb`/`pg_ctl`/`postgres`
 **no** están en `PATH` (Debian opera por cluster: `pg_ctlcluster`, `pg_lsclusters`,
 `pg_conftool`), el mínimo efectivo, y las diferencias de dialecto e índices frente a
-MariaDB. Hermano de `db-mysql` (que vive en `api`), no su reemplazo: MariaDB sigue
-siendo el motor en uso.
+MariaDB. Es el skill **del motor en uso**; `db-mysql` (que vive en `api`) queda como
+referencia del motor que sigue corriendo en producción hasta el corte.
 
 ## Convenciones locales / gotchas
 
-- **Socket Unix** `/run/mysqld/mysqld.sock` es la ruta canónica (verificado: owner
+- **Socket Unix de PostgreSQL** — en libpq el socket **es el HOST**: `HOST` es el
+  *directorio* (`/var/run/postgresql`) y `PORT` nombra el archivo
+  (`.s.PGSQL.5432`). Un `Peer authentication failed` no es de credenciales: el
+  `pg_hba.conf` de Debian asigna `peer` al canal local (H-DB-05).
+- **Socket Unix de MariaDB** `/run/mysqld/mysqld.sock` es la ruta canónica del motor
+  viejo, que sigue en producción (verificado: owner
   `mysql`). Los scripts intentan socket primero, luego TCP.
 - **`mariadb-admin`, no `mysqladmin`.** En MariaDB 11.8 / Ubuntu 24.04 los aliases
   legacy ya no se instalan; `utils/database.sh::mariadb_admin_bin` resuelve
@@ -91,12 +104,22 @@ utils/                  core.sh, database.sh (MariaDB), postgresql.sh, logging.s
 config/mariadb/         99-practicayoruba.cnf
 ```
 
-## Schemas y usuario
+## Bases y rol (PostgreSQL)
 
-- `practicayoruba_db` — producción/desarrollo (charset utf8mb4, collate utf8mb4_unicode_ci).
-- `practicayoruba_qa` — testing.
-- `django_user` — usuario de aplicación; en db recibe `SELECT, INSERT, UPDATE, DELETE,
-  CREATE, ALTER, DROP, INDEX, REFERENCES` (más `ALL` sobre `test_practicayoruba_db` para pytest).
+En PostgreSQL lo que MariaDB llamaba *schema* es una **base**; un *schema* es un
+namespace **dentro** de una base (el default es `public`).
+
+- `kaupamex_db` — producción/desarrollo (encoding `unicode`, `TEMPLATE template0`).
+- `kaupamex_qa` — testing.
+- `django_user` — rol de aplicación, `LOGIN CREATEDB` + `GRANT ALL ON SCHEMA public`.
+  `CREATEDB` es un atributo **global** del rol: no admite acotar por patrón de
+  nombre como el `GRANT ... company\_%` de MariaDB (H-DB-06). Desde PG 15 el schema
+  `public` ya no se otorga a `PUBLIC`, de ahí el `GRANT` explícito.
+- Las bases por empresa (`company_<N>_db`) las crea la app, con `pg_trgm` y
+  `unaccent` instaladas al crearlas.
+
+**Motor viejo (producción, hasta el corte):** schemas `practicayoruba_db` /
+`practicayoruba_qa` en MariaDB, charset `utf8mb4`, collate `utf8mb4_unicode_ci`.
 
 ## Lo que este submódulo NO lleva (y por qué)
 
