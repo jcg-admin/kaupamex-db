@@ -49,12 +49,23 @@ Esquema socket-primero, fallback TCP `127.0.0.1:3306`.
 - `bash provisioners/mariadb/db_setup.sh` / `db_qa_setup.sh` — crean schema + django_user
   (idempotente). `install.sh` instala/pinea MariaDB 11.8.x.
 - `bash provisioners/postgresql/install.sh` — instala el PostgreSQL **del distro** y
-  verifica que satisfaga el mínimo de la referencia (`MIN_PG_VERSION = 13`,
-  `odoo19c: odoo/release.py:41`). No pinea versión, igual que el `debian/control` de
-  la referencia; en Ubuntu 24.04 resuelve a **16**. `--migrate` purga (destructivo).
+  verifica el **mínimo efectivo**: el mayor entre el de la referencia (13,
+  `odoo19c: odoo/release.py:41`) y el de nuestro ORM (**14**,
+  `django/db/backends/postgresql/features.py:10` — aborta la conexión, no avisa).
+  Ver H-DB-03. No pinea versión, igual que el `debian/control` de la referencia; en
+  Ubuntu 24.04 resuelve a **16**. `--migrate` purga (destructivo).
 - `bash provisioners/postgresql/db_setup.sh [--qa]` — crea **base** + **rol**
   (idempotente). Un archivo con flag, no dos como en MariaDB: la lógica es idéntica y
   duplicarla es cómo divergen dos scripts gemelos.
+
+## Skill del motor
+
+`.claude/skills/db-postgres/SKILL.md` — el skill de PostgreSQL: modelo de nombres
+(database vs schema vs rol), los 33 binarios y por qué `initdb`/`pg_ctl`/`postgres`
+**no** están en `PATH` (Debian opera por cluster: `pg_ctlcluster`, `pg_lsclusters`,
+`pg_conftool`), el mínimo efectivo, y las diferencias de dialecto e índices frente a
+MariaDB. Hermano de `db-mysql` (que vive en `api`), no su reemplazo: MariaDB sigue
+siendo el motor en uso.
 
 ## Convenciones locales / gotchas
 

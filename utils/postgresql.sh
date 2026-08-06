@@ -52,10 +52,19 @@ _POSTGRES_SOCKET_DIRS=(
     "/tmp"
 )
 
-# Mínimo declarado por la referencia (``odoo19c: odoo/release.py:41``).
-# No es un capricho local: por debajo de esto la referencia avisa en cada
-# arranque.
-POSTGRES_MIN_MAJOR="${POSTGRES_MIN_MAJOR:-13}"
+# Mínimo efectivo = el MAYOR de los dos mínimos que nos atan, no el de la
+# referencia solo:
+#
+#   | Quién lo impone | Mínimo | Dónde                                       |
+#   |-----------------|--------|---------------------------------------------|
+#   | la referencia   | **13** | ``odoo19c: odoo/release.py:41``             |
+#   | **nuestro ORM** | **14** | ``django/db/backends/postgresql/features.py:10`` |
+#
+# Django 6 no avisa: `minimum_database_version = (14,)` aborta la conexión.
+# Un servidor 13 pasaría el gate de la referencia y **rompería el arranque**
+# de nuestro backend, así que 13 sería un gate que no protege lo que el
+# proyecto realmente ejecuta. Ver H-DB-03.
+POSTGRES_MIN_MAJOR="${POSTGRES_MIN_MAJOR:-14}"
 
 # -----------------------------------------------------------------------------
 # postgres_client_bin
@@ -137,10 +146,12 @@ postgres_meets_minimum() {
         return 1
     fi
     if (( major < POSTGRES_MIN_MAJOR )); then
-        echo "PostgreSQL ${major} < mínimo ${POSTGRES_MIN_MAJOR} de la referencia"
+        echo "PostgreSQL ${major} < mínimo efectivo ${POSTGRES_MIN_MAJOR}" \
+             "(referencia 13 · Django 6 exige 14)"
         return 1
     fi
-    echo "PostgreSQL ${major} (mínimo de la referencia: ${POSTGRES_MIN_MAJOR})"
+    echo "PostgreSQL ${major} (mínimo efectivo: ${POSTGRES_MIN_MAJOR}" \
+         "— referencia 13, Django 6 exige 14)"
     return 0
 }
 

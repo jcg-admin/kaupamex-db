@@ -1,7 +1,7 @@
 #!/bin/bash
 # =============================================================================
 # provisioners/postgresql/install.sh
-# Instala PostgreSQL (el del distro, ≥ mínimo de la referencia)
+# Instala PostgreSQL (el del distro, ≥ mínimo efectivo: referencia 13, Django 14)
 # =============================================================================
 # IDEMPOTENTE: si ya hay un servidor que satisface el mínimo, no hace nada.
 #
@@ -53,8 +53,15 @@
 #   alternativa real y no un exotismo. Se descarta por ahora porque añade un
 #   repositorio externo al provisioning, no porque no funcione. Ver H-DB-02.
 #
+#   El mínimo que se verifica **no** es el de la referencia solo: es el mayor
+#   de los dos que nos atan — referencia **13** (``odoo19c: odoo/release.py:41``)
+#   y **Django 6 = 14** (``django/db/backends/postgresql/features.py:10``,
+#   ``minimum_database_version``, que aborta la conexión en vez de avisar). Un
+#   servidor 13 pasaría el gate de la referencia y rompería nuestro arranque.
+#   Ver H-DB-03.
+#
 # Variables del .env (opcionales, con defaults):
-#   POSTGRES_MIN_MAJOR  (default: 13 — el mínimo de la referencia)
+#   POSTGRES_MIN_MAJOR  (default: 14 — mínimo efectivo, ver arriba)
 # =============================================================================
 set -euo pipefail
 
@@ -74,7 +81,7 @@ if [[ -f "$ENV_FILE" ]]; then
     set -a; source "$ENV_FILE"; set +a
 fi
 
-POSTGRES_MIN_MAJOR="${POSTGRES_MIN_MAJOR:-13}"
+POSTGRES_MIN_MAJOR="${POSTGRES_MIN_MAJOR:-14}"
 MIGRATE=false
 [[ "${1:-}" == "--migrate" ]] && MIGRATE=true
 
@@ -96,7 +103,7 @@ if command_exists psql; then
         # -------------------------------------------------------------------
         log_warn "${diagnostico}"
         if [[ "$MIGRATE" != true ]]; then
-            log_error "El servidor no satisface el mínimo de la referencia."
+            log_error "El servidor no satisface el mínimo efectivo (referencia 13, Django 6 exige 14)."
             log_info  "Para reinstalar PURGANDO los datos existentes:"
             log_info  "    sudo bash provisioners/postgresql/install.sh --migrate"
             log_info  "Antes de eso, respaldar:  pg_dumpall > respaldo.sql"
@@ -127,7 +134,7 @@ fi
 # Gate: lo instalado tiene que satisfacer el mínimo. Instalar y no verificar
 # dejaría el mismo estado que el escenario C, sin avisar.
 # -----------------------------------------------------------------------------
-log_step 3 3 "Verificando contra el mínimo de la referencia"
+log_step 3 3 "Verificando contra el mínimo efectivo (referencia 13 · Django 14)"
 if diagnostico="$(postgres_meets_minimum)"; then
     log_success "$diagnostico"
 else
