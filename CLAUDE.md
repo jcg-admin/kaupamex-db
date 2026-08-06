@@ -1,9 +1,15 @@
 # CLAUDE.md — kaupamex-db
 
 Submódulo **db** del monorepo PracticaYoruba (repo GitHub `jcg-admin/kaupamex-db`).
-Base de datos de PracticaYoruba sobre **MariaDB 11.8 LTS**, provisionada con bash +
-python-dotenv (sin Vagrant, sin PostgreSQL). Cheat-sheet local — no duplica el gobierno
-del padre.
+Base de datos de PracticaYoruba, provisionada con bash + python-dotenv (sin Vagrant).
+Cheat-sheet local — no duplica el gobierno del padre.
+
+**Dos motores en el repo, y no es indecisión.** `provisioners/mariadb/` sigue siendo
+el motor en uso; `provisioners/postgresql/` existe porque la referencia adapta contra
+PostgreSQL (SQL crudo, `Query`/`SQL()`, índices GIN, operadores de arreglo) y el
+costo de esa divergencia ya está medido — ver `analisis-postgres-only-vs-mariadb.rst`
+y `reporte-costo-mariadb-vs-postgres-2026-08-06.rst` en docs. Tener el provisioning
+listo no decide la migración: la habilita para cuando se decida.
 
 ## Gobernanza
 
@@ -42,6 +48,13 @@ Esquema socket-primero, fallback TCP `127.0.0.1:3306`.
   (mysqlclient==2.2.1) y `libmysqlclient-dev`.
 - `bash provisioners/mariadb/db_setup.sh` / `db_qa_setup.sh` — crean schema + django_user
   (idempotente). `install.sh` instala/pinea MariaDB 11.8.x.
+- `bash provisioners/postgresql/install.sh` — instala el PostgreSQL **del distro** y
+  verifica que satisfaga el mínimo de la referencia (`MIN_PG_VERSION = 13`,
+  `odoo19c: odoo/release.py:41`). No pinea versión, igual que el `debian/control` de
+  la referencia; en Ubuntu 24.04 resuelve a **16**. `--migrate` purga (destructivo).
+- `bash provisioners/postgresql/db_setup.sh [--qa]` — crea **base** + **rol**
+  (idempotente). Un archivo con flag, no dos como en MariaDB: la lógica es idéntica y
+  duplicarla es cómo divergen dos scripts gemelos.
 
 ## Convenciones locales / gotchas
 
@@ -59,9 +72,11 @@ Esquema socket-primero, fallback TCP `127.0.0.1:3306`.
 ```
 provisioners/mariadb/   db_setup.sh, db_qa_setup.sh, install.sh
   data/                 sepomex-codigos-postales.txt
+provisioners/postgresql/ install.sh, db_setup.sh (--qa para la base de pruebas)
 scripts/                start_db.sh, verify.sh, backup_db.sh, check_db.py, …
   db-client/            verificación SSL/privilegios contra la VM de producción
-utils/                  core.sh, database.sh, logging.sh, network.sh, validation.sh
+utils/                  core.sh, database.sh (MariaDB), postgresql.sh, logging.sh,
+                        network.sh, validation.sh
 config/mariadb/         99-practicayoruba.cnf
 ```
 
