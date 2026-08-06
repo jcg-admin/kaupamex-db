@@ -12,11 +12,19 @@ la conexión). Bases `kaupamex_db` (prod/dev) y `kaupamex_qa` (tests), rol
 `django_user`. Desarrollo y pruebas ya corren ahí: suite api **2 235 passed,
 5 skipped, 0 failed** contra PostgreSQL 16.13 (2026-08-06).
 
-**`provisioners/mariadb/` sigue en el repo, y no es indecisión.** **Producción
-sigue en MariaDB** hasta que se ejecute el corte, que es una iniciativa de
-operaciones aparte; hasta entonces el provisioner del motor viejo describe lo que
-hay en la VM. El análisis que fundó el cambio:
-`analisis-postgres-only-vs-mariadb.rst` y
+**`provisioners/mariadb/` sigue en el repo, y ya no hay razón operativa para
+ello.** Hasta el 2026-08-06 este párrafo decía que producción seguía en MariaDB
+hasta el corte. **Es falso**: la VM se eliminó y no se considera activa
+(directiva del ejecutor). El próximo despliegue se levanta con PostgreSQL +
+Gunicorn embebido, como aplicación autocontenida Django + DRF.
+
+Lo que queda del motor viejo —`provisioners/mariadb/`, `start_db.sh`,
+`verify.sh`, `backup_db.sh`, `check_db.py`— **no sirve a ningún entorno**. Sigue
+en el repo porque hay documentos, reglas y el runbook E2E de `ui` que lo citan,
+no porque algo lo ejecute. Retirarlo es una decisión pendiente del ejecutor, no
+un olvido: la alternativa a borrarlo es limpiar primero las citas.
+
+El análisis que fundó el cambio: `analisis-postgres-only-vs-mariadb.rst` y
 `reporte-costo-mariadb-vs-postgres-2026-08-06.rst` en docs.
 
 ## Gobernanza
@@ -62,7 +70,7 @@ Mismo criterio que `utils/postgresql.sh` junto a `utils/database.sh`.
   `sudo bash scripts/backup_postgres.sh --setup-user` crea el rol de respaldo
   con `pg_read_all_data` (PG 14+) — lectura de todo, escritura de nada.
 
-### MariaDB — motor de producción hasta el corte
+### MariaDB — sin entorno al que aplicarse (ver arriba)
 
 - `bash scripts/start_db.sh` — arranque de MariaDB **sin systemd** (idempotente).
   Si ya responde, informa y sale. Si no: limpia pid/sock stale, arranca `mariadbd`
@@ -99,7 +107,7 @@ Mismo criterio que `utils/postgresql.sh` junto a `utils/database.sh`.
 **no** están en `PATH` (Debian opera por cluster: `pg_ctlcluster`, `pg_lsclusters`,
 `pg_conftool`), el mínimo efectivo, y las diferencias de dialecto e índices frente a
 MariaDB. Es el skill **del motor en uso**; `db-mysql` (que vive en `api`) queda como
-referencia del motor que sigue corriendo en producción hasta el corte.
+referencia del motor retirado.
 
 ## Convenciones locales / gotchas
 
@@ -107,9 +115,10 @@ referencia del motor que sigue corriendo en producción hasta el corte.
   *directorio* (`/var/run/postgresql`) y `PORT` nombra el archivo
   (`.s.PGSQL.5432`). Un `Peer authentication failed` no es de credenciales: el
   `pg_hba.conf` de Debian asigna `peer` al canal local (H-DB-05).
-- **Socket Unix de MariaDB** `/run/mysqld/mysqld.sock` es la ruta canónica del motor
-  viejo, que sigue en producción (verificado: owner
-  `mysql`). Los scripts intentan socket primero, luego TCP.
+- **Socket Unix de MariaDB** `/run/mysqld/mysqld.sock` es la ruta canónica del
+  motor viejo (verificado: owner `mysql`). Los scripts intentan socket primero,
+  luego TCP. Sólo aplica a los scripts de MariaDB, que ya no sirven a ningún
+  entorno.
 - **`mariadb-admin`, no `mysqladmin`.** En MariaDB 11.8 / Ubuntu 24.04 los aliases
   legacy ya no se instalan; `utils/database.sh::mariadb_admin_bin` resuelve
   `mariadb-admin` (canónico) con fallback a `mysqladmin`.
@@ -145,7 +154,7 @@ namespace **dentro** de una base (el default es `public`).
 - Las bases por empresa (`company_<N>_db`) las crea la app, con `pg_trgm` y
   `unaccent` instaladas al crearlas.
 
-**Motor viejo (producción, hasta el corte):** schemas `practicayoruba_db` /
+**Motor viejo (sin entorno activo):** schemas `practicayoruba_db` /
 `practicayoruba_qa` en MariaDB, charset `utf8mb4`, collate `utf8mb4_unicode_ci`.
 
 ## Lo que este submódulo NO lleva (y por qué)
