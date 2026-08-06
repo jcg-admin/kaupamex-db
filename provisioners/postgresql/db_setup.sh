@@ -121,13 +121,24 @@ _pg_exists() {
 #   IF NOT EXISTS`` de MariaDB), así que la idempotencia se construye: se
 #   consulta ``pg_roles`` y se crea o se actualiza la contraseña.
 # -----------------------------------------------------------------------------
+#   ``CREATEDB`` es el equivalente PostgreSQL del grant ``company\_%`` de
+#   MariaDB (T-091-01): lo que habilita el multi-DB-per-company, donde la
+#   aplicación crea la base de cada empresa en caliente
+#   (``api: service/db.create_empty_database``). Sin él, esa ruta muere con
+#   "permission denied to create database".
+#
+#   PostgreSQL NO permite acotar el permiso a un patrón de nombre: ``CREATEDB``
+#   es global o no es. Es una pérdida real de granularidad frente al
+#   ``company\_%`` de MariaDB, y se acepta porque la alternativa —que el rol de
+#   aplicación sea superusuario, o que un humano cree cada base a mano— es
+#   peor. Ver H-DB-06.
 log_step 1 5 "Rol ${TARGET_USER}"
 if _pg_exists "SELECT 1 FROM pg_roles WHERE rolname = '${TARGET_USER}'"; then
-    _pg "ALTER ROLE \\\"${TARGET_USER}\\\" WITH LOGIN PASSWORD '${TARGET_PASSWORD}'" >/dev/null
-    log_success "Rol ya existía — contraseña actualizada"
+    _pg "ALTER ROLE \\\"${TARGET_USER}\\\" WITH LOGIN CREATEDB PASSWORD '${TARGET_PASSWORD}'" >/dev/null
+    log_success "Rol ya existía — contraseña y CREATEDB actualizados"
 else
-    _pg "CREATE ROLE \\\"${TARGET_USER}\\\" WITH LOGIN PASSWORD '${TARGET_PASSWORD}'" >/dev/null
-    log_success "Rol creado"
+    _pg "CREATE ROLE \\\"${TARGET_USER}\\\" WITH LOGIN CREATEDB PASSWORD '${TARGET_PASSWORD}'" >/dev/null
+    log_success "Rol creado (LOGIN CREATEDB)"
 fi
 
 # -----------------------------------------------------------------------------
