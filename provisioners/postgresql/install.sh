@@ -36,6 +36,23 @@
 #   En Ubuntu 24.04 eso resuelve a 16 (medido: ``apt-cache policy postgresql``
 #   → ``16+257build1.1``).
 #
+#   El ecosistema corrobora el rango, sin ser autoridad. En el mismo repo
+#   ``odoo-tools`` hay terceros que sí pinean, y no coinciden entre ellos:
+#
+#     | Fuente (terceros, NO la referencia)      | Versión         |
+#     |------------------------------------------|-----------------|
+#     | ``scripts/OdooScript/src/redhat.sh:47``   | 16 (pin duro)   |
+#     | ``scripts/OdooScript/src/odoo_redhat.sh:43`` | 16 (pin duro)|
+#     | ``19.x/oerp-odoo-19.0`` CI (``test.yml:15``) | ``postgres:13``|
+#     | ``16.x/scuver-oddo`` (``docker-compose.yml:20``) | ``postgres:13`` |
+#
+#   Instalación fresca → 16; CI → 13. Nuestro 16-del-distro cae dentro y
+#   satisface el mínimo, así que la elección no depende de ellos — pero vale
+#   registrar que la vía **PGDG** (repositorio oficial de PostgreSQL, que es
+#   lo que usan esos instaladores vía ``pgdg.list``/``pgdg20.list``) es una
+#   alternativa real y no un exotismo. Se descarta por ahora porque añade un
+#   repositorio externo al provisioning, no porque no funcione. Ver H-DB-02.
+#
 # Variables del .env (opcionales, con defaults):
 #   POSTGRES_MIN_MAJOR  (default: 13 — el mínimo de la referencia)
 # =============================================================================
@@ -114,9 +131,11 @@ log_step 3 3 "Verificando contra el mínimo de la referencia"
 if diagnostico="$(postgres_meets_minimum)"; then
     log_success "$diagnostico"
 else
-    log_fatal "El distro sirvió una versión insuficiente: ${diagnostico}. Hay que
-decidir si se añade el repositorio oficial de PostgreSQL — eso divergiría de
-la referencia, que toma la del distro, así que no se hace en automático."
+    log_fatal "El distro sirvió una versión insuficiente: ${diagnostico}.
+La salida es el repositorio PGDG (apt.postgresql.org), que es lo que usan los
+instaladores de terceros de odoo-tools — no un exotismo. No se hace en
+automático porque añade un repositorio externo al provisioning, y esa es una
+decisión del operador, no un efecto colateral de correr este script."
 fi
 
 log_success "PostgreSQL instalado y en ejecución"
