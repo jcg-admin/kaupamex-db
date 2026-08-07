@@ -36,7 +36,7 @@ económicos.
 | `opus` (Opus 4.8) | Razonamiento complejo o adversarial de alto riesgo, síntesis crítica, decisiones arquitectónicas, verificación que sella un gate, orquestación de varias fuentes en conflicto. **No** es el default. |
 | `sonnet` (Sonnet 5) | Análisis y documentación sustanciales, research multi-archivo, drafting de artefactos RST con citas PROVEN. **Default recomendado** para el grueso de los subagentes de análisis/redacción. |
 | `fable` (Fable 5) | Alternativa económica para análisis/redacción cuando está disponible (ver caveat abajo). Útil para equilibrar el gasto en tandas grandes. |
-| `haiku` (Haiku 4.5) | Tareas mecánicas o acotadas: greps dirigidos, lecturas puntuales, transformaciones simples, checks de convención, resúmenes cortos, verificación de aterrizaje de archivos. |
+| `haiku` (Haiku 4.5) | **NO DESPACHABLE HOY** — medido 2026-08-07: con los cinco repos en scope el contexto siempre-cargado es de **126 029 tokens de piso**, y Haiku 4.5 falla con `Prompt is too long` incluso con un prompt propio de 450 caracteres (tres intentos; Sonnet 5 arrancó). Ver H-DOCS-99. La fila se reabre cuando se mida un scope en el que Haiku arranque — decisión de alcance #200. Hasta entonces, para tareas mecánicas usar `sonnet`. |
 
 **Regla de oro:** si la tarea es "leer N archivos y redactar un análisis
 con citas", el default es `sonnet` o `fable`, **no** `opus`. Si es
