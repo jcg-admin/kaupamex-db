@@ -65,7 +65,6 @@ PROVISIONER_FILES=(
     "$PROJECT_ROOT/provisioners/mariadb/install.sh"
     "$PROJECT_ROOT/provisioners/mariadb/db_setup.sh"
     "$PROJECT_ROOT/provisioners/mariadb/db_qa_setup.sh"
-    "$PROJECT_ROOT/provisioners/mariadb/deploy_objetos.sh"
 )
 
 for f in "${PROVISIONER_FILES[@]}"; do

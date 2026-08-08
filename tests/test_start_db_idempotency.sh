@@ -18,7 +18,7 @@
 #        cualquier nohup / su mysql. Sin esta rama, el segundo run
 #        causaria "Address already in use" o doble daemon (S-02).
 #   I-3: start_db.sh NO invoca db_setup.sh ni db_qa_setup.sh ni
-#        deploy_objetos.sh ni grants — un "start" idempotente no
+#        db_qa_setup.sh ni grants — un "start" idempotente no
 #        re-provisiona. Si en el futuro alguien agrega esa llamada,
 #        este test la atrapa.
 #
@@ -96,7 +96,6 @@ pass "I-2 rama idempotente correcta (if mariadb_is_running -> exit 0 antes de no
 forbidden_patterns=(
     'db_setup\.sh'
     'db_qa_setup\.sh'
-    'deploy_objetos\.sh'
     'GRANT'
     'CREATE USER'
 )

@@ -12,7 +12,7 @@ Checks:
     1. Conectividad a kaupamex_db como django_user
     2. Conectividad a kaupamex_qa como django_user (o DB_QA_USER)
     3. django_migrations existe en kaupamex_db (migraciones aplicadas)
-    4. users_user existe en kaupamex_db (modelo User personalizado)
+    4. res_users existe en kaupamex_db (credencial, Odoo res.users)
     5. Privilegios DML en kaupamex_db (SELECT, INSERT, DELETE)
     6. Privilegios DML en kaupamex_qa (SELECT, INSERT, DELETE)
 
@@ -20,7 +20,10 @@ Adaptaciones respecto a IACT-db/test/check_db_connections.py:
     - Solo MariaDB (sin PostgreSQL) — H-F4-003
     - Usa mysqlclient (MySQLdb) en lugar de mysql.connector — H-F4-003
     - Usa python-dotenv (load_dotenv) en lugar de parser manual — H-F4-004
-    - Verifica users_user en lugar de auth_user —  H-F4-005
+    - Verifica res_users en lugar de auth_user (H-F4-005). El nombre cambio
+      de users_user a res_users al disolverse el addon users en base: la
+      referencia no tiene un addon users, declara res.users en el nucleo
+      (odoo19c: odoo/addons/base/models/res_users.py). Ver H-DB-01.
       (PracticaYoruba usa AUTH_USER_MODEL = 'users.User')
     - Salida con colores ANSI sin depender de colorama
 
@@ -327,23 +330,23 @@ def check_migrations_db() -> None:
 
 
 # =============================================================================
-# users_user en kaupamex_db (H-F4-005)
+# res_users en kaupamex_db (H-F4-005)
 # =============================================================================
 def check_users_table() -> None:
-    log.header(f"PASO: Tabla users_user en {DB_NAME}")
-    log.info("  PracticaYoruba usa AUTH_USER_MODEL = 'users.User' — tabla: users_user")
+    log.header(f"PASO: Tabla res_users en {DB_NAME}")
+    log.info("  AUTH_USER_MODEL = 'base.ResUsers' — tabla: res_users")
     try:
         conn = _connect(DB_HOST, DB_PORT, DB_USER, DB_PASSWORD, DB_NAME)
 
-        if _table_exists(conn, DB_NAME, "users_user"):
-            count = _query_one(conn, f"SELECT COUNT(*) FROM `{DB_NAME}`.users_user")
-            log.ok(f"users_user presente ({count} usuarios registrados)")
+        if _table_exists(conn, DB_NAME, "res_users"):
+            count = _query_one(conn, f"SELECT COUNT(*) FROM `{DB_NAME}`.res_users")
+            log.ok(f"res_users presente ({count} usuarios registrados)")
         else:
-            log.warn("users_user no encontrada — ejecuta: python manage.py migrate apps.users")
+            log.warn("res_users no encontrada — ejecuta: python manage.py migrate base")
 
         conn.close()
     except MySQLdb.OperationalError as e:
-        log.warn(f"No se pudo verificar users_user: {e}")
+        log.warn(f"No se pudo verificar res_users: {e}")
 
 
 # =============================================================================
@@ -354,13 +357,17 @@ def check_users_table() -> None:
 # verifica que las tablas mas criticas esten presentes para detectar
 # migraciones parciales antes de arrancar la aplicacion.
 # =============================================================================
+# Nombres verificados contra el schema real (SHOW TABLES) tras la adaptacion
+# a las familias de la referencia: el carrito ya no es una tabla propia — es
+# una SaleOrder en estado draft (odoo19c: addons/sale), asi que cart_cart y
+# orders_* desaparecieron. payments_* conserva su nombre fisico aunque el
+# addon se llame payment, igual que settings_sitesettings. Ver H-DB-01.
 _REQUIRED_TABLES = [
-    "orders_order",
-    "orders_order_item",
-    "orders_order_value",
+    "sale_order",
+    "sale_order_line",
     "payments_payment",
-    "cart_cart",
-    "catalogue_product",
+    "product_product",
+    "product_template",
 ]
 
 
@@ -449,7 +456,7 @@ def main() -> None:
         check_required_tables()
         check_privs_db()
     else:
-        log.warn("Migraciones, users_user, tablas y privilegios de DB omitidos — sin conexion a kaupamex_db")
+        log.warn("Migraciones, res_users, tablas y privilegios de DB omitidos — sin conexion a kaupamex_db")
 
     if qa_ok:
         check_privs_qa()

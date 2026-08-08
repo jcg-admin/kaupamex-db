@@ -21,12 +21,11 @@
 #   6. Schema kaupamex_qa existe y tiene django_migrations
 #   7. Usuario Django tiene SELECT, INSERT, UPDATE, DELETE en kaupamex_db
 #   8. Usuario Django tiene SELECT, INSERT, UPDATE, DELETE en kaupamex_qa
-#   9. Funciones SQL desplegadas (fn_price_with_tax, fn_stock_status,
-#      fn_qualifies_free_shipping) — warn si faltan, no fail
-#   10. Vistas SQL desplegadas (v_published_catalog, v_featured_products,
-#       v_low_stock) — warn si faltan, no fail
-#   11. SPs de reporte desplegados (sp_rpt_catalog_by_category,
-#       sp_rpt_low_stock, sp_rpt_catalog_summary) — warn si faltan
+#
+# Los checks 9-11 (funciones, vistas y SPs desplegados) se retiraron junto
+# con los objetos que verificaban: la referencia no lleva logica de negocio
+# en SQL — declara sus vistas desde Python (_auto = False + _table_query) y
+# no tiene un solo CREATE PROCEDURE/FUNCTION. Ver H-DB-01.
 #
 # Muestra resumen final con contadores OK / WARN / ERROR.
 # Retorna exit code 0 si ERR=0, 1 si hay algún error.
@@ -384,94 +383,6 @@ check_privs_qa() {
 }
 
 # =============================================================================
-# Check 9: Funciones SQL desplegadas
-# Emite warn (no fail): las funciones son una capa adicional — su ausencia
-# no impide que Django funcione correctamente.
-# =============================================================================
-check_sql_functions() {
-    log_header "PASO: Funciones SQL desplegadas"
-
-    local fn_ok=0 fn_miss=0
-
-    for fn in fn_price_with_tax fn_stock_status fn_qualifies_free_shipping; do
-        local exists
-        exists=$(_root_exec \
-            -e "SELECT COUNT(*) FROM information_schema.routines
-                WHERE routine_schema='${DB_NAME}'
-                AND routine_name='${fn}'
-                AND routine_type='FUNCTION';" || echo "0")
-        if [[ "${exists:-0}" -ge 1 ]]; then
-            ok "FUNCTION ${fn}"
-            (( fn_ok++ )) || true
-        else
-            warn "FUNCTION ${fn}: no desplegada"
-            (( fn_miss++ )) || true
-        fi
-    done
-
-    if [[ $fn_miss -gt 0 ]]; then
-        log_warn "  Despliega con: bash provisioners/mariadb/deploy_objetos.sh"
-    fi
-}
-
-# =============================================================================
-# Check 10: Vistas SQL desplegadas
-# =============================================================================
-check_sql_views() {
-    log_header "PASO: Vistas SQL desplegadas"
-
-    local v_ok=0 v_miss=0
-
-    for v in v_published_catalog v_featured_products v_low_stock; do
-        local exists
-        exists=$(_root_exec \
-            -e "SELECT COUNT(*) FROM information_schema.views
-                WHERE table_schema='${DB_NAME}'
-                AND table_name='${v}';" || echo "0")
-        if [[ "${exists:-0}" -ge 1 ]]; then
-            ok "VIEW ${v}"
-            (( v_ok++ )) || true
-        else
-            warn "VIEW ${v}: no desplegada"
-            (( v_miss++ )) || true
-        fi
-    done
-
-    if [[ $v_miss -gt 0 ]]; then
-        log_warn "  Despliega con: bash provisioners/mariadb/deploy_objetos.sh"
-    fi
-}
-
-# =============================================================================
-# Check 11: Stored procedures desplegados
-# =============================================================================
-check_sql_sps() {
-    log_header "PASO: Stored procedures desplegados"
-
-    local sp_ok=0 sp_miss=0
-
-    for sp in sp_rpt_catalog_by_category sp_rpt_low_stock sp_rpt_catalog_summary; do
-        local exists
-        exists=$(_root_exec \
-            -e "SELECT COUNT(*) FROM information_schema.routines
-                WHERE routine_schema='${DB_NAME}'
-                AND routine_name='${sp}'
-                AND routine_type='PROCEDURE';" || echo "0")
-        if [[ "${exists:-0}" -ge 1 ]]; then
-            ok "PROCEDURE ${sp}"
-            (( sp_ok++ )) || true
-        else
-            warn "PROCEDURE ${sp}: no desplegado"
-            (( sp_miss++ )) || true
-        fi
-    done
-
-    if [[ $sp_miss -gt 0 ]]; then
-        log_warn "  Despliega con: bash provisioners/mariadb/deploy_objetos.sh"
-    fi
-}
-
-# =============================================================================
 # MAIN
 # =============================================================================
 # DEC-DB-4: conteo de checks calculado dinamicamente.
@@ -492,9 +403,6 @@ check_schema_db;    echo ""
 check_schema_qa;    echo ""
 check_privs_db;     echo ""
 check_privs_qa;     echo ""
-check_sql_functions; echo ""
-check_sql_views;    echo ""
-check_sql_sps;       echo ""
 
 # =============================================================================
 # Resumen
