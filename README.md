@@ -246,12 +246,15 @@ docs/integracion-api.md
 
 ### Relación técnica con los scripts de la API
 
-`PracticaYoruba-api` tiene sus propios scripts en `scripts/provisioners/mysql/`
-para entornos de desarrollo local (usados por `scripts/bootstrap.sh`).
-`PracticaYoruba-db` es el repositorio canónico para infraestructura de BD
-en servidores dedicados. Los `utils/` de ambos repos son equivalentes con
-diferencias de nomenclatura: este repo usa prefijo `mariadb_*` en lugar de
-`mysql_*` para reflejar el motor real.
+**Este repo es el único que provisiona la base** — también en desarrollo
+local. `kaupamex-api` ya no lo hace: su `scripts/bootstrap.sh` delega aquí
+(`scripts/start_postgres.sh` + `provisioners/postgresql/db_setup.sh [--qa]`).
+
+Hasta el 2026-08-11 api tenía sus propios `scripts/provisioners/mysql/`, y esa
+duplicación fue el defecto, no la conveniencia: eran **dos copias del mismo
+provisioner que envejecieron por separado** — el encabezado de
+`provisioners/mariadb/db_setup.sh` todavía dice "Adaptaciones respecto a
+…-api/scripts/provisioners/mysql/". Ver H-API-385.
 
 ---
 
