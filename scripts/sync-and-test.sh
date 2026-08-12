@@ -4,7 +4,7 @@
 # (fast-forward only) y, opcionalmente, reinstala dependencias.
 # Pensado para el entorno WSL2 `Ubuntu-ecomerce-p001`.
 #
-# Correr SIEMPRE como el usuario `develop` (dueno de Clase A /opt/practicayoruba).
+# Correr SIEMPRE como el usuario `develop` (dueno de Clase A /opt/kaupamex).
 # NO usar `safe.directory` para `deploy`: rompe el aislamiento de Clase A.
 #
 # Uso:
@@ -14,7 +14,7 @@
 #                                                 #   de pruebas (no lo corre)
 #
 # Variables:
-#   ECOM_REPO_ROOT   raiz de los repos (default: /opt/practicayoruba)
+#   ECOM_REPO_ROOT   raiz de los repos (default: /opt/kaupamex)
 #
 # Barandas de seguridad:
 #   - Aborta si no se corre como `develop`.
@@ -48,7 +48,7 @@ if [ "${_SAT_STABLE:-}" != "1" ]; then
     exec bash "$_tmp" "$@"
 fi
 
-REPO_ROOT="${ECOM_REPO_ROOT:-/opt/practicayoruba}"
+REPO_ROOT="${ECOM_REPO_ROOT:-/opt/kaupamex}"
 REPOS=(kaupamex-api kaupamex-db kaupamex-docs kaupamex-server kaupamex-ui)
 
 print_test_steps() {
