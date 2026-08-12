@@ -36,9 +36,9 @@
 #   bash scripts/init-env.sh
 #
 #   # Desde cualquier ruta (bind-mount, /tmp, etc.):
-#   bash /opt/practicayoruba/db/scripts/init-env.sh \
-#     --db-root /opt/practicayoruba/db \
-#     --api-root /opt/practicayoruba/api
+#   bash /opt/kaupamex/db/scripts/init-env.sh \
+#     --db-root /opt/kaupamex/db \
+#     --api-root /opt/kaupamex/api
 # =============================================================================
 set -euo pipefail
 
