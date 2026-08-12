@@ -99,13 +99,13 @@ sudo systemctl reload mariadb 2>/dev/null \
 
 En entornos WSL2 según el
 **Procedimiento-Implementacion-Almacenamiento-WSL2-ecomerce-p001**,
-`backups/` está bind-montado sobre `/opt/practicayoruba/backups/database`,
+`backups/` está bind-montado sobre `/opt/kaupamex/backups/database`,
 que pertenece a `svc-dbdata` (UID 997, nologin). `develop` no puede
 escribir ahí por diseño del modelo de aislamiento por clase.
 
 **`git sparse-checkout disable` falla en este entorno** con
 `Permission denied` porque git intenta materializar `backups/` en el
-working tree. No intentar `sudo chown` sobre `/opt/practicayoruba/backups/database/`
+working tree. No intentar `sudo chown` sobre `/opt/kaupamex/backups/database/`
 — viola el modelo de aislamiento.
 
 **La solución correcta** es reconfigurar sparse-checkout en modo
@@ -123,8 +123,8 @@ ls scripts/init-env.sh
 
 # Ejecutar normalmente desde el repo
 bash scripts/init-env.sh \
-  --db-root /opt/practicayoruba/db \
-  --api-root /opt/practicayoruba/api
+  --db-root /opt/kaupamex/db \
+  --api-root /opt/kaupamex/api
 ```
 
 El patrón `'/*'` materializa todos los archivos en todos los
@@ -246,12 +246,15 @@ docs/integracion-api.md
 
 ### Relación técnica con los scripts de la API
 
-`PracticaYoruba-api` tiene sus propios scripts en `scripts/provisioners/mysql/`
-para entornos de desarrollo local (usados por `scripts/bootstrap.sh`).
-`PracticaYoruba-db` es el repositorio canónico para infraestructura de BD
-en servidores dedicados. Los `utils/` de ambos repos son equivalentes con
-diferencias de nomenclatura: este repo usa prefijo `mariadb_*` en lugar de
-`mysql_*` para reflejar el motor real.
+**Este repo es el único que provisiona la base** — también en desarrollo
+local. `kaupamex-api` ya no lo hace: su `scripts/bootstrap.sh` delega aquí
+(`scripts/start_postgres.sh` + `provisioners/postgresql/db_setup.sh [--qa]`).
+
+Hasta el 2026-08-11 api tenía sus propios `scripts/provisioners/mysql/`, y esa
+duplicación fue el defecto, no la conveniencia: eran **dos copias del mismo
+provisioner que envejecieron por separado** — el encabezado de
+`provisioners/mariadb/db_setup.sh` todavía dice "Adaptaciones respecto a
+…-api/scripts/provisioners/mysql/". Ver H-API-385.
 
 ---
 

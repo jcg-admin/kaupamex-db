@@ -61,13 +61,14 @@ El arranque y siembra de la BD requieren root: son paso de 'deploy', no de
 IMPORTANTE: antes de sembrar, arregla el valor sin comillas del .env
 (linea ~53). Ambos seeders leen ese .env y abortan hasta que se entrecomille.
 
-[deploy]  (tiene sudo; arranca mariadbd y siembra la BD de QA)
-  sudo bash $REPO_ROOT/kaupamex-db/scripts/start_db.sh
-  # Sembrar QA con el MISMO seeder que la auto-recuperacion de pytest
-  # re-ejecuta (kaupamex-api/tests/conftest.py::_restart_mariadb, linea 21).
-  # NO usar el de kaupamex-db: divergiria del que pytest usa y exige
-  # DB_QA_PASSWORD sin default (aborta si el .env esta roto).
-  sudo bash $REPO_ROOT/kaupamex-api/scripts/provisioners/mysql/db_qa_setup.sh
+[deploy]  (tiene sudo; arranca el cluster y crea la base de QA)
+  sudo bash $REPO_ROOT/kaupamex-db/scripts/start_postgres.sh
+  # El provisioning vive AQUI, no en api. La nota anterior mandaba lo
+  # contrario —usar el seeder de api "porque es el que pytest re-ejecuta"—
+  # y eso dejo de ser cierto dos veces: pytest ya no re-ejecuta ningun
+  # seeder (se retiro el keepalive de MariaDB, H-API-384) y api ya no
+  # provisiona la base (bootstrap delega aqui, H-API-385).
+  sudo bash $REPO_ROOT/kaupamex-db/provisioners/postgresql/db_setup.sh --qa
 
 [develop] (corre las suites DESDE LA RAIZ del repo api; uv run, no pip/python pelados)
   # 'uv run' fija el interprete del .venv del API: evita PEP 668
@@ -78,8 +79,10 @@ IMPORTANTE: antes de sembrar, arregla el valor sin comillas del .env
   echo "API rc=\$rc_api  UI rc=\$rc_ui"
   if [ "\$rc_api" -eq 0 ] && [ "\$rc_ui" -eq 0 ]; then echo VERDE; else echo ROJO; fi
 
-Baselines esperados: API 1432/0/0 · UI 780/0/0.
-Nota: 'pytest' NO debe correrse desde practicayoruba/ (colecta 0 items).
+Baselines esperados: API 2996 passed / 22 skipped / 0 failed (2026-08-11)
+                     UI  779/780 (1 skip).
+Nota: 'pytest' se corre desde la RAIZ de kaupamex-api; pytest.ini declara
+      pythonpath = src y testpaths = tests.
 EOF
 }
 
