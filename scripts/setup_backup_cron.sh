@@ -1,14 +1,15 @@
 #!/bin/bash
 # =============================================================================
 # scripts/setup_backup_cron.sh
-# Activa el cron automático de backup_db.sh como svc-dbdata
+# Activa el cron automático de backup_postgres.sh como svc-dbdata
 # =============================================================================
 # Instala la entrada en /etc/cron.d/practicayoruba-backup para que
-# backup_db.sh corra diariamente a las 02:00 (America/Mexico_City)
+# backup_postgres.sh corra diariamente a las 02:00 (America/Mexico_City)
 # como svc-dbdata via sudo.
 #
 # Prerequisitos:
-#   - backup_db.sh existe en el repo (scripts/backup_db.sh)
+#   - backup_postgres.sh existe en el repo (scripts/backup_postgres.sh)
+#   - El rol de respaldo existe: sudo bash scripts/backup_postgres.sh --setup-user
 #   - El usuario svc-dbdata existe en el sistema
 #   - .env en el directorio raíz del repo con BACKUP_* configurado
 #   - El bind mount /opt/kaupamex/backups/database está activo
@@ -25,7 +26,7 @@ set -euo pipefail
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 REPO_DIR="$(dirname "$SCRIPT_DIR")"
 CRON_FILE="/etc/cron.d/practicayoruba-backup"
-BACKUP_SCRIPT="${REPO_DIR}/scripts/backup_db.sh"
+BACKUP_SCRIPT="${REPO_DIR}/scripts/backup_postgres.sh"
 BACKUP_PROYECTOS_SCRIPT="${REPO_DIR}/scripts/backup_proyectos.sh"
 
 # ---- Colores ----
@@ -50,7 +51,7 @@ if ! id "svc-dbdata" &>/dev/null; then
 fi
 
 if [[ ! -f "${BACKUP_SCRIPT}" ]]; then
-    log_error "No se encontró scripts/backup_db.sh en ${REPO_DIR}."
+    log_error "No se encontró scripts/backup_postgres.sh en ${REPO_DIR}."
     exit 1
 fi
 
@@ -78,7 +79,8 @@ cat > "${CRON_FILE}" <<EOF
 # Repositorio: ${REPO_DIR}
 #
 # Corre daily a las 02:00 America/Mexico_City.
-# backup_db.sh genera dumps .sql.gz + checksums MD5 en backups/.
+# backup_postgres.sh genera dumps .dump (pg_dump -Fc) + checksums SHA-256
+# en backups/, verificados con pg_restore --list.
 # Los logs de cada ejecución quedan en backups/<timestamp>.log
 #
 # Para deshabilitar temporalmente: comentar la línea siguiente.
