@@ -191,7 +191,7 @@ verify_connection() {
 }
 
 # =============================================================================
-log_header "MariaDB QA Setup — PracticaYoruba"
+log_header "MariaDB QA Setup — Kaupamex"
 echo "  Schema QA : ${DB_NAME}"
 echo "  Usuario   : ${DB_USER}"
 echo "  Host      : ${DB_HOST}:${DB_PORT}"

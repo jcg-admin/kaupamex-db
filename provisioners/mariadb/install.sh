@@ -273,7 +273,7 @@ _check_current_version() {
         log_error "======================================================="
         log_error ""
         log_error "Hay MariaDB ${installed_version} instalado."
-        log_error "PracticaYoruba requiere MariaDB ${MARIADB_TARGET_SERIES}.x (ADR-009)."
+        log_error "Kaupamex requiere MariaDB ${MARIADB_TARGET_SERIES}.x (ADR-009)."
         log_error ""
         log_error "Para migrar, el script necesita:"
         log_error "  1. Detener el servicio MariaDB"
@@ -392,7 +392,7 @@ _add_mariadb_repo() {
     # redirect transparentemente.
     local repo_file="/etc/apt/sources.list.d/mariadb.list"
     cat > "$repo_file" << EOF
-# MariaDB ${MARIADB_TARGET_SERIES} LTS — gestionado por PracticaYoruba-db
+# MariaDB ${MARIADB_TARGET_SERIES} LTS — gestionado por kaupamex-db
 # provisioners/mariadb/install.sh
 deb [arch=amd64 signed-by=${keyring}] https://dlm.mariadb.com/repo/mariadb-server/${MARIADB_TARGET_SERIES}/repo/ubuntu ${codename} main
 EOF
@@ -589,7 +589,7 @@ _activate_project_config() {
 # =============================================================================
 # MAIN
 # =============================================================================
-log_header "Instalación MariaDB ${MARIADB_TARGET_SERIES} — PracticaYoruba"
+log_header "Instalación MariaDB ${MARIADB_TARGET_SERIES} — Kaupamex"
 log_info "  Objetivo: MariaDB ${MARIADB_TARGET_SERIES}.x LTS (ADR-009)"
 [[ "$ALLOW_MIGRATE" == "true" ]] && \
     log_warn "  Modo: --migrate activo — puede purgar datos existentes"
