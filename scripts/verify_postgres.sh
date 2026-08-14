@@ -15,8 +15,8 @@
 #   3. El servidor responde
 #   4. **Mínimo efectivo 14** — Django 6 ABORTA la conexión por debajo,
 #      no avisa (django/db/backends/postgresql/features.py:10). H-DB-03.
-#   5. Base kaupamex_db existe y tiene django_migrations
-#   6. Base kaupamex_qa existe y tiene django_migrations
+#   5. Base kaupamex_core existe y tiene django_migrations
+#   6. Base kaupamex_core_qa existe y tiene django_migrations
 #   7. Rol django_user: LOGIN + CREATEDB (CREATEDB es global, no admite
 #      acotar por patrón de nombre como el GRANT de MariaDB — H-DB-06)
 #   8. **El rol entra por socket** — el pg_hba de Debian asigna ``peer`` al
@@ -66,8 +66,8 @@ while IFS='=' read -r key value; do
     export "$key=${value}"
 done < "$ENV_FILE"
 
-DB_NAME="${DB_NAME:-kaupamex_db}"
-DB_QA_NAME="${DB_QA_NAME:-kaupamex_qa}"
+DB_NAME="${DB_NAME:-kaupamex_core}"
+DB_QA_NAME="${DB_QA_NAME:-kaupamex_core_qa}"
 DB_USER="${DB_USER:-django_user}"
 DB_PASSWORD="${DB_PASSWORD:-django_pass}"
 DB_QA_USER="${DB_QA_USER:-django_user}"

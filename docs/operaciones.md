@@ -15,7 +15,7 @@ Runbook de operaciones de **kaupamex-db**.
 Tres capas que la versión anterior de este archivo colapsaba en una:
 
 - **Kaupamex es el producto y el operador L0.** Da nombre a la
-  infraestructura: bases `kaupamex_db` / `kaupamex_qa`, rutas de
+  infraestructura: bases `kaupamex_core` / `kaupamex_core_qa`, rutas de
   despliegue `/opt/kaupamex/`, repos `kaupamex-{api,db,docs,server,ui}`.
 - **PracticaYoruba es una empresa L1** — la de ejemplo, no el producto.
   Un e-commerce es lo que hace un L1, nunca la plataforma entera.
@@ -45,8 +45,8 @@ contenedor vive en `/var/lib/postgresql/16/main`.
 
 | Objeto | Nombre | Para qué |
 |---|---|---|
-| Base | `kaupamex_db` | producción / desarrollo |
-| Base | `kaupamex_qa` | testing (`config.settings.testing`) |
+| Base | `kaupamex_core` | producción / desarrollo |
+| Base | `kaupamex_core_qa` | testing (`config.settings.testing`) |
 | Rol | `django_user` | aplicación — `LOGIN CREATEDB` + `GRANT ALL ON SCHEMA public` |
 | Extensiones | `unaccent`, `pg_trgm` | instaladas en ambas bases al provisionar |
 
@@ -72,8 +72,8 @@ cp .env.example .env
 sudo bash provisioners/postgresql/install.sh
 
 # 4. Provisionar ambas bases — un solo script con flag, no dos gemelos
-sudo bash provisioners/postgresql/db_setup.sh          # kaupamex_db
-sudo bash provisioners/postgresql/db_setup.sh --qa     # kaupamex_qa
+sudo bash provisioners/postgresql/db_setup.sh          # kaupamex_core
+sudo bash provisioners/postgresql/db_setup.sh --qa     # kaupamex_core_qa
 ```
 
 `install.sh` **no pinea versión**, igual que el `debian/control` de la
@@ -160,10 +160,10 @@ PG 14): lee todo, no escribe nada. En MariaDB eso exigía enumerar
 Genera por ejecución en `backups/`:
 
 ```
-YYYYMMDD_HHMMSS_kaupamex_db.dump
-YYYYMMDD_HHMMSS_kaupamex_db.sha256
-YYYYMMDD_HHMMSS_kaupamex_qa.dump
-YYYYMMDD_HHMMSS_kaupamex_qa.sha256
+YYYYMMDD_HHMMSS_kaupamex_core.dump
+YYYYMMDD_HHMMSS_kaupamex_core.sha256
+YYYYMMDD_HHMMSS_kaupamex_core_qa.dump
+YYYYMMDD_HHMMSS_kaupamex_core_qa.sha256
 ```
 
 Tres diferencias con el flujo de MariaDB, y las tres importan:
@@ -199,14 +199,14 @@ mount Clase C").
 > el mismo precedente con el que H-SERVER-08 dejó los nombres de vhost.
 > Lo que **sí** se corrigió aquí es a qué script apunta el cron: instalaba
 > `backup_db.sh` (MariaDB) mientras su propio comentario declaraba respaldar
-> `kaupamex_db + kaupamex_qa`. Ver H-DB-09.
+> `kaupamex_core + kaupamex_core_qa`. Ver H-DB-09.
 
 ### Verificar un backup existente
 
 ```bash
 cd backups/
-sha256sum -c 20260812_020000_kaupamex_db.sha256
-pg_restore --list 20260812_020000_kaupamex_db.dump | head
+sha256sum -c 20260812_020000_kaupamex_core.sha256
+pg_restore --list 20260812_020000_kaupamex_core.dump | head
 ```
 
 ### Sincronización a S3 (opcional)
@@ -246,7 +246,7 @@ sudo -u postgres psql -c "\l kaupamex*"
 sudo -u postgres psql -c "\du django_user"
 
 # Conexión por socket como la aplicación
-psql -h /var/run/postgresql -U django_user -d kaupamex_qa -c "SELECT 1"
+psql -h /var/run/postgresql -U django_user -d kaupamex_core_qa -c "SELECT 1"
 ```
 
 ### `Peer authentication failed` NO es un problema de credenciales
@@ -284,7 +284,7 @@ bash scripts/verify_postgres.sh
 
 ## Integración con la suite de `api`
 
-`api` corre pytest contra **`kaupamex_qa`** con `config.settings.testing`
+`api` corre pytest contra **`kaupamex_core_qa`** con `config.settings.testing`
 (`ENGINE = django.db.backends.postgresql`). `pytest.ini` declara
 `--reuse-db`, así que la base **no** se recrea en cada corrida: es
 compartida, y recrearla mientras otro agente corre la suite le rompe el run.
@@ -365,7 +365,7 @@ La configuración de `fstab` vive en el procedimiento de provisioning, NO en
 estos scripts. Para un dump manual:
 
 ```bash
-sudo -u svc-dbdata pg_dump -Fc kaupamex_db \
+sudo -u svc-dbdata pg_dump -Fc kaupamex_core \
   > /opt/kaupamex/db/backups/dump-$(date -u +%Y-%m-%dT%H-%M-%SZ).dump
 ```
 

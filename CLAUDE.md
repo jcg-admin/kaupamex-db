@@ -8,7 +8,7 @@ Cheat-sheet local — no duplica el gobierno del padre.
 supersede ADR-009). Mínimo efectivo **14** — el mayor de los dos mínimos que atan al
 proyecto: la referencia declara 13 (`odoo19c: odoo/release.py:41`, que avisa) y
 Django 6 declara 14 (`django/db/backends/postgresql/features.py:10`, que **aborta**
-la conexión). Bases `kaupamex_db` (prod/dev) y `kaupamex_qa` (tests), rol
+la conexión). Bases `kaupamex_core` (prod/dev) y `kaupamex_core_qa` (tests), rol
 `django_user`. Desarrollo y pruebas ya corren ahí: suite api **2 235 passed,
 5 skipped, 0 failed** contra PostgreSQL 16.13 (2026-08-06).
 
@@ -145,8 +145,8 @@ config/mariadb/         99-practicayoruba.cnf
 En PostgreSQL lo que MariaDB llamaba *schema* es una **base**; un *schema* es un
 namespace **dentro** de una base (el default es `public`).
 
-- `kaupamex_db` — producción/desarrollo (encoding `unicode`, `TEMPLATE template0`).
-- `kaupamex_qa` — testing.
+- `kaupamex_core` — producción/desarrollo (encoding `unicode`, `TEMPLATE template0`).
+- `kaupamex_core_qa` — testing.
 - `django_user` — rol de aplicación, `LOGIN CREATEDB` + `GRANT ALL ON SCHEMA public`.
   `CREATEDB` es un atributo **global** del rol: no admite acotar por patrón de
   nombre como el `GRANT ... company\_%` de MariaDB (H-DB-06). Desde PG 15 el schema

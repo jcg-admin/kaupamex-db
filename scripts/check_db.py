@@ -9,12 +9,12 @@ Descripción:
     privilegios necesarios para operar la aplicación.
 
 Checks:
-    1. Conectividad a kaupamex_db como django_user
-    2. Conectividad a kaupamex_qa como django_user (o DB_QA_USER)
-    3. django_migrations existe en kaupamex_db (migraciones aplicadas)
-    4. res_users existe en kaupamex_db (credencial, Odoo res.users)
-    5. Privilegios DML en kaupamex_db (SELECT, INSERT, DELETE)
-    6. Privilegios DML en kaupamex_qa (SELECT, INSERT, DELETE)
+    1. Conectividad a kaupamex_core como django_user
+    2. Conectividad a kaupamex_core_qa como django_user (o DB_QA_USER)
+    3. django_migrations existe en kaupamex_core (migraciones aplicadas)
+    4. res_users existe en kaupamex_core (credencial, Odoo res.users)
+    5. Privilegios DML en kaupamex_core (SELECT, INSERT, DELETE)
+    6. Privilegios DML en kaupamex_core_qa (SELECT, INSERT, DELETE)
 
 Adaptaciones respecto a IACT-db/test/check_db_connections.py:
     - Solo MariaDB (sin PostgreSQL) — H-F4-003
@@ -136,13 +136,13 @@ if not _ENV_FILE.exists():
 
 load_dotenv(dotenv_path=_ENV_FILE)
 
-DB_NAME     = os.getenv("DB_NAME",         "kaupamex_db")
+DB_NAME     = os.getenv("DB_NAME",         "kaupamex_core")
 DB_USER     = os.getenv("DB_USER",         "django_user")
 DB_PASSWORD = os.getenv("DB_PASSWORD",     "django_pass")
 DB_HOST     = os.getenv("DB_HOST",         "127.0.0.1")
 DB_PORT     = int(os.getenv("DB_PORT",     "3306"))
 
-DB_QA_NAME     = os.getenv("DB_QA_NAME",     "kaupamex_qa")
+DB_QA_NAME     = os.getenv("DB_QA_NAME",     "kaupamex_core_qa")
 DB_QA_USER     = os.getenv("DB_QA_USER",     "django_user")
 DB_QA_PASSWORD = os.getenv("DB_QA_PASSWORD", "django_pass")
 DB_QA_HOST     = os.getenv("DB_QA_HOST",     DB_HOST)
@@ -253,7 +253,7 @@ def _check_dml_privs(
 
 
 # =============================================================================
-# Conectividad a kaupamex_db
+# Conectividad a kaupamex_core
 # =============================================================================
 def check_connectivity_db() -> bool:
     log.header(f"PASO: Conectividad a {DB_NAME}")
@@ -293,7 +293,7 @@ def check_connectivity_db() -> bool:
 
 
 # =============================================================================
-# Conectividad a kaupamex_qa
+# Conectividad a kaupamex_core_qa
 # =============================================================================
 def check_connectivity_qa() -> bool:
     log.header(f"PASO: Conectividad a {DB_QA_NAME}")
@@ -310,7 +310,7 @@ def check_connectivity_qa() -> bool:
 
 
 # =============================================================================
-# django_migrations en kaupamex_db
+# django_migrations en kaupamex_core
 # =============================================================================
 def check_migrations_db() -> None:
     log.header(f"PASO: Migraciones en {DB_NAME}")
@@ -330,7 +330,7 @@ def check_migrations_db() -> None:
 
 
 # =============================================================================
-# res_users en kaupamex_db (H-F4-005)
+# res_users en kaupamex_core (H-F4-005)
 # =============================================================================
 def check_users_table() -> None:
     log.header(f"PASO: Tabla res_users en {DB_NAME}")
@@ -350,7 +350,7 @@ def check_users_table() -> None:
 
 
 # =============================================================================
-# Tablas de aplicacion criticas en kaupamex_db (H-CICLO66-10)
+# Tablas de aplicacion criticas en kaupamex_core (H-CICLO66-10)
 #
 # django_migrations puede existir aunque las migraciones hayan fallado
 # a mitad de camino, dejando tablas de negocio ausentes.  Este check
@@ -390,7 +390,7 @@ def check_required_tables() -> None:
 
 
 # =============================================================================
-# Privilegios DML en kaupamex_db
+# Privilegios DML en kaupamex_core
 # =============================================================================
 def check_privs_db() -> None:
     log.header(f"PASO: Privilegios DML en {DB_NAME}")
@@ -405,7 +405,7 @@ def check_privs_db() -> None:
 
 
 # =============================================================================
-# Privilegios DML en kaupamex_qa
+# Privilegios DML en kaupamex_core_qa
 # =============================================================================
 def check_privs_qa() -> None:
     log.header(f"PASO: Privilegios DML en {DB_QA_NAME}")
@@ -456,12 +456,12 @@ def main() -> None:
         check_required_tables()
         check_privs_db()
     else:
-        log.warn("Migraciones, res_users, tablas y privilegios de DB omitidos — sin conexion a kaupamex_db")
+        log.warn("Migraciones, res_users, tablas y privilegios de DB omitidos — sin conexion a kaupamex_core")
 
     if qa_ok:
         check_privs_qa()
     else:
-        log.warn("Privilegios QA omitidos — sin conexion a kaupamex_qa")
+        log.warn("Privilegios QA omitidos — sin conexion a kaupamex_core_qa")
 
     log.summary()
 

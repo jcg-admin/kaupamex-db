@@ -36,8 +36,8 @@
 #
 #   | MariaDB (lo que ya existe) | PostgreSQL (aquí)            |
 #   |----------------------------|------------------------------|
-#   | schema ``kaupamex_db``     | **database** ``kaupamex_db`` |
-#   | schema ``kaupamex_qa``     | **database** ``kaupamex_qa`` |
+#   | schema ``kaupamex_core``     | **database** ``kaupamex_core`` |
+#   | schema ``kaupamex_core_qa``     | **database** ``kaupamex_core_qa`` |
 #   | usuario ``django_user``    | **rol** ``django_user`` LOGIN|
 #
 # Un "schema" de PostgreSQL es un namespace **dentro** de una base; el

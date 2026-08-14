@@ -17,10 +17,10 @@
 #   2. Herramientas CLI disponibles (mariadb, mariadb-admin)
 #   3. MariaDB instalado y versión correcta (11.8.x — ADR-009)
 #   4. MariaDB responde (socket Unix primero, luego TCP)
-#   5. Schema kaupamex_db existe y tiene django_migrations
-#   6. Schema kaupamex_qa existe y tiene django_migrations
-#   7. Usuario Django tiene SELECT, INSERT, UPDATE, DELETE en kaupamex_db
-#   8. Usuario Django tiene SELECT, INSERT, UPDATE, DELETE en kaupamex_qa
+#   5. Schema kaupamex_core existe y tiene django_migrations
+#   6. Schema kaupamex_core_qa existe y tiene django_migrations
+#   7. Usuario Django tiene SELECT, INSERT, UPDATE, DELETE en kaupamex_core
+#   8. Usuario Django tiene SELECT, INSERT, UPDATE, DELETE en kaupamex_core_qa
 #
 # Los checks 9-11 (funciones, vistas y SPs desplegados) se retiraron junto
 # con los objetos que verificaban: la referencia no lleva logica de negocio
@@ -61,8 +61,8 @@ if [[ ! -f "$ENV_FILE" ]]; then
 fi
 set -a; source "$ENV_FILE"; set +a
 
-DB_NAME="${DB_NAME:-kaupamex_db}"
-DB_QA_NAME="${DB_QA_NAME:-kaupamex_qa}"
+DB_NAME="${DB_NAME:-kaupamex_core}"
+DB_QA_NAME="${DB_QA_NAME:-kaupamex_core_qa}"
 DB_USER="${DB_USER:-django_user}"
 DB_PASSWORD="${DB_PASSWORD:-django_pass}"
 DB_QA_USER="${DB_QA_USER:-django_user}"
@@ -235,7 +235,7 @@ check_mariadb_running() {
 }
 
 # =============================================================================
-# Schema kaupamex_db existe y tiene django_migrations
+# Schema kaupamex_core existe y tiene django_migrations
 # =============================================================================
 check_schema_db() {
     log_header "PASO: Schema ${DB_NAME}: existencia y migraciones"
@@ -277,7 +277,7 @@ check_schema_db() {
 }
 
 # =============================================================================
-# Schema kaupamex_qa existe y tiene django_migrations
+# Schema kaupamex_core_qa existe y tiene django_migrations
 # =============================================================================
 check_schema_qa() {
     log_header "PASO: Schema ${DB_QA_NAME}: existencia y migraciones"
@@ -317,7 +317,7 @@ check_schema_qa() {
 }
 
 # =============================================================================
-# Privilegios Django en kaupamex_db
+# Privilegios Django en kaupamex_core
 # =============================================================================
 check_privs_db() {
     log_header "PASO: Privilegios ${DB_USER} en ${DB_NAME}"
@@ -351,7 +351,7 @@ check_privs_db() {
 }
 
 # =============================================================================
-# Privilegios Django en kaupamex_qa
+# Privilegios Django en kaupamex_core_qa
 # =============================================================================
 check_privs_qa() {
     log_header "PASO: Privilegios ${DB_QA_USER} en ${DB_QA_NAME}"
