@@ -58,8 +58,8 @@ if [[ -f "$ENV_FILE" ]]; then
     done < "$ENV_FILE"
 fi
 
-DB_PROD="${DB_NAME:-kaupamex_db}"
-DB_QA="${DB_QA_NAME:-kaupamex_qa}"
+DB_PROD="${DB_NAME:-kaupamex_core}"
+DB_QA="${DB_QA_NAME:-kaupamex_core_qa}"
 DB_PORT="${DB_PORT:-5432}"
 BACKUP_USER="${PY_BACKUP_USER:-py_backup_user}"
 BACKUP_PASS="${PY_BACKUP_PASSWORD:-}"

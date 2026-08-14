@@ -24,8 +24,8 @@
 # ---------------------------------------------------------------------
 #   | MariaDB                  | PostgreSQL (aquí)             |
 #   |--------------------------|-------------------------------|
-#   | schema ``kaupamex_db``   | **database** ``kaupamex_db``  |
-#   | schema ``kaupamex_qa``   | **database** ``kaupamex_qa``  |
+#   | schema ``kaupamex_core``   | **database** ``kaupamex_core``  |
+#   | schema ``kaupamex_core_qa``   | **database** ``kaupamex_core_qa``  |
 #   | usuario ``django_user``  | **rol** ``django_user`` LOGIN |
 #
 #   Un schema de PostgreSQL es un namespace DENTRO de una base. El
@@ -33,7 +33,7 @@
 #   además el modelo de la referencia: una base por instalación.
 #
 # Variables del .env:
-#   DB_NAME         (default: kaupamex_db)      · DB_QA_NAME    (kaupamex_qa)
+#   DB_NAME         (default: kaupamex_core)      · DB_QA_NAME    (kaupamex_core_qa)
 #   DB_USER         (default: django_user)      · DB_QA_USER    (django_user)
 #   DB_PASSWORD     (OBLIGATORIA)               · DB_QA_PASSWORD (obligatoria en --qa)
 #
@@ -71,12 +71,12 @@ IS_QA=false
 [[ "${1:-}" == "--qa" ]] && IS_QA=true
 
 if [[ "$IS_QA" == true ]]; then
-    TARGET_DB="${DB_QA_NAME:-kaupamex_qa}"
+    TARGET_DB="${DB_QA_NAME:-kaupamex_core_qa}"
     TARGET_USER="${DB_QA_USER:-django_user}"
     TARGET_PASSWORD="${DB_QA_PASSWORD:?DB_QA_PASSWORD must be set in environment or .env}"
     ETIQUETA="QA"
 else
-    TARGET_DB="${DB_NAME:-kaupamex_db}"
+    TARGET_DB="${DB_NAME:-kaupamex_core}"
     TARGET_USER="${DB_USER:-django_user}"
     TARGET_PASSWORD="${DB_PASSWORD:?DB_PASSWORD must be set in environment or .env}"
     ETIQUETA="producción/desarrollo"
@@ -183,7 +183,7 @@ log_success "GRANT aplicado"
 #   ``CREATE EXTENSION IF NOT EXISTS`` sobre ``unaccent`` y ``pg_trgm``.
 #
 #   Van AQUÍ y no sólo en el aprovisionamiento por empresa: las dos bases L0
-#   (``kaupamex_db`` y ``kaupamex_qa``) las crea este script, así que sin este
+#   (``kaupamex_core`` y ``kaupamex_core_qa``) las crea este script, así que sin este
 #   paso quedaban sin extensiones mientras las bases por empresa sí las tenían
 #   — la búsqueda por similitud habría funcionado por empresa y no en L0.
 #   Detectado por ``scripts/verify_postgres.sh`` (H-DB-07).
