@@ -1,6 +1,6 @@
 # =============================================================================
 # config/mariadb/99-practicayoruba.cnf
-# Overrides de MariaDB 11.8 para el proyecto PracticaYoruba
+# Overrides de MariaDB 11.8 para la plataforma Kaupamex
 # =============================================================================
 #
 # Este archivo es la fuente de verdad para la configuración de MariaDB del
@@ -23,7 +23,7 @@
 # Idempotencia:
 #   El symlink se crea con ln -sf — re-ejecutar el provisioner es seguro.
 #
-# Referencia: ADR-009 (MariaDB 11.8 como motor de PracticaYoruba)
+# Referencia: ADR-009 (MariaDB 11.8 como motor de Kaupamex)
 # =============================================================================
 
 [mariadb]
@@ -33,7 +33,7 @@
 # del BMP). utf8mb4_unicode_ci alinea con la collation usada en CREATE DATABASE
 # en db_setup.sh y con la opción 'charset': 'utf8mb4' en Django settings.
 #
-# HALLAZGO H-F1-003: 99-iact.cnf usa utf8mb4_general_ci. PracticaYoruba usa
+# HALLAZGO H-F1-003: 99-iact.cnf usa utf8mb4_general_ci. Kaupamex usa
 # utf8mb4_unicode_ci en todos los CREATE DATABASE y en Django OPTIONS.
 # Se usa unicode_ci para consistencia con el proyecto.
 character-set-server  = utf8mb4

@@ -231,7 +231,7 @@ verify_connection() {
 }
 
 # =============================================================================
-log_header "MariaDB DB Setup — PracticaYoruba"
+log_header "MariaDB DB Setup — Kaupamex"
 echo "  Schema  : ${DB_NAME}"
 echo "  Usuario : ${DB_USER}"
 echo "  Host    : ${DB_HOST}:${DB_PORT}"
@@ -245,4 +245,4 @@ verify_connection
 
 echo ""
 log_success "Setup completado."
-log_info "Siguiente: cd <PracticaYoruba-api>/practicayoruba && python manage.py migrate"
+log_info "Siguiente: cd <kaupamex-api> && python manage.py migrate"
