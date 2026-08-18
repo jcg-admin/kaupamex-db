@@ -25,6 +25,55 @@ del defecto (2026-07-05): un agente de **análisis documental** corrió en
 Opus y consumió ~410k tokens para una tarea que Sonnet 5 o Fable 5
 habrían hecho a una fracción del costo.
 
+## Antes de elegir modelo: ¿despachar o no? — el costo lo domina lo que RELEE
+
+Medido 2026-08-18 sobre **216 agentes** del store (`agent_sessions`), el gasto
+no está donde se supone:
+
+| Componente | tokens | % |
+|---|---|---|
+| `cache_read` | 4 150 264 618 | **97.8 %** |
+| `cache_creation` | 93 214 449 | 2.2 % |
+| `output` | 746 110 | 0.0 % |
+| `input` | 106 405 | 0.0 % |
+
+Acortar el prompt o pedir menos salida **no ahorra nada**: los dos son 0.0 %.
+Lo que se paga es el contexto que el agente **relee en cada turno**, y por eso
+escala con los turnos:
+
+| turnos | n | `cache_read` medio | `equiv_cost` medio |
+|---|---|---|---|
+| 1-3 | 12 | 246 k | 338 k |
+| 4-8 | 7 | 1 451 k | 502 k |
+| 9-20 | 45 | 4 238 k | 861 k |
+| **21+** | **152** | **25 963 k** | **3 218 k** |
+
+Un agente de 21+ turnos cuesta **~9.5×** uno de 1-3 — y **152 de 216 (70 %)**
+cayeron en ese tramo.
+
+**La regla:** antes de despachar, preguntar si el trabajo es *ancho* o sólo
+*largo*.
+
+- **Ancho y paralelo** — N lotes independientes, cada uno con su propio árbol de
+  archivos → **despachar**. Es donde el agente rinde.
+- **Conocido y acotado** — una lista de archivos que ya se nombró → **lo hace el
+  orquestador**. Su contexto ya está caliente; el agente paga **en frío** el
+  piso siempre-cargado (medido: **126 029 tokens**, H-DOCS-99) más todo lo que
+  lea, y lo paga **por turno**.
+
+**El prompt no acota el gasto: acota los turnos, que es lo que lo causa.** Un
+agente con los archivos nombrados y la condición de cierre fijada da pocos
+turnos; uno al que se le da un objetivo y que descubra el alcance da sesenta.
+Mismo entregable, ~10×.
+
+**Corolario para el propio orquestador.** Un comando sin acotar cuesta lo mismo
+por la vía del tiempo. Un `grep` recursivo sobre `odoo-tools` —**566 917
+archivos**— agota el timeout de 2 min y devuelve nada. Acotar con `--include`,
+`-maxdepth` o una raíz concreta es la misma disciplina que acotar el prompt.
+
+Ver :ref:`h-docs-177` para la serie completa y :ref:`h-docs-169` para por qué el
+titular del harness no sirve para medir esto.
+
 ## Regla principal
 
 Al invocar `Agent`, pasar `model:` explícito según la tarea. **Reservar
