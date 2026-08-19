@@ -183,6 +183,23 @@ Agent(description="análisis d-6 ...", model="sonnet", ...)
 Criterio: la densidad de razonamiento del ítem manda, no la comodidad de
 poner todo igual.
 
+**Los seis NO corren a la vez.** Añadido 2026-08-19 (:ref:`h-docs-211`): el
+ejemplo de arriba se leía como un fan-out de seis, y no lo es. Medido en el
+ejecutable de esta sesión (`/opt/claude-code/bin/claude`, 2.1.235):
+
+- la **anchura** del tool `Agent` la acota su propio guard
+  (`hip(){return K.CLAUDE_CODE_MAX_CONCURRENT_SUBAGENTS??K5b}`, `K5b=20`);
+- la **anchura de `parallel()`** dentro de `Workflow` es **otro** mecanismo:
+  `min(16, CPUs−2)` — con `nproc` = 4 aquí, **2**;
+- la **profundidad** es un tercer cap (`MW()`), y en este entorno vale **1**,
+  así que un subagente **no puede lanzar subagentes**.
+
+Consecuencia para el gasto, que es lo que esta regla gobierna: una tanda de N
+con el cap en C **es una cola**, no un fan-out. El reloj de pared es ≈ Σtᵢ/C.
+Repartir modelos entre seis agentes no compra seis veces menos tiempo; compra
+lo que el cap deje pasar. El desglose y los comandos para re-medirlo están en
+`bash-background-tasks.md`, sección «ANCHURA y PROFUNDIDAD».
+
 ## Qué NO cambia
 
 - La **calidad de la evidencia** no depende del modelo: todo subagente,
