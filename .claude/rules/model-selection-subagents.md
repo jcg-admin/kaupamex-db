@@ -92,6 +92,79 @@ con citas", el default es `sonnet` o `fable`, **no** `opus`. Si es
 "decidir entre opciones en conflicto con trade-offs finos" o "verificar
 adversarialmente un claim de alto riesgo", entonces `opus`.
 
+## El segundo eje: `effort` — y NO es simétrico con `model`
+
+> Añadido 2026-08-20 (:ref:`h-docs-217`, tarea #38). La regla gobernaba un
+> solo eje —qué modelo— cuando el cliente expone dos. El segundo tiene una
+> asimetría que hay que conocer antes de planear una tanda.
+
+**Dónde se puede fijar, medido en el ejecutable 2.1.236 y en este proceso:**
+
+| Superficie | Alcance | Estado aquí |
+|---|---|---|
+| `CLAUDE_EFFORT` | la **sesión** entera | **`high`** — asignada en este proceso |
+| `CLAUDE_CODE_EFFORT_LEVEL` | la sesión; `unset`/`auto` la anulan | sin asignar |
+| **`opts.effort` de `Workflow`** | **por llamada a `agent()`** | la única vía por-agente |
+
+**La asimetría:** el tool `Agent` **no tiene parámetro `effort`**. Su esquema
+declara `description`, `isolation`, `model`, `prompt`, `run_in_background` y
+`subagent_type` — nada más. Por tanto un `Agent` suelto **hereda el effort de
+la sesión y no se puede cambiar**; el esfuerzo por subagente existe **sólo
+dentro de un `Workflow`**, vía `opts.effort` con los cinco niveles
+`low · medium · high · xhigh · max`.
+
+Consecuencia de planificación: si una tanda necesita **esfuerzos distintos por
+ítem**, el canal es `Workflow`, no una serie de `Agent`. Con `Agent` la única
+palanca es `model`.
+
+### El coste de subir el nivel NO es el mismo entre familias
+
+Cada registro de modelo declara su `default_effort` y un `effort_cost_index`:
+el coste relativo de cada nivel tomando `high` = 1. Las cuatro familias que
+declaran la capacidad `effort`:
+
+| Familia | `default_effort` | low | medium | high | xhigh | max | rango |
+|---|---|---|---|---|---|---|---|
+| sonnet 5 | `high` | 0.47 | 0.74 | 1 | 2.41 | **5.59** | **11.9×** |
+| opus 4.8 | `high` | 0.72 | 0.90 | 1 | 1.65 | **1.88** | 2.6× |
+| opus 5 | `high` | 0.67 | 0.76 | 1 | 1.60 | **1.70** | 2.5× |
+| fable 5 | `high` | 0.60 | 0.77 | 1 | 1.74 | **1.91** | 3.2× |
+
+**Lo que esto corrige.** La intuición *«sonnet es el barato; si hace falta más,
+súbele el esfuerzo»* es correcta hacia abajo —`low` en sonnet es el punto más
+barato de la tabla, 0.47— y **falsa en el extremo**: llevarlo a `max` cuesta
+**5.59×** su `high`, mientras que el mismo salto vale 1.70×–1.91× en las otras
+tres. Un `sonnet` a `max` deja de tener el perfil de coste de su familia.
+
+Criterio operativo que se desprende:
+
+- **Bajar el esfuerzo rinde más en sonnet** (0.47) que en opus (0.72) o fable
+  (0.60). Para etapas mecánicas dentro de un `Workflow`, `sonnet` + `low` es el
+  punto más barato disponible.
+- **Subir el esfuerzo rinde más en opus** — su curva es casi plana. Si el ítem
+  necesita `xhigh`/`max`, el salto se paga mejor donde el índice es 1.60–1.65
+  que donde es 2.41.
+- **`haiku` no declara `effort`** — su arreglo de capacidades es
+  `["context_management"]` y nada más. Pasarle un nivel no tiene receptor. Es
+  dato para la decisión de alcance **#200**, que hoy lo excluye por el piso de
+  contexto y no por su superficie.
+
+*Métrica:* `capabilities`, `default_effort` y `effort_cost_index` declarados en
+el registro de cada modelo del ejecutable 2.1.236, más las variables presentes
+en el entorno de este proceso.
+*Ciega a:* el precio por token de cada familia — el índice es **relativo a
+`high` dentro de un mismo modelo** y NO compara familias entre sí. Cruzar las
+dos escalas es la tarea **#286**.
+
+**Se re-mide, no se cita de memoria** — el índice cambia entre builds:
+
+```bash
+B=$(readlink -f "$(command -v claude)")
+strings -n 4 "$B" | grep -ao 'id:"claude-[a-z0-9-]*",family:"[a-z]*".\{0,1400\}advisor_rank:[0-9]*' \
+  | grep -o 'id:"[^"]*"\|default_effort:"[^"]*"\|effort_cost_index:{[^}]*}'
+echo "${CLAUDE_EFFORT:-(sin asignar)}"   # el nivel de la sesión
+```
+
 ## Obligatorio: cada subagente entrega su documento en la iniciativa
 
 **El modelo económico NO relaja el entregable.** Sea cual sea el modelo
