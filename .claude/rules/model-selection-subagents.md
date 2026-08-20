@@ -84,13 +84,18 @@ económicos.
 |---|---|
 | `opus` (Opus 4.8) | Razonamiento complejo o adversarial de alto riesgo, síntesis crítica, decisiones arquitectónicas, verificación que sella un gate, orquestación de varias fuentes en conflicto. **No** es el default. |
 | `sonnet` (Sonnet 5) | Análisis y documentación sustanciales, research multi-archivo, drafting de artefactos RST con citas PROVEN. **Default recomendado** para el grueso de los subagentes de análisis/redacción. |
-| `fable` (Fable 5) | Alternativa económica para análisis/redacción cuando está disponible (ver caveat abajo). Útil para equilibrar el gasto en tandas grandes. |
+| `fable` (Fable 5) | **NO es la opción económica** — corregido 2026-08-20: cuesta **10/50 $/Mtok**, el doble que opus, y declara el `advisor_rank` más alto (5). Es el tope de capacidad del catálogo, no un ahorro. Se elige cuando el ítem lo justifique, nunca «para equilibrar el gasto». Ver caveat de disponibilidad abajo. |
 | `haiku` (Haiku 4.5) | **NO DESPACHABLE HOY** — medido 2026-08-07: con los cinco repos en scope el contexto siempre-cargado es de **126 029 tokens de piso**, y Haiku 4.5 falla con `Prompt is too long` incluso con un prompt propio de 450 caracteres (tres intentos; Sonnet 5 arrancó). Ver H-DOCS-99. La fila se reabre cuando se mida un scope en el que Haiku arranque — decisión de alcance #200. Hasta entonces, para tareas mecánicas usar `sonnet`. |
 
-**Regla de oro:** si la tarea es "leer N archivos y redactar un análisis
-con citas", el default es `sonnet` o `fable`, **no** `opus`. Si es
-"decidir entre opciones en conflicto con trade-offs finos" o "verificar
-adversarialmente un claim de alto riesgo", entonces `opus`.
+**Criterio de corte:** si la tarea es "leer N archivos y redactar un análisis
+con citas", el default es **`sonnet`**, no `opus` **ni `fable`**. Si es "decidir
+entre opciones en conflicto con trade-offs finos" o "verificar adversarialmente
+un claim de alto riesgo", entonces `opus`. `fable` queda para lo que ninguno de
+los dos resuelve — es el más caro por token de los cuatro.
+
+> Corregido 2026-08-20: esta frase decía *«el default es `sonnet` o `fable`»* y
+> se llamaba «regla de oro» —un cliché que `redaccion-tecnica-es.md` prohíbe—.
+> Ofrecer `fable` como default equivalente a `sonnet` cuesta **3.3×** por token.
 
 ## El segundo eje: `effort` — y NO es simétrico con `model`
 
@@ -149,19 +154,89 @@ Criterio operativo que se desprende:
   dato para la decisión de alcance **#200**, que hoy lo excluye por el piso de
   contexto y no por su superficie.
 
-*Métrica:* `capabilities`, `default_effort` y `effort_cost_index` declarados en
-el registro de cada modelo del ejecutable 2.1.236, más las variables presentes
-en el entorno de este proceso.
-*Ciega a:* el precio por token de cada familia — el índice es **relativo a
-`high` dentro de un mismo modelo** y NO compara familias entre sí. Cruzar las
-dos escalas es la tarea **#286**.
+### El registro declara seis ejes más, y tres cambian una decisión de tanda
 
-**Se re-mide, no se cita de memoria** — el índice cambia entre builds:
+Medido sobre los **17** registros del ejecutable 2.1.236. Las columnas de coste
+salen del `pricing` de cada uno cruzado con la tabla de tiers (:ref:`h-docs-218`);
+la quinta familia no se nombra, por el mismo criterio de :ref:`h-docs-217`.
+
+| Familia | in/out $/Mtok | ventana | salida def/máx | 1M | `advisor_rank` | `default_effort` | capac. | corte |
+|---|---|---|---|---|---|---|---|---|
+| haiku 3.5 | 0.8 / 4 | — | 8 192 / 8 192 | — | — | — | 0 | — |
+| haiku 4.5 | 1 / 5 | 200 k | 32 000 / 64 000 | — | 1 | — | 1 | feb 2025 |
+| sonnet 3.5 | 3 / 15 | — | 8 192 / 8 192 | — | — | — | 0 | — |
+| sonnet 3.7 | 3 / 15 | — | 32 000 / 64 000 | — | — | — | 0 | — |
+| sonnet 4.0 | 3 / 15 | 200 k | 32 000 / 64 000 | beta | — | — | 1 | ene 2025 |
+| sonnet 4.5 | 3 / 15 | 200 k | 32 000 / 64 000 | beta | — | — | 1 | ene 2025 |
+| sonnet 4.6 | 3 / 15 | 200 k | 32 000 / 128 000 | beta | 2 | — | 4 | ago 2025 |
+| **sonnet 5** | **3 / 15** | **1 M** | **64 000 / 128 000** | **nativa** | **3** | `high` | **6** | ene 2026 |
+| opus 4.0 | **15 / 75** | 200 k | 32 000 / 32 000 | — | — | — | 1 | ene 2025 |
+| opus 4.1 | **15 / 75** | 200 k | 32 000 / 32 000 | — | — | — | 1 | ene 2025 |
+| opus 4.5 | 5 / 25 | 200 k | 32 000 / 64 000 | — | — | — | 1 | may 2025 |
+| opus 4.6 | 5 / 25 | 200 k | 64 000 / 128 000 | beta | 3 | — | 4 | may 2025 |
+| opus 4.7 | 5 / 25 | 1 M | 64 000 / 128 000 | nativa | 4 | `xhigh` | 5 | ene 2026 |
+| **opus 4.8** | **5 / 25** | **1 M** | **64 000 / 128 000** | **nativa** | **4** | `high` | **8** | ene 2026 |
+| **opus 5** | **5 / 25** | **1 M** | **64 000 / 128 000** | **nativa** | **4** | `high` | **10** | may 2026 |
+| **fable 5** | **10 / 50** | **1 M** | **64 000 / 128 000** | **nativa** | **5** | `high` | **10** | ene 2026 |
+| *(quinta familia)* | 10 / 50 | 1 M | 64 000 / 128 000 | nativa | 5 | — | 0 | ene 2026 |
+
+En negrita, los cuatro despachables por el `enum` de `model`. Tres columnas
+cambian una decisión que esta regla ya tomaba a ciegas:
+
+- **`in/out $/Mtok` desmonta el orden de precio que se supone.** `fable` cuesta
+  **2×** lo que opus 4.8/5 por token, no menos: la tabla de arriba de esta regla
+  lo llama *«alternativa económica»* y **eso es falso frente a opus**. Es barato
+  frente a las **dos** familias de 15/75 y frente a nada más. El orden real de
+  precio por token es haiku 1× → sonnet 3× → opus 5× → fable 10×.
+- **`advisor_rank` es el orden de capacidad que el propio cliente declara** —
+  1 haiku, 2–3 sonnet, 3–4 opus, 5 fable. Cruzado con el precio: fable es a la
+  vez el de mayor rango declarado **y** el más caro por token, así que la fila
+  *«alternativa económica para análisis/redacción»* no se sostiene por ninguno
+  de los dos ejes.
+- **La ventana y la salida acotan el trabajo, no sólo el gasto.** Con el piso
+  siempre-cargado en **126 029 tokens** (:ref:`h-docs-99`), una ventana de
+  200 k deja ~74 k para el trabajo; una de 1 M deja ~874 k. Un agente que deba
+  leer un árbol grande **no cabe** en las familias de 200 k, y eso es una
+  restricción de viabilidad anterior a cualquier cálculo de coste.
+
+Y dos precisiones que la tabla del `effort` de arriba necesita:
+
+- **Siete modelos declaran la capacidad `effort`; sólo cuatro declaran su
+  índice de coste.** opus 4.7 declara `default_effort: xhigh` y **ningún**
+  `effort_cost_index`; sonnet 4.6 y opus 4.6 declaran `effort` sin índice. La
+  tabla de cuatro filas de arriba está completa — no le faltan filas.
+- **`context_management` es la única capacidad universal** entre los que
+  declaran alguna (13 de 17). El resto —`fast_mode`, `lean_prompt`,
+  `refusal_fallback`, `mid_conv_system`— se concentra en los de rango 4–5.
+
+*Métrica:* `capabilities`, `default_effort`, `effort_cost_index`, `pricing`,
+`context.window`, `max_output_tokens`, `advisor_rank` y `knowledge_cutoff`
+declarados en los 17 registros del ejecutable 2.1.236, más las variables
+presentes en el entorno de este proceso.
+*Ciega a:* el precio **efectivo** bajo contrato o plan — la tabla de tiers es la
+de lista, y no consta que el gasto de esta sesión se facture con ella. Y ciega a
+toda capacidad que el cliente resuelva por identificador en vez de por arreglo
+(`adaptive_thinking` tiene una rama así). Cruzar el índice de esfuerzo con el
+precio por token sigue siendo la tarea **#286**.
+
+**Se re-mide, no se cita de memoria** — la tabla cambia entre builds. El
+recorrido **se delimita por registro**, nunca con un `.{0,N}?` no codicioso: un
+N distinto captura un registro distinto, y ése fue el instrumento que publicó un
+`tier_15_75` sin modelos en :ref:`h-docs-218`.
 
 ```bash
-B=$(readlink -f "$(command -v claude)")
-strings -n 4 "$B" | grep -ao 'id:"claude-[a-z0-9-]*",family:"[a-z]*".\{0,1400\}advisor_rank:[0-9]*' \
-  | grep -o 'id:"[^"]*"\|default_effort:"[^"]*"\|effort_cost_index:{[^}]*}'
+B=$(readlink -f "$(command -v claude)"); strings -n 4 "$B" > /tmp/cc.txt
+python3 - <<'PY'
+import re
+t = open('/tmp/cc.txt', errors='ignore').read()
+ini = [m.start() for m in re.finditer(r'\{id:"claude-[a-z0-9-]+",family:"', t)] + [len(t)]
+for a, b in zip(ini, ini[1:]):
+    seg = t[a:b][:4000]
+    g = lambda p, d='—': (re.search(p, seg).group(1) if re.search(p, seg) else d)
+    print(g(r'\{id:"(claude-[a-z0-9-]+)"'), g(r'pricing:"([a-z0-9_]+)"'),
+          g(r'context:\{window:([0-9e.]+)'), g(r'advisor_rank:(\d+)'),
+          g(r'default_effort:"([a-z]+)"'), g(r'effort_cost_index:\{([^}]*)\}'))
+PY
 echo "${CLAUDE_EFFORT:-(sin asignar)}"   # el nivel de la sesión
 ```
 
@@ -245,13 +320,19 @@ En una tanda de N agentes independientes (Clausula 6 de
 ```python
 # Ejemplo: 6 análisis documentales independientes
 Agent(description="análisis d-1 ...", model="sonnet", ...)
-Agent(description="análisis d-2 ...", model="fable",  ...)
-Agent(description="análisis d-3 ...", model="sonnet", ...)   # el más denso
-Agent(description="análisis d-4 ...", model="haiku",  ...)   # inventario/tabla
-Agent(description="análisis d-5 ...", model="fable",  ...)
+Agent(description="análisis d-2 ...", model="sonnet", ...)
+Agent(description="análisis d-3 ...", model="opus",   ...)   # el más denso
+Agent(description="análisis d-4 ...", model="sonnet", ...)   # inventario/tabla
+Agent(description="análisis d-5 ...", model="sonnet", ...)
 Agent(description="análisis d-6 ...", model="sonnet", ...)
-# Reservar opus solo si una de las decisiones es de alto riesgo.
+# fable sólo si el ítem lo justifica: cuesta 2x opus y 3.3x sonnet por token.
 ```
+
+> Corregido 2026-08-20: el ejemplo repartía dos ítems a `fable` **para abaratar**
+> —cuando es el más caro— y uno a `haiku`, que hoy **no arranca** con el piso de
+> contexto de esta sesión (#200). Un ejemplo que contradice a su propia tabla
+> enseña la conducta equivocada, que es el modo de fallo que
+> `react-verification-gate.md` §1-bis ya registró para los ejemplos negativos.
 
 Criterio: la densidad de razonamiento del ítem manda, no la comodidad de
 poner todo igual.
