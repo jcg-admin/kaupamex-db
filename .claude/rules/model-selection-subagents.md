@@ -18,12 +18,17 @@ origen: directiva ejecutor 2026-07-05 ("no es necesario que ejecutes solo
 
 ## El problema que esta regla resuelve
 
-Opus 4.8 es el modelo más caro. Usarlo para toda tarea de subagente
-(research documental, drafting, greps dirigidos, transformaciones
-mecánicas) quema tokens sin ganancia de calidad proporcional. Evidencia
-del defecto (2026-07-05): un agente de **análisis documental** corrió en
-Opus y consumió ~410k tokens para una tarea que Sonnet 5 o Fable 5
-habrían hecho a una fracción del costo.
+Despachar todo subagente al modelo más caro —research documental, drafting,
+greps dirigidos, transformaciones mecánicas— quema tokens sin ganancia de
+calidad proporcional. Evidencia del defecto (2026-07-05): un agente de
+**análisis documental** corrió en un opus y consumió ~410k tokens para una
+tarea que `claude-sonnet-5` habría hecho a una fracción del costo.
+
+> Corregido 2026-08-20: este párrafo decía *«Opus 4.8 es el modelo más caro»*
+> y proponía `fable` como el ahorro. Las dos afirmaciones son falsas contra el
+> `pricing` medido: el más caro por token es `claude-fable-5` (10/50), el
+> doble que `claude-opus-4-8`/`claude-opus-5` (5/25). Ver la tabla de
+> registros abajo.
 
 ## Antes de elegir modelo: ¿despachar o no? — el costo lo domina lo que RELEE
 
@@ -80,12 +85,47 @@ Al invocar `Agent`, pasar `model:` explícito según la tarea. **Reservar
 Opus para el razonamiento más difícil**; el resto va a modelos más
 económicos.
 
-| Modelo (`model:`) | Cuándo usarlo |
-|---|---|
-| `opus` (Opus 4.8) | Razonamiento complejo o adversarial de alto riesgo, síntesis crítica, decisiones arquitectónicas, verificación que sella un gate, orquestación de varias fuentes en conflicto. **No** es el default. |
-| `sonnet` (Sonnet 5) | Análisis y documentación sustanciales, research multi-archivo, drafting de artefactos RST con citas PROVEN. **Default recomendado** para el grueso de los subagentes de análisis/redacción. |
-| `fable` (Fable 5) | **NO es la opción económica** — corregido 2026-08-20: cuesta **10/50 $/Mtok**, el doble que opus, y declara el `advisor_rank` más alto (5). Es el tope de capacidad del catálogo, no un ahorro. Se elige cuando el ítem lo justifique, nunca «para equilibrar el gasto». Ver caveat de disponibilidad abajo. |
-| `haiku` (Haiku 4.5) | **NO DESPACHABLE HOY** — medido 2026-08-07: con los cinco repos en scope el contexto siempre-cargado es de **126 029 tokens de piso**, y Haiku 4.5 falla con `Prompt is too long` incluso con un prompt propio de 450 caracteres (tres intentos; Sonnet 5 arrancó). Ver H-DOCS-99. La fila se reabre cuando se mida un scope en el que Haiku arranque — decisión de alcance #200. Hasta entonces, para tareas mecánicas usar `sonnet`. |
+| `model:` (alias) | Identificador que resuelve aquí | Cuándo usarlo |
+|---|---|---|
+| `opus` | `claude-opus-5` | Razonamiento complejo o adversarial de alto riesgo, síntesis crítica, decisiones arquitectónicas, verificación que sella un gate, orquestación de varias fuentes en conflicto. **No** es el default. |
+| `sonnet` | `claude-sonnet-5` | Análisis y documentación sustanciales, research multi-archivo, drafting de artefactos RST con citas PROVEN. **Default recomendado** para el grueso de los subagentes de análisis/redacción. |
+| `fable` | `claude-fable-5` | **NO es la opción económica** — corregido 2026-08-20: cuesta **10/50 $/Mtok**, el doble que opus, y declara el `advisor_rank` más alto (5). Es el tope de capacidad del catálogo, no un ahorro. Se elige cuando el ítem lo justifique, nunca «para equilibrar el gasto». Ver caveat de disponibilidad abajo. |
+| `haiku` | `claude-haiku-4-5` | **NO DESPACHABLE HOY** — medido 2026-08-07: con los cinco repos en scope el contexto siempre-cargado es de **126 029 tokens de piso**, y falla con `Prompt is too long` incluso con un prompt propio de 450 caracteres (tres intentos; `claude-sonnet-5` arrancó). Ver H-DOCS-99. La fila se reabre cuando se mida un scope en el que arranque — decisión de alcance #200. Hasta entonces, para tareas mecánicas usar `sonnet`. |
+
+> Corregido 2026-08-20: la columna decía «`opus` (Opus 4.8)». El alias
+> **no** resuelve a 4.8 — resuelve a `claude-opus-5`, medido abajo. Y la
+> resolución **no es constante**, así que la columna del medio vale para el
+> proveedor por defecto y no es una propiedad del alias.
+
+### El alias NO es el modelo: resuelve distinto según el proveedor
+
+Directiva del ejecutor 2026-08-20: *"para que no existan problemas, guárdala
+como en su referencia: `claude-sonnet-5`, `claude-opus-5`, `claude-haiku-4-5`,
+`claude-mythos-5`, etc."*. El motivo está en el propio binario — el bloque
+`aliases` declara un `default` **y un mapa por proveedor**:
+
+| alias | `default` | `bedrock` · `vertex` · `foundry` · `mantle` | `anthropic_aws` · `gateway` |
+|---|---|---|---|
+| `opus` | `claude-opus-5` | 5 · 5 · **4-6** · 5 | 5 · **4-7** |
+| `sonnet` | `claude-sonnet-5` | **4-5** en los cuatro | **4-6** en los dos |
+| `haiku` | `claude-haiku-4-5` | — (sin mapa por proveedor) | — |
+| `fable` | `claude-fable-5` | — | — |
+
+**Consecuencia:** `model: "sonnet"` no determina la versión, y por tanto **no
+determina el tier de precio ni la ventana**. Un agente despachado con `sonnet`
+puede haber corrido en `claude-sonnet-4-5` (ventana 200 k) o en
+`claude-sonnet-5` (1 M). Por eso el store guarda el identificador que el
+**transcript** declara (`message.model`), no el alias con que se despachó ni la
+familia que trae el sidecar — ver :ref:`h-docs-219`.
+
+El binario también declara `best:"fable"` y un `latest_per_family`
+(`fable → claude-fable-5`, `opus → claude-opus-5`, `sonnet → claude-sonnet-5`,
+`haiku → claude-haiku-4-5`).
+
+*Métrica:* el bloque `aliases` del ejecutable 2.1.236.
+*Ciega a:* qué proveedor sirve **esta** sesión — el mapa dice cómo resolvería
+cada uno, no cuál está en uso. Para saber el modelo real de un agente hay que
+leer su transcript, que es exactamente lo que el hook hace ahora.
 
 **Criterio de corte:** si la tarea es "leer N archivos y redactar un análisis
 con citas", el default es **`sonnet`**, no `opus` **ni `fable`**. Si es "decidir
@@ -128,12 +168,12 @@ Cada registro de modelo declara su `default_effort` y un `effort_cost_index`:
 el coste relativo de cada nivel tomando `high` = 1. Las cuatro familias que
 declaran la capacidad `effort`:
 
-| Familia | `default_effort` | low | medium | high | xhigh | max | rango |
+| Modelo | `default_effort` | low | medium | high | xhigh | max | rango |
 |---|---|---|---|---|---|---|---|
-| sonnet 5 | `high` | 0.47 | 0.74 | 1 | 2.41 | **5.59** | **11.9×** |
-| opus 4.8 | `high` | 0.72 | 0.90 | 1 | 1.65 | **1.88** | 2.6× |
-| opus 5 | `high` | 0.67 | 0.76 | 1 | 1.60 | **1.70** | 2.5× |
-| fable 5 | `high` | 0.60 | 0.77 | 1 | 1.74 | **1.91** | 3.2× |
+| `claude-sonnet-5` | `high` | 0.47 | 0.74 | 1 | 2.41 | **5.59** | **11.9×** |
+| `claude-opus-4-8` | `high` | 0.72 | 0.90 | 1 | 1.65 | **1.88** | 2.6× |
+| `claude-opus-5` | `high` | 0.67 | 0.76 | 1 | 1.60 | **1.70** | 2.5× |
+| `claude-fable-5` | `high` | 0.60 | 0.77 | 1 | 1.74 | **1.91** | 3.2× |
 
 **Lo que esto corrige.** La intuición *«sonnet es el barato; si hace falta más,
 súbele el esfuerzo»* es correcta hacia abajo —`low` en sonnet es el punto más
@@ -156,41 +196,56 @@ Criterio operativo que se desprende:
 
 ### El registro declara seis ejes más, y tres cambian una decisión de tanda
 
-Medido sobre los **17** registros del ejecutable 2.1.236. Las columnas de coste
-salen del `pricing` de cada uno cruzado con la tabla de tiers (:ref:`h-docs-218`);
-la quinta familia no se nombra, por el mismo criterio de :ref:`h-docs-217`.
+Medido sobre los **17** registros del ejecutable 2.1.236, con el identificador
+que cada uno declara. Las columnas de coste salen del `pricing` de cada uno
+cruzado con la tabla de tiers (:ref:`h-docs-218`).
 
-| Familia | in/out $/Mtok | ventana | salida def/máx | 1M | `advisor_rank` | `default_effort` | capac. | corte |
+| Modelo | in/out $/Mtok | ventana | salida def/máx | 1M | `advisor_rank` | `default_effort` | capac. | corte |
 |---|---|---|---|---|---|---|---|---|
-| haiku 3.5 | 0.8 / 4 | — | 8 192 / 8 192 | — | — | — | 0 | — |
-| haiku 4.5 | 1 / 5 | 200 k | 32 000 / 64 000 | — | 1 | — | 1 | feb 2025 |
-| sonnet 3.5 | 3 / 15 | — | 8 192 / 8 192 | — | — | — | 0 | — |
-| sonnet 3.7 | 3 / 15 | — | 32 000 / 64 000 | — | — | — | 0 | — |
-| sonnet 4.0 | 3 / 15 | 200 k | 32 000 / 64 000 | beta | — | — | 1 | ene 2025 |
-| sonnet 4.5 | 3 / 15 | 200 k | 32 000 / 64 000 | beta | — | — | 1 | ene 2025 |
-| sonnet 4.6 | 3 / 15 | 200 k | 32 000 / 128 000 | beta | 2 | — | 4 | ago 2025 |
-| **sonnet 5** | **3 / 15** | **1 M** | **64 000 / 128 000** | **nativa** | **3** | `high` | **6** | ene 2026 |
-| opus 4.0 | **15 / 75** | 200 k | 32 000 / 32 000 | — | — | — | 1 | ene 2025 |
-| opus 4.1 | **15 / 75** | 200 k | 32 000 / 32 000 | — | — | — | 1 | ene 2025 |
-| opus 4.5 | 5 / 25 | 200 k | 32 000 / 64 000 | — | — | — | 1 | may 2025 |
-| opus 4.6 | 5 / 25 | 200 k | 64 000 / 128 000 | beta | 3 | — | 4 | may 2025 |
-| opus 4.7 | 5 / 25 | 1 M | 64 000 / 128 000 | nativa | 4 | `xhigh` | 5 | ene 2026 |
-| **opus 4.8** | **5 / 25** | **1 M** | **64 000 / 128 000** | **nativa** | **4** | `high` | **8** | ene 2026 |
-| **opus 5** | **5 / 25** | **1 M** | **64 000 / 128 000** | **nativa** | **4** | `high` | **10** | may 2026 |
-| **fable 5** | **10 / 50** | **1 M** | **64 000 / 128 000** | **nativa** | **5** | `high` | **10** | ene 2026 |
-| *(quinta familia)* | 10 / 50 | 1 M | 64 000 / 128 000 | nativa | 5 | — | 0 | ene 2026 |
+| `claude-3-5-haiku` | 0.8 / 4 | — | 8 192 / 8 192 | — | — | — | 0 | — |
+| `claude-haiku-4-5` | 1 / 5 | 200 k | 32 000 / 64 000 | — | 1 | — | 1 | feb 2025 |
+| `claude-3-5-sonnet` | 3 / 15 | — | 8 192 / 8 192 | — | — | — | 0 | — |
+| `claude-3-7-sonnet` | 3 / 15 | — | 32 000 / 64 000 | — | — | — | 0 | — |
+| `claude-sonnet-4-0` | 3 / 15 | 200 k | 32 000 / 64 000 | beta | — | — | 1 | ene 2025 |
+| `claude-sonnet-4-5` | 3 / 15 | 200 k | 32 000 / 64 000 | beta | — | — | 1 | ene 2025 |
+| `claude-sonnet-4-6` | 3 / 15 | 200 k | 32 000 / 128 000 | beta | 2 | — | 4 | ago 2025 |
+| **`claude-sonnet-5`** | **3 / 15** | **1 M** | **64 000 / 128 000** | **nativa** | **3** | `high` | **6** | ene 2026 |
+| `claude-opus-4-0` | **15 / 75** | 200 k | 32 000 / 32 000 | — | — | — | 1 | ene 2025 |
+| `claude-opus-4-1` | **15 / 75** | 200 k | 32 000 / 32 000 | — | — | — | 1 | ene 2025 |
+| `claude-opus-4-5` | 5 / 25 | 200 k | 32 000 / 64 000 | — | — | — | 1 | may 2025 |
+| `claude-opus-4-6` | 5 / 25 | 200 k | 64 000 / 128 000 | beta | 3 | — | 4 | may 2025 |
+| `claude-opus-4-7` | 5 / 25 | 1 M | 64 000 / 128 000 | nativa | 4 | `xhigh` | 5 | ene 2026 |
+| **`claude-opus-4-8`** | **5 / 25** | **1 M** | **64 000 / 128 000** | **nativa** | **4** | `high` | **8** | ene 2026 |
+| **`claude-opus-5`** | **5 / 25** | **1 M** | **64 000 / 128 000** | **nativa** | **4** | `high` | **10** | may 2026 |
+| **`claude-fable-5`** | **10 / 50** | **1 M** | **64 000 / 128 000** | **nativa** | **5** | `high` | **10** | ene 2026 |
+| `claude-mythos-5` | 10 / 50 | 1 M | 64 000 / 128 000 | nativa | 5 | — | 0 | ene 2026 |
 
-En negrita, los cuatro despachables por el `enum` de `model`. Tres columnas
-cambian una decisión que esta regla ya tomaba a ciegas:
+En negrita, los que un alias del `enum` de `model` alcanza. **`claude-mythos-5`
+ya se nombra** — antes figuraba como «la quinta familia» por la discreción de
+:ref:`h-docs-217`; el ejecutor lo nombró él mismo en la directiva del
+2026-08-20, así que la reserva ya no protege nada. No es despachable: ningún
+alias lo resuelve.
 
-- **`in/out $/Mtok` desmonta el orden de precio que se supone.** `fable` cuesta
-  **2×** lo que opus 4.8/5 por token, no menos: la tabla de arriba de esta regla
-  lo llama *«alternativa económica»* y **eso es falso frente a opus**. Es barato
-  frente a las **dos** familias de 15/75 y frente a nada más. El orden real de
-  precio por token es haiku 1× → sonnet 3× → opus 5× → fable 10×.
+**El identificador no tiene una sola forma.** Los tres anteriores a la 4
+ponen la versión delante (`claude-3-5-sonnet`) y del 4 en adelante va detrás
+(`claude-sonnet-4-0`). Un patrón que asuma `claude-<familia>-<version>` es
+ciego a tres de los diecisiete — por eso la columna `model` del store guarda
+la cadena **verbatim** y el discriminador de «¿es un identificador?» es el
+prefijo `claude-`, no una gramática de partes.
+
+Tres columnas cambian una decisión que esta regla ya tomaba a ciegas:
+
+- **`in/out $/Mtok` desmonta el orden de precio que se supone.**
+  `claude-fable-5` cuesta **2×** lo que `claude-opus-4-8`/`claude-opus-5` por
+  token, no menos: la tabla de arriba de esta regla lo llamaba *«alternativa
+  económica»* y **eso es falso frente a opus**. Es barato frente a
+  `claude-opus-4-0`/`4-1` y frente a nada más. El orden real de precio por
+  token es `claude-haiku-4-5` 1× → `claude-sonnet-5` 3× → `claude-opus-5` 5×
+  → `claude-fable-5` 10×.
 - **`advisor_rank` es el orden de capacidad que el propio cliente declara** —
-  1 haiku, 2–3 sonnet, 3–4 opus, 5 fable. Cruzado con el precio: fable es a la
-  vez el de mayor rango declarado **y** el más caro por token, así que la fila
+  1 `claude-haiku-4-5`, 2–3 los sonnet, 3–4 los opus, 5 `claude-fable-5` y
+  `claude-mythos-5`. Cruzado con el precio: `claude-fable-5` es a la vez el de
+  mayor rango declarado **y** el más caro por token, así que la fila
   *«alternativa económica para análisis/redacción»* no se sostiene por ninguno
   de los dos ejes.
 - **La ventana y la salida acotan el trabajo, no sólo el gasto.** Con el piso
@@ -298,17 +353,18 @@ Esta regla vive en `.claude/rules/` de **los cuatro repos** (docs, api, ui,
 db) porque los subagentes se despachan desde cualquiera de ellos; el
 contenido es idéntico y la iniciativa de destino siempre está en `docs`.
 
-## Caveat de disponibilidad — Fable 5
+## Caveat de disponibilidad — `claude-fable-5`
 
-Fable 5 **está disponible por ahora** (directiva ejecutor 2026-07-05) y
+`claude-fable-5` **está disponible por ahora** (directiva ejecutor 2026-07-05) y
 puede usarse. Sin embargo, **de forma intermitente el harness puede
-indicar que Fable 5 no está disponible**. Manejo:
+indicar que `claude-fable-5` no está disponible**. Manejo:
 
 1. Intentar `model: "fable"` cuando aplique.
-2. Si el harness reporta que Fable 5 no está disponible → **degradar** a
-   `sonnet` (o `haiku` si la tarea es mecánica). No bloquear el trabajo
-   por la indisponibilidad de un modelo.
-3. No afirmar "Fable 5 no está disponible" de memoria — es un hecho de
+2. Si el harness reporta que no está disponible → **degradar** a `sonnet`.
+   No bloquear el trabajo por la indisponibilidad de un modelo. (Decía
+   *«o `haiku` si la tarea es mecánica»*; se retira — `claude-haiku-4-5` no
+   arranca con el piso de contexto de esta sesión, ver #200.)
+3. No afirmar «`claude-fable-5` no está disponible» de memoria — es un hecho de
    estado del entorno; derivarlo de la respuesta real del harness
    (`react-verification-gate.md`).
 
@@ -360,8 +416,16 @@ lo que el cap deje pasar. El desglose y los comandos para re-medirlo están en
   sea cual sea el modelo, sigue `calibration-verified-numbers.md`,
   `react-verification-gate.md` y `auto-audit-before-writing.md` (citas
   PROVEN `file:line`, no inventar cifras).
-- El **identificador del modelo** (`claude-opus-4-8`, etc.) NO se escribe
-  en commits, PRs, ni artefactos versionados — solo en chat/configuración.
+- El **identificador del modelo** NO se escribe en commits, PRs, mensajes de
+  commit ni comentarios de código — sólo en chat y configuración.
+
+  **Excepción declarada por el ejecutor (2026-08-20):** la columna `model` de
+  `agent_sessions` guarda el identificador **verbatim** — `claude-sonnet-5`,
+  `claude-opus-5`, `claude-haiku-4-5`, `claude-mythos-5`. No es prosa: es el
+  dato de telemetría con el que #286 ponderará el gasto, y sin la versión no
+  se puede (opus 4.0/4.1 facturan 15/75 y de 4.5 en adelante 5/25 — 3×). La
+  frontera es la de siempre: **prohibido en lo que se lee como autoría del
+  cambio; obligatorio en lo que se mide.**
 - El orquestador principal conserva su modelo de sesión; esta regla
   aplica a los **subagentes** que despacha.
 
@@ -381,7 +445,7 @@ flujo, pero su ausencia reintroduce el sobrecosto observado el
 
 - `principio-rector-rup-arquitectura.md` (Clausula 6): despacho paralelo
   de agentes independientes — esta regla fija **qué modelo** por agente.
-- `react-verification-gate.md`: la disponibilidad de Fable 5 es un hecho
+- `react-verification-gate.md`: la disponibilidad de `claude-fable-5` es un hecho
   de estado — no se afirma de memoria.
 - `calibration-verified-numbers.md` / `auto-audit-before-writing.md`:
   aplican por igual a cualquier modelo de subagente.
