@@ -416,16 +416,31 @@ lo que el cap deje pasar. El desglose y los comandos para re-medirlo están en
   sea cual sea el modelo, sigue `calibration-verified-numbers.md`,
   `react-verification-gate.md` y `auto-audit-before-writing.md` (citas
   PROVEN `file:line`, no inventar cifras).
-- El **identificador del modelo** NO se escribe en commits, PRs, mensajes de
-  commit ni comentarios de código — sólo en chat y configuración.
+- El **identificador del modelo** se rige por una frontera, no por una lista de
+  sitios: **prohibido en lo que se lee como autoría del cambio; obligatorio en
+  lo que se mide.**
 
-  **Excepción declarada por el ejecutor (2026-08-20):** la columna `model` de
-  `agent_sessions` guarda el identificador **verbatim** — `claude-sonnet-5`,
-  `claude-opus-5`, `claude-haiku-4-5`, `claude-mythos-5`. No es prosa: es el
-  dato de telemetría con el que #286 ponderará el gasto, y sin la versión no
-  se puede (opus 4.0/4.1 facturan 15/75 y de 4.5 en adelante 5/25 — 3×). La
-  frontera es la de siempre: **prohibido en lo que se lee como autoría del
-  cambio; obligatorio en lo que se mide.**
+  **PROHIBIDO** — el **cuerpo y el título de un PR**, los mensajes de commit y
+  los comentarios de código. Ahí el identificador no informa: firma. Un lector
+  del historial lo lee como quién hizo el cambio, que es exactamente lo que no
+  es.
+
+  **SE CITA, Y COMPLETO** — en todo artefacto que **mida**: la columna `model`
+  de `agent_sessions`, las tablas de telemetría de `source/**`, un hallazgo que
+  publique un cruce por modelo. Verbatim: `claude-sonnet-5`, `claude-opus-4-8`,
+  `claude-opus-5`, `claude-haiku-4-5`, `claude-mythos-5`. Sin la versión, #286
+  no puede ponderar el gasto —opus 4.0/4.1 facturan 15/75 y de 4.5 en adelante
+  5/25, un factor de 3— y **el alias no la determina** (:ref:`h-docs-220`): el
+  mismo `sonnet` resuelve a 4-5 o a 5 según el proveedor, con ventanas de 200 k
+  y 1 M respectivamente.
+
+  > **Historia de esta frontera.** El 2026-08-20 se abrió como excepción para
+  > la columna `model` de `agent_sessions`. Ese mismo día el ejecutor la
+  > amplió al ver que **12 archivos `.rst` de `source/`** ya citaban el
+  > identificador completo, todos en tablas de medición: *"está bien que citen
+  > el ID completo; lo que sí sigue prohibido es el cuerpo de un PR"*. La regla
+  > pasa de enumerar sitios permitidos a declarar el criterio, que es lo que
+  > sobrevive a un sitio nuevo.
 - El orquestador principal conserva su modelo de sesión; esta regla
   aplica a los **subagentes** que despacha.
 
