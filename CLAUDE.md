@@ -41,6 +41,20 @@ Las reglas no negociables viven en el superproyecto, no aquí:
     Observation real ejecutada en el turno; nunca del resultado esperado.
   - `calibration-verified-numbers.md` — ningún número sin verificar.
 
+**Los githooks se activan por clon, y no se activan solos.** `core.hooksPath`
+vive en `.git/config`, que **no se versiona**: un clon nuevo tiene los dos
+hooks escritos en `.githooks/` y git no los mira. Primer comando tras clonar:
+
+```bash
+bash scripts/install-hooks.sh        # git config core.hooksPath .githooks
+git config core.hooksPath            # debe imprimir .githooks
+```
+
+`commit-msg` valida el subject Tim Pope; `pre-commit` exige `set -euo pipefail`
+en los `*.sh` en *staging*. Sin el config, los dos están saltados por omisión —
+sin `--no-verify` de por medio y sin nada en el árbol que lo delate. Ver
+H-DOCS-249 en `docs: pm/docs/iniciativas/integrar-referencia-how-claude-code-works/hallazgos/`.
+
 ## Comandos
 
 Todos leen variables desde `.env` en la raíz del repo (copiar de `.env.example`).
