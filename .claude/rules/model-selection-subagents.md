@@ -32,29 +32,51 @@ tarea que `claude-sonnet-5` habría hecho a una fracción del costo.
 
 ## Antes de elegir modelo: ¿despachar o no? — el costo lo domina lo que RELEE
 
-Medido 2026-08-18 sobre **216 agentes** del store (`agent_sessions`), el gasto
-no está donde se supone:
+> **Re-medido 2026-08-26 (:ref:`h-docs-427`, tarea #899).** La versión anterior
+> decía «medido sobre **216 agentes** del store» y ese 216 era un **numerador
+> sin cociente**: el universo nunca se declaró. Y las columnas de token nacen
+> `NULL`, así que un promedio sobre el universo repartía el gasto entre filas
+> que no aportaron dato. Las cifras de abajo salen de `censo-medicion`, que
+> excluye del denominador las filas `no_medido` en vez de sumarlas como ceros.
 
-| Componente | tokens | % |
+**Universo: 671 filas de `agent_sessions`. Con telemetría: 313 (46.6 %).** Las
+otras 358 no son ceros — son agentes cuyo costo existió y ya no se puede leer
+(356 `no_medido`, 2 sin clasificar). Toda cifra de esta sección se lee sobre
+los **313 medidos**, y sólo la primera tabla se puede extrapolar.
+
+### Lo que SÍ se extrapola: el reparto
+
+Es una **proporción dentro de cada agente medido**, no un agregado del
+universo — por eso sobrevive aunque el 53 % restante no haya dejado rastro:
+
+| Componente | tokens (n = 313) | % |
 |---|---|---|
-| `cache_read` | 4 150 264 618 | **97.8 %** |
-| `cache_creation` | 93 214 449 | 2.2 % |
-| `output` | 746 110 | 0.0 % |
-| `input` | 106 405 | 0.0 % |
+| `cache_read` | 7 223 505 643 | **98.07 %** |
+| `cache_creation` | 141 087 634 | 1.92 % |
+| `output` | 1 325 735 | 0.02 % |
+| `input` | 119 139 | 0.00 % |
 
-Acortar el prompt o pedir menos salida **no ahorra nada**: los dos son 0.0 %.
-Lo que se paga es el contexto que el agente **relee en cada turno**, y por eso
-escala con los turnos:
+Acortar el prompt o pedir menos salida **no ahorra nada**: los dos juntos son
+el 0.02 %. Lo que se paga es el contexto que el agente **relee en cada turno**.
 
-| turnos | n | `cache_read` medio | `equiv_cost` medio |
+### Lo que NO se extrapola: los conteos por tramo
+
+La tabla siguiente describe **a los 313 que dejaron rastro**, no a los 671.
+Nada indica que los 358 sin medir se les parezcan: pudieron ser
+sistemáticamente los más cortos o los más largos, y no hay con qué
+distinguirlo.
+
+| turnos | n (de 313) | `cache_read` medio | `equiv_cost` medio |
 |---|---|---|---|
-| 1-3 | 12 | 246 k | 338 k |
+| 1-3 | 22 | 134 k | 202 k |
 | 4-8 | 7 | 1 451 k | 502 k |
-| 9-20 | 45 | 4 238 k | 861 k |
-| **21+** | **152** | **25 963 k** | **3 218 k** |
+| 9-20 | 55 | 4 518 k | 908 k |
+| **21+** | **229** | **30 401 k** | **3 701 k** |
 
-Un agente de 21+ turnos cuesta **~9.5×** uno de 1-3 — y **152 de 216 (70 %)**
-cayeron en ese tramo.
+Los cuatro tramos suman 313: ningún medido queda fuera. Un agente de 21+
+turnos cuesta **~18×** uno de 1-3 en costo ponderado, y **229 de los 313
+medidos (73 %)** cayeron ahí — sobre el universo eso es una **cota inferior**
+del 34 %, no una proporción.
 
 **La regla:** antes de despachar, preguntar si el trabajo es *ancho* o sólo
 *largo*.
@@ -69,15 +91,33 @@ cayeron en ese tramo.
 **El prompt no acota el gasto: acota los turnos, que es lo que lo causa.** Un
 agente con los archivos nombrados y la condición de cierre fijada da pocos
 turnos; uno al que se le da un objetivo y que descubra el alcance da sesenta.
-Mismo entregable, ~10×.
+Mismo entregable, ~18×.
 
 **Corolario para el propio orquestador.** Un comando sin acotar cuesta lo mismo
 por la vía del tiempo. Un `grep` recursivo sobre `odoo-tools` —**566 917
 archivos**— agota el timeout de 2 min y devuelve nada. Acotar con `--include`,
 `-maxdepth` o una raíz concreta es la misma disciplina que acotar el prompt.
 
-Ver :ref:`h-docs-177` para la serie completa y :ref:`h-docs-169` para por qué el
-titular del harness no sirve para medir esto.
+### Cómo se re-mide, y por qué no se cita de memoria
+
+```bash
+python3 .claude/scripts/agent_store.py censo-medicion      # el agregado, con su n
+bash .claude/scripts/costo-agente.sh <agent_id>            # un agente concreto
+```
+
+El store crece en cada sesión, así que estas cifras envejecen. Lo que **no**
+envejece es la forma: toda cifra se publica con su `n` **y** su universo, y se
+declara si es proporción o agregado.
+
+*Métrica:* `agent_sessions` con `usage_source = 'transcript'`, sumando las
+cuatro columnas de token y agrupando por tramo de `turns`.
+*Ciega a:* los 358 agentes sin telemetría, cuyo gasto existió y no se puede
+leer; y a un agente que existió y nunca llegó al store por ninguna vía — el
+universo son las filas escritas, no los agentes despachados.
+
+Ver :ref:`h-docs-177` para la serie completa, :ref:`h-docs-169` para por qué el
+titular del harness no sirve para medir esto, y :ref:`h-docs-427` para por qué
+el denominador es obligatorio.
 
 ## Regla principal
 
