@@ -76,6 +76,21 @@ fi
 # 'ing'. Las palabras siguientes pueden terminar asi legitimamente.
 LOWER_SUBJECT="$(echo "$SUBJECT" | tr '[:upper:]' '[:lower:]')"
 FIRST_WORD="${LOWER_SUBJECT%% *}"
+#
+# La terminacion NO decide sola: hay verbos imperativos que acaban en
+# 'ing' o 'ed'. MEDIDO 2026-08-27: el subject "Bring the seven cron
+# seeds inside the H-API-22 net" fue rechazado con "primer verbo:
+# 'bring'", y "Bring" es imperativo. El comentario que estaba aqui ya
+# reconocia el hueco ("No whitelist por ahora"); esta es la whitelist.
+#
+# 'seed' es el caso que mas importa en este arbol: sembrar es una
+# operacion con siete data-migrations propias, asi que un subject
+# "Seed ..." iba a chocar tarde o temprano.
+IMPERATIVOS_EN_ING_O_ED="bring sing ring string shed feed speed seed \\
+embed exceed proceed spread read lead need breed bleed succeed"
+case " $IMPERATIVOS_EN_ING_O_ED " in
+    *" $FIRST_WORD "*) FIRST_WORD="" ;;
+esac
 case "$FIRST_WORD" in
     *ing|*ed)
         fail "subject parece no-imperativo (primer verbo: '$FIRST_WORD'). Usar imperativo (Add, Fix, Remove, ...)"
