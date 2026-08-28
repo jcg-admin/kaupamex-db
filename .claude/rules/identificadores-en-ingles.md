@@ -32,7 +32,10 @@ El gate de nombres **reusa** `spanish_words_in` del gate de `api` en vez de
 copiar el léxico, y sin él **rehúsa con exit 2 sin emitir conteo** — un 0 ahí
 sería un verde falso.
 
-**Deuda heredada congelada**, no barrida: 1140 identificadores en 1652 archivos
-(`api: scripts/identifier_language_baseline.txt`) y 38 nombres de archivo sobre
-215 medidos (`docs: .claude/scripts/gates/script_naming_language_baseline.txt`).
-Uno listado no bloquea; uno nuevo sí. Se paga al tocar (barrido: tarea #147).
+**Deuda heredada congelada**, no barrida. Los dos baselines son
+`api: scripts/identifier_language_baseline.txt` y
+`docs: .claude/scripts/gates/script_naming_language_baseline.txt`. **Su conteo
+no se transcribe aquí** — es propiedad de un artefacto que cambia con cada
+tramo del barrido, y lo publica el propio gate al correr (`wc -l` sobre el
+baseline da la cifra del día). Uno listado no bloquea; uno nuevo sí. Se paga al
+tocar (barrido: tarea #147).
