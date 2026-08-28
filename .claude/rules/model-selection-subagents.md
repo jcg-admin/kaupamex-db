@@ -440,7 +440,8 @@ ejecutable de esta sesión (`/opt/claude-code/bin/claude`, 2.1.235):
 - la **anchura** del tool `Agent` la acota su propio guard
   (`hip(){return K.CLAUDE_CODE_MAX_CONCURRENT_SUBAGENTS??K5b}`, `K5b=20`);
 - la **anchura de `parallel()`** dentro de `Workflow` es **otro** mecanismo:
-  `Math.min(16,Math.max(2,r-2))` — piso 2; con `nproc` = 4 aquí, **2**;
+  lo publica `python3 .claude/scripts/report_client_caps.py` — tiene piso, y el piso
+  es justo lo que una paráfrasis pierde;
 - la **profundidad** es un tercer cap (`MW()`), y en este entorno vale **1**,
   así que un subagente **no puede lanzar subagentes**.
 
