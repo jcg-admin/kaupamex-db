@@ -1,7 +1,7 @@
 #!/bin/bash
 # =============================================================================
 # scripts/verify.sh
-# Verificación completa del entorno MariaDB de PracticaYoruba
+# Verificación completa del entorno MariaDB de Kaupamex
 # =============================================================================
 # Comprueba en orden los N checks declarados como funciones
 # check_*() en este archivo. El conteo NO se hardcodea aqui —
@@ -390,7 +390,7 @@ check_privs_qa() {
 # de funcion check_*(). Evita el magic number en docs.
 TOTAL_CHECKS=$(grep -cE '^(function )?check_[a-z_]+\(\)' "$0")
 
-log_header "PracticaYoruba-db — Verificacion completa (${TOTAL_CHECKS} checks)"
+log_header "Kaupamex-db — Verificacion completa (${TOTAL_CHECKS} checks)"
 log_info "  DB prod : ${DB_NAME} @ ${DB_HOST}:${DB_PORT}"
 log_info "  DB QA   : ${DB_QA_NAME} @ ${DB_HOST}:${DB_PORT}"
 echo ""

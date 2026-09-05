@@ -1,8 +1,8 @@
 #!/bin/bash
 # =============================================================================
-# utils/database.sh — Funciones de base de datos — PracticaYoruba-db
+# utils/database.sh — Funciones de base de datos — Kaupamex-db
 # =============================================================================
-# Adaptado desde PracticaYoruba-api/scripts/utils/database.sh.
+# Adaptado desde Kaupamex-api/scripts/utils/database.sh.
 #
 # Adaptaciones respecto al original (Hallazgo H-F2-003):
 #   - Variables privadas renombradas: _MYSQL_* → _MARIADB_*

@@ -555,8 +555,8 @@ _verify_installation() {
 _activate_project_config() {
     log_header "PASO: Activando configuración del proyecto"
 
-    local cnf_src="${PROJECT_ROOT}/config/mariadb/99-practicayoruba.cnf"
-    local cnf_dst="/etc/mysql/mariadb.conf.d/99-practicayoruba.cnf"
+    local cnf_src="${PROJECT_ROOT}/config/mariadb/99-kaupamex.cnf"
+    local cnf_dst="/etc/mysql/mariadb.conf.d/99-kaupamex.cnf"
 
     if [[ ! -f "$cnf_src" ]]; then
         log_warn "  ${cnf_src} no encontrado — omitiendo"

@@ -1,10 +1,10 @@
 #!/usr/bin/env python3
 # -*- coding: utf-8 -*-
 """
-migrate_db.py — Django migrate hacia db.practicayoruba.com
+migrate_db.py — Django migrate hacia db.kaupamex.com
 ==========================================================
 Wrapper que corre `python manage.py migrate` con la configuración
-de base de datos apuntando a db.practicayoruba.com:3306 via SSL.
+de base de datos apuntando a db.kaupamex.com:3306 via SSL.
 
 Verifica antes de migrar:
   1. Conectividad SSL a MariaDB
@@ -23,7 +23,7 @@ Uso:
 
 Prerequisitos:
   pip install -r requirements.txt
-  .env configurado con DB_USER=practicayoruba_app
+  .env configurado con DB_USER=kaupamex_app
   DJANGO_MANAGE_PATH apuntando al manage.py del proyecto
 """
 
@@ -109,9 +109,9 @@ def load_env(path: str = None) -> dict:
 
 def connect(env: dict, schema: str) -> mysql.connector.MySQLConnection:
     params = {
-        'host':               env.get('DB_HOST', 'db.practicayoruba.com'),
+        'host':               env.get('DB_HOST', 'db.kaupamex.com'),
         'port':               int(env.get('DB_PORT', 3306)),
-        'user':               env.get('DB_USER', 'practicayoruba_app'),
+        'user':               env.get('DB_USER', 'kaupamex_app'),
         'password':           env.get('DB_PASSWORD', ''),
         'database':           schema,
         'connection_timeout': 10,
@@ -223,10 +223,10 @@ def build_env_for_django(env: dict, schema: str) -> dict:
     django_env = os.environ.copy()
 
     # Variables estándar que Django settings suele leer
-    django_env['DB_HOST']     = env.get('DB_HOST', 'db.practicayoruba.com')
+    django_env['DB_HOST']     = env.get('DB_HOST', 'db.kaupamex.com')
     django_env['DB_PORT']     = env.get('DB_PORT', '3306')
     django_env['DB_NAME']     = schema
-    django_env['DB_USER']     = env.get('DB_USER', 'practicayoruba_app')
+    django_env['DB_USER']     = env.get('DB_USER', 'kaupamex_app')
     django_env['DB_PASSWORD'] = env.get('DB_PASSWORD', '')
     django_env['DB_SSL_CA']   = env.get('DB_SSL_CA', '')
 
@@ -268,7 +268,7 @@ def run_manage(manage_py: str, args: List[str],
 
 def main():
     parser = argparse.ArgumentParser(
-        description='Django migrate hacia db.practicayoruba.com')
+        description='Django migrate hacia db.kaupamex.com')
     parser.add_argument('--schema', choices=['prod', 'qa'], default='prod',
                         help='Schema destino: prod=kaupamex_core, '
                              'qa=kaupamex_core_qa (default: prod)')
@@ -289,7 +289,7 @@ def main():
     manage_py = os.path.abspath(
         env.get('DJANGO_MANAGE_PATH', '../manage.py'))
 
-    log.header(f"MIGRATE DB — {env.get('DB_HOST', 'db.practicayoruba.com')} "
+    log.header(f"MIGRATE DB — {env.get('DB_HOST', 'db.kaupamex.com')} "
                f"→ {schema}")
     log.info(f"manage.py: {manage_py}")
     log.info(f"Log: {log.log_file}")

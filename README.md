@@ -1,7 +1,7 @@
-# PracticaYoruba-db
+# Kaupamex-db
 
 Repositorio de infraestructura de base de datos para
-[PracticaYoruba](https://github.com/NestorMonroy/PracticaYoruba-api) —
+[Kaupamex](https://github.com/NestorMonroy/Kaupamex-api) —
 plataforma e-commerce de productos Yoruba.
 
 Implementa los patrones de scripting identificados en el análisis de
@@ -33,14 +33,14 @@ sin Vagrant, sin PostgreSQL, sin Adminer.
 ## Estructura
 
 ```
-PracticaYoruba-db/
+Kaupamex-db/
 ├── .env.example                    # Plantilla de variables de entorno
 ├── .gitignore
 ├── README.md
 │
 ├── config/
 │   └── mariadb/
-│       └── 99-practicayoruba.cnf  # Overrides de MariaDB (charset, sql_mode, InnoDB)
+│       └── 99-kaupamex.cnf  # Overrides de MariaDB (charset, sql_mode, InnoDB)
 │
 ├── utils/                          # Librerías de shell compartidas
 │   ├── logging.sh                  # log_info, log_warn, log_error, log_success
@@ -51,8 +51,8 @@ PracticaYoruba-db/
 │
 ├── provisioners/
 │   └── mariadb/
-│       ├── db_setup.sh             # Crea schema practicayoruba_db y usuario django_user
-│       └── db_qa_setup.sh          # Crea schema practicayoruba_qa
+│       ├── db_setup.sh             # Crea schema kaupamex_db y usuario django_user
+│       └── db_qa_setup.sh          # Crea schema kaupamex_qa
 │
 ├── scripts/
 │   ├── backup_db.sh                # Backup de ambos schemas con MD5 y gzip-6
@@ -78,7 +78,7 @@ cd kaupamex-db
 # 2. Variables de entorno — generación automática (recomendado)
 bash scripts/init-env.sh
 # El script genera .env con credenciales openssl y propaga los mismos
-# valores al .env de kaupamex-api/practicayoruba/ automáticamente.
+# valores al .env de kaupamex-api/kaupamex/ automáticamente.
 # Si los repos no son siblings, usa las flags explícitas:
 #   bash scripts/init-env.sh \
 #     --db-root /ruta/a/kaupamex-db \
@@ -89,8 +89,8 @@ sudo bash provisioners/mariadb/install.sh
 
 # 4. Activar la configuración del proyecto (lo hace install.sh, pero
 #    en upgrades manuales el symlink puede faltar)
-sudo ln -sf "$(pwd)/config/mariadb/99-practicayoruba.cnf" \
-            /etc/mysql/mariadb.conf.d/99-practicayoruba.cnf
+sudo ln -sf "$(pwd)/config/mariadb/99-kaupamex.cnf" \
+            /etc/mysql/mariadb.conf.d/99-kaupamex.cnf
 sudo systemctl reload mariadb 2>/dev/null \
     || sudo mysqladmin --socket=/run/mysqld/mysqld.sock reload
 ```
@@ -228,13 +228,13 @@ done
 
 ---
 
-## Integración con PracticaYoruba-api
+## Integración con Kaupamex-api
 
-`PracticaYoruba-db` provisiona la infraestructura de BD para entornos
+`Kaupamex-db` provisiona la infraestructura de BD para entornos
 donde la base de datos vive en un servidor dedicado (producción, CI).
 
-Las variables en `PracticaYoruba-db/.env` y en
-`PracticaYoruba-api/practicayoruba/.env` deben ser **idénticas** —
+Las variables en `Kaupamex-db/.env` y en
+`Kaupamex-api/kaupamex/.env` deben ser **idénticas** —
 son archivos independientes y un cambio en uno no se replica en el otro.
 
 El flujo completo de configuración inicial, la tabla de equivalencias

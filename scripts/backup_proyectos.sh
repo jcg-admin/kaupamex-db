@@ -1,6 +1,6 @@
 #!/usr/bin/env bash
 # =============================================================================
-# backup_proyectos.sh — Backup completo de los tres repositorios PracticaYoruba
+# backup_proyectos.sh — Backup completo de los tres repositorios Kaupamex
 # =============================================================================
 # Genera por cada repo:
 #   - git bundle  (restaurable con git clone <bundle>)
@@ -44,7 +44,7 @@ read -ra REPOS <<< "${BACKUP_REPOS:-$BACKUP_REPOS_DEFAULT}"
 log() { echo "[$(date '+%Y-%m-%d %H:%M:%S')] $*" | tee -a "$LOG"; }
 
 mkdir -p "$BACKUP_DIR"
-log "=== INICIO BACKUP — PracticaYoruba Proyectos ==="
+log "=== INICIO BACKUP — Kaupamex Proyectos ==="
 log "Origen:  $ORIGEN"
 log "Destino: $BACKUP_DIR"
 echo "" | tee -a "$LOG"

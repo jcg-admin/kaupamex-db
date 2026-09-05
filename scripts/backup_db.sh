@@ -320,7 +320,7 @@ _sync_remote() {
 # =============================================================================
 mkdir -p "$BACKUP_DIR"
 
-log_header "Backup PracticaYoruba — ${TS}"
+log_header "Backup Kaupamex — ${TS}"
 log_info "  Schemas:   ${DB_PROD}, ${DB_QA}"
 log_info "  Usuario:   ${BACKUP_USER}"
 log_info "  Destino:   ${BACKUP_DIR}"

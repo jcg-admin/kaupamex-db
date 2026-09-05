@@ -4,13 +4,13 @@
 check_db.py — Verificación de MariaDB ecom-prod
 ================================================
 Verifica conectividad SSL, usuarios, permisos y estado de schemas
-contra db.practicayoruba.com:3306 desde el entorno local del desarrollador.
+contra db.kaupamex.com:3306 desde el entorno local del desarrollador.
 
 Lee configuración desde .env en el mismo directorio.
 
 Checks realizados:
-  1. Conectividad SSL con practicayoruba_readonly (SELECT)
-  2. Conectividad SSL con practicayoruba_app (DML)
+  1. Conectividad SSL con kaupamex_readonly (SELECT)
+  2. Conectividad SSL con kaupamex_app (DML)
   3. SSL activo en la conexión (Ssl_cipher no vacío)
   4. require_secure_transport rechaza conexión sin SSL
   5. Schemas existentes: kaupamex_core, kaupamex_core_qa
@@ -242,7 +242,7 @@ def check_schemas(cfg_app: dict, log: Logger) -> bool:
     try:
         cfg = {**cfg_app, 'database': None}
         cnx = connect(cfg)
-        rows = query_all(cnx, "SHOW DATABASES LIKE 'practicayoruba%'")
+        rows = query_all(cnx, "SHOW DATABASES LIKE 'kaupamex%'")
         cnx.close()
         schemas = [r[0] for r in rows]
         log.info(f"Schemas encontrados: {schemas}")
@@ -296,7 +296,7 @@ def check_permisos_readonly(cfg_readonly: dict, log: Logger) -> bool:
 def check_permisos_app_prod(cfg_app: dict, log: Logger) -> bool:
     """Check 7: app puede DML en kaupamex_core, no puede DROP DATABASE.
 
-    practicayoruba_app tiene solo DML (SELECT, INSERT, UPDATE, DELETE) en
+    kaupamex_app tiene solo DML (SELECT, INSERT, UPDATE, DELETE) en
     kaupamex_core — no tiene CREATE TABLE permanente. Se usa
     CREATE TEMPORARY TABLE que no requiere privilegio CREATE y solo
     existe en la sesion actual.
@@ -308,7 +308,7 @@ def check_permisos_app_prod(cfg_app: dict, log: Logger) -> bool:
         cur = cnx.cursor()
 
         # Verificar grants DML via SHOW GRANTS
-        # practicayoruba_app tiene SELECT, INSERT, UPDATE, DELETE en prod
+        # kaupamex_app tiene SELECT, INSERT, UPDATE, DELETE en prod
         # No tiene CREATE — verificamos grants directamente sin crear tablas
         try:
             cur.execute("SHOW GRANTS FOR CURRENT_USER()")
@@ -382,27 +382,27 @@ def main():
     log = Logger("check_db")
     env = load_env()
 
-    host = env.get('DB_HOST', 'db.practicayoruba.com')
+    host = env.get('DB_HOST', 'db.kaupamex.com')
     port = env.get('DB_PORT', '3306')
     ssl_ca = env.get('DB_SSL_CA', '')
 
     cfg_readonly = {
         'host': host, 'port': port,
-        'user': env.get('DB_READONLY_USER', 'practicayoruba_readonly'),
+        'user': env.get('DB_READONLY_USER', 'kaupamex_readonly'),
         'password': env.get('DB_READONLY_PASSWORD', ''),
         'database': env.get('DB_NAME', 'kaupamex_core'),
         'ssl_ca': ssl_ca,
     }
     cfg_app = {
         'host': host, 'port': port,
-        'user': env.get('DB_USER', 'practicayoruba_app'),
+        'user': env.get('DB_USER', 'kaupamex_app'),
         'password': env.get('DB_PASSWORD', ''),
         'database': env.get('DB_NAME', 'kaupamex_core'),
         'ssl_ca': ssl_ca,
     }
     cfg_app_qa = {
         'host': host, 'port': port,
-        'user': env.get('DB_QA_USER', 'practicayoruba_app'),
+        'user': env.get('DB_QA_USER', 'kaupamex_app'),
         'password': env.get('DB_QA_PASSWORD', ''),
         'database': env.get('DB_QA_NAME', 'kaupamex_core_qa'),
         'ssl_ca': ssl_ca,

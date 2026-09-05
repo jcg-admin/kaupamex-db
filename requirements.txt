@@ -1,5 +1,5 @@
 # =============================================================================
-# requirements.txt — PracticaYoruba-db
+# requirements.txt — Kaupamex-db
 # =============================================================================
 # Dependencias de scripts/check_db.py.
 #
@@ -12,7 +12,7 @@
 #   Necesario para compilar mysqlclient.
 #
 # Nota: mysqlclient==2.2.1 coincide con la versión usada en
-#   PracticaYoruba-api/requirements/base.txt. Mantener en sincronía.
+#   Kaupamex-api/requirements/base.txt. Mantener en sincronía.
 #
 # Nota: python-dotenv es distinto de python-decouple (usado en la API).
 #   check_db.py usa load_dotenv() de python-dotenv porque es un script

@@ -2,17 +2,17 @@
 # =============================================================================
 # scripts/verify_env_sync.sh
 # Verifica que las claves DB_* esten sincronizadas entre el .env de db/
-# y el .env de api/practicayoruba/.
+# y el .env de api/kaupamex/.
 # =============================================================================
 # Origen: T-B1 de iniciativa resolver-problemas-db-pendientes
 # (cierra ENV-01, H-03; DEC-DB-3).
 #
 # Comportamiento:
 #
-#   * Por default compara db/.env.example vs api/practicayoruba/.env.example
+#   * Por default compara db/.env.example vs api/kaupamex/.env.example
 #     (las plantillas son el contrato — el .env real es secreto y puede no
 #     existir en el repo padre cuando se corre este script en CI).
-#   * Si ambos .env reales existen (db/.env y api/practicayoruba/.env) y se
+#   * Si ambos .env reales existen (db/.env y api/kaupamex/.env) y se
 #     pasa --check-values, ademas compara los valores de las claves DB_*.
 #     Diferencia silenciosa entre los dos .env = bug clase
 #     "errores silenciosos en tiempo de ejecucion" descrito en
@@ -64,14 +64,14 @@ done
 # -----------------------------------------------------------------------------
 # Estrategia: si el operador no la pasa, probar layouts conocidos:
 #   1. Monorepo (jcg-admin/kaupamex): <parent>/api/
-#   2. Sibling clone:                  <parent>/PracticaYoruba-api/
+#   2. Sibling clone:                  <parent>/Kaupamex-api/
 #   3. Sibling clone variante:         <parent>/kaupamex-api/
 # Si ninguno existe, error 2 con sugerencia.
 # -----------------------------------------------------------------------------
 if [[ -z "$API_ROOT" ]]; then
     PARENT="$(cd "${DB_ROOT}/.." && pwd)"
-    for cand in "${PARENT}/api" "${PARENT}/PracticaYoruba-api" "${PARENT}/kaupamex-api"; do
-        if [[ -f "${cand}/practicayoruba/.env.example" ]]; then
+    for cand in "${PARENT}/api" "${PARENT}/Kaupamex-api" "${PARENT}/kaupamex-api"; do
+        if [[ -f "${cand}/kaupamex/.env.example" ]]; then
             API_ROOT="$cand"
             break
         fi
@@ -80,12 +80,12 @@ fi
 
 if [[ -z "$API_ROOT" ]]; then
     echo "ERROR: no se encontro el repo api/." >&2
-    echo "       Probe --api-root <path> apuntando al clon de PracticaYoruba-api." >&2
+    echo "       Probe --api-root <path> apuntando al clon de Kaupamex-api." >&2
     exit 2
 fi
 
 DB_ENV_EXAMPLE="${DB_ROOT}/.env.example"
-API_ENV_EXAMPLE="${API_ROOT}/practicayoruba/.env.example"
+API_ENV_EXAMPLE="${API_ROOT}/kaupamex/.env.example"
 
 [[ -f "$DB_ENV_EXAMPLE" ]]  || { echo "ERROR: no existe $DB_ENV_EXAMPLE"  >&2; exit 2; }
 [[ -f "$API_ENV_EXAMPLE" ]] || { echo "ERROR: no existe $API_ENV_EXAMPLE" >&2; exit 2; }
@@ -116,7 +116,7 @@ EXIT_CODE=0
 if [[ -n "$KEY_DIFF" ]]; then
     echo "DRIFT: las claves DB_* difieren entre las plantillas."
     echo "  db/.env.example                  : ${DB_ENV_EXAMPLE}"
-    echo "  api/practicayoruba/.env.example  : ${API_ENV_EXAMPLE}"
+    echo "  api/kaupamex/.env.example  : ${API_ENV_EXAMPLE}"
     echo ""
     echo "Diff (< db, > api):"
     diff <(echo "$DB_KEYS") <(echo "$API_KEYS") | sed 's/^/  /' || true
@@ -132,7 +132,7 @@ fi
 # -----------------------------------------------------------------------------
 if [[ "$CHECK_VALUES" -eq 1 ]]; then
     DB_ENV_REAL="${DB_ROOT}/.env"
-    API_ENV_REAL="${API_ROOT}/practicayoruba/.env"
+    API_ENV_REAL="${API_ROOT}/kaupamex/.env"
 
     if [[ ! -f "$DB_ENV_REAL" ]] || [[ ! -f "$API_ENV_REAL" ]]; then
         echo ""

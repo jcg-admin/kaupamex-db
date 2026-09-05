@@ -7,7 +7,7 @@ systemd** (devcontainers, Docker minimal, sandboxes de CI).
 
 ## 1. Por que MariaDB 11.8
 
-ADR-009 fija MariaDB 11.8 LTS como motor canonico para PracticaYoruba.
+ADR-009 fija MariaDB 11.8 LTS como motor canonico para Kaupamex.
 La serie 11.8 es LTS hasta 2028 e incluye correcciones que la 10.11 no
 recibira en el ciclo de soporte vigente del proyecto.
 
@@ -89,7 +89,7 @@ mariadb --version
   segunda corrida no relanza mariadbd si ya responde en
   `/run/mysqld/mysqld.sock`.
 - El datadir `/var/lib/mysql` se reutiliza entre series. Los schemas
-  `practicayoruba_db`, `practicayoruba_qa` y los usuarios creados por
+  `kaupamex_db`, `kaupamex_qa` y los usuarios creados por
   `db_setup.sh` / `db_qa_setup.sh` sobreviven al upgrade.
 - Tras el upgrade conviene correr una vez `mariadb-upgrade` (mismo
   binario, gestiona `mysql.user`, `mysql.proc` legacy, etc.):

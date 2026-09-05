@@ -26,10 +26,10 @@
 #   DB_HOST      (default: 127.0.0.1)
 #   DB_PORT      (default: 3306)
 #
-# Adaptaciones respecto a PracticaYoruba-api/scripts/provisioners/mysql/:
+# Adaptaciones respecto a Kaupamex-api/scripts/provisioners/mysql/:
 #   - PROJECT_ROOT: dos niveles arriba (no tres) — H-F1-002
 #   - source paths: ${PROJECT_ROOT}/utils/ (no scripts/utils/) — H-F3-003
-#   - ENV_FILE: ${PROJECT_ROOT}/.env (no practicayoruba/.env) — H-F1-002
+#   - ENV_FILE: ${PROJECT_ROOT}/.env (no kaupamex/.env) — H-F1-002
 #   - mysql_is_running/mysql_start → mariadb_is_running/mariadb_start — H-F2-004
 #   - _my_exec renombrado a _db_exec y usa _MARIADB_SOCKETS — H-F3-002
 #   - Mensajes de log: MySQL → MariaDB

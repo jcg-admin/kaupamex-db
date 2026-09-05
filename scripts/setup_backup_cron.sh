@@ -3,7 +3,7 @@
 # scripts/setup_backup_cron.sh
 # Activa el cron automático de backup_postgres.sh como svc-dbdata
 # =============================================================================
-# Instala la entrada en /etc/cron.d/practicayoruba-backup para que
+# Instala la entrada en /etc/cron.d/kaupamex-backup para que
 # backup_postgres.sh corra diariamente a las 02:00 (America/Mexico_City)
 # como svc-dbdata via sudo.
 #
@@ -19,13 +19,13 @@
 #   sudo bash scripts/setup_backup_cron.sh
 #
 # Para deshabilitar:
-#   sudo rm /etc/cron.d/practicayoruba-backup
+#   sudo rm /etc/cron.d/kaupamex-backup
 # =============================================================================
 set -euo pipefail
 
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 REPO_DIR="$(dirname "$SCRIPT_DIR")"
-CRON_FILE="/etc/cron.d/practicayoruba-backup"
+CRON_FILE="/etc/cron.d/kaupamex-backup"
 BACKUP_SCRIPT="${REPO_DIR}/scripts/backup_postgres.sh"
 BACKUP_PROYECTOS_SCRIPT="${REPO_DIR}/scripts/backup_proyectos.sh"
 
@@ -73,7 +73,7 @@ log_info "Instalando cron de backup en ${CRON_FILE} ..."
 # de ejecución del cron — para que el path sea fijo.
 
 cat > "${CRON_FILE}" <<EOF
-# /etc/cron.d/practicayoruba-backup
+# /etc/cron.d/kaupamex-backup
 # Backup automático de kaupamex_core + kaupamex_core_qa.
 # Instalado por: setup_backup_cron.sh
 # Repositorio: ${REPO_DIR}
@@ -88,7 +88,7 @@ cat > "${CRON_FILE}" <<EOF
 SHELL=/bin/bash
 PATH=/usr/local/sbin:/usr/local/bin:/sbin:/bin:/usr/sbin:/usr/bin
 
-0 2 * * * root sudo -u svc-dbdata bash ${BACKUP_SCRIPT} >> /var/log/practicayoruba-backup.log 2>&1
+0 2 * * * root sudo -u svc-dbdata bash ${BACKUP_SCRIPT} >> /var/log/kaupamex-backup.log 2>&1
 EOF
 
 chmod 644 "${CRON_FILE}"
@@ -113,10 +113,10 @@ log_info "  Archivo:  ${CRON_FILE}"
 log_info "  Script:   ${BACKUP_SCRIPT}"
 log_info "  Horario:  02:00 diario (America/Mexico_City)"
 log_info "  Usuario:  svc-dbdata (via sudo)"
-log_info "  Log:      /var/log/practicayoruba-backup.log"
+log_info "  Log:      /var/log/kaupamex-backup.log"
 echo ""
 log_info "Para verificar la próxima ejecución:"
-log_info "  grep practicayoruba-backup /var/log/syslog | tail -5"
+log_info "  grep kaupamex-backup /var/log/syslog | tail -5"
 log_info ""
 log_info "Para ejecutar manualmente (como test):"
 log_info "  sudo -u svc-dbdata bash ${BACKUP_SCRIPT}"

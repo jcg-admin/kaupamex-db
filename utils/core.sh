@@ -1,12 +1,12 @@
 #!/bin/bash
 # =============================================================================
-# utils/core.sh — Funciones utilitarias core — PracticaYoruba-db
+# utils/core.sh — Funciones utilitarias core — Kaupamex-db
 # =============================================================================
-# Portado desde PracticaYoruba-api/scripts/utils/core.sh sin cambios
+# Portado desde Kaupamex-api/scripts/utils/core.sh sin cambios
 # funcionales — no contiene referencias al dominio de la API.
 #
 # Nota: provisioning.sh (apt_update, install_apt_packages, setup_venv)
-# no se porta porque PracticaYoruba-db no gestiona paquetes del sistema
+# no se porta porque Kaupamex-db no gestiona paquetes del sistema
 # ni entornos virtuales Python. (Hallazgo H-F2-002)
 #
 # Depende de: logging.sh

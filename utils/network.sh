@@ -1,8 +1,8 @@
 #!/bin/bash
 # =============================================================================
-# utils/network.sh — Funciones de red — PracticaYoruba-db
+# utils/network.sh — Funciones de red — Kaupamex-db
 # =============================================================================
-# Portado desde PracticaYoruba-api/scripts/utils/network.sh sin cambios
+# Portado desde Kaupamex-api/scripts/utils/network.sh sin cambios
 # funcionales — no contiene referencias al dominio de la API.
 #
 # Depende de: logging.sh

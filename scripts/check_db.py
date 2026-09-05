@@ -2,7 +2,7 @@
 # -*- coding: utf-8 -*-
 """
 scripts/check_db.py
-Verificación Python de conectividad y privilegios MariaDB — PracticaYoruba-db
+Verificación Python de conectividad y privilegios MariaDB — Kaupamex-db
 ===============================================================================
 Descripción:
     Verifica que MariaDB está accesible y que el usuario Django tiene los
@@ -24,7 +24,7 @@ Adaptaciones respecto a IACT-db/test/check_db_connections.py:
       de users_user a res_users al disolverse el addon users en base: la
       referencia no tiene un addon users, declara res.users en el nucleo
       (odoo19c: odoo/addons/base/models/res_users.py). Ver H-DB-01.
-      (PracticaYoruba usa AUTH_USER_MODEL = 'users.User')
+      (Kaupamex usa AUTH_USER_MODEL = 'users.User')
     - Salida con colores ANSI sin depender de colorama
 
 Requisitos:
@@ -443,7 +443,7 @@ def _count_checks() -> int:
 
 def main() -> None:
     n = _count_checks()
-    print(_bold(_cyan(f"\n>>> PracticaYoruba-db — Verificacion Python ({n} checks)\n")))
+    print(_bold(_cyan(f"\n>>> Kaupamex-db — Verificacion Python ({n} checks)\n")))
     print(f"  DB prod : {DB_NAME} @ {DB_HOST}:{DB_PORT}  ({DB_USER})")
     print(f"  DB QA   : {DB_QA_NAME} @ {DB_QA_HOST}:{DB_QA_PORT}  ({DB_QA_USER})")
 

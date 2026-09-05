@@ -1,8 +1,8 @@
 #!/bin/bash
 # =============================================================================
-# utils/validation.sh — Funciones de validación — PracticaYoruba-db
+# utils/validation.sh — Funciones de validación — Kaupamex-db
 # =============================================================================
-# Portado desde PracticaYoruba-api/scripts/utils/validation.sh sin cambios
+# Portado desde Kaupamex-api/scripts/utils/validation.sh sin cambios
 # funcionales — no contiene referencias al dominio de la API.
 #
 # Depende de: logging.sh, core.sh

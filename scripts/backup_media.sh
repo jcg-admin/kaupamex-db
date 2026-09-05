@@ -1,7 +1,7 @@
 #!/bin/bash
 # =============================================================================
 # scripts/backup_media.sh
-# Backup del árbol de media (uploads) de PracticaYoruba
+# Backup del árbol de media (uploads) de Kaupamex
 # =============================================================================
 # Cierra la brecha H-KRU-02 (diseño Kruchten K2): backup_db.sh respalda SOLO
 # los schemas MariaDB (kaupamex_core, kaupamex_core_qa); los archivos
@@ -111,7 +111,7 @@ init_log "backup_media_${TS}"
 # =============================================================================
 mkdir -p "$BACKUP_DIR"
 
-log_header "Backup media PracticaYoruba — ${TS}"
+log_header "Backup media Kaupamex — ${TS}"
 log_info "  MEDIA_ROOT: ${MEDIA_ROOT}"
 log_info "  Destino:    ${BACKUP_DIR}"
 log_info "  Retención:  ${BACKUP_RETENTION_DAYS} días"

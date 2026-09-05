@@ -1,4 +1,4 @@
-# Integración PracticaYoruba-db con PracticaYoruba-api
+# Integración Kaupamex-db con Kaupamex-api
 
 Este documento describe cómo los dos repositorios trabajan juntos y
 el orden correcto de configuración.
@@ -7,20 +7,20 @@ el orden correcto de configuración.
 
 ## Dos enfoques, un propósito
 
-`PracticaYoruba-api` tiene sus propios scripts de base de datos en
+`Kaupamex-api` tiene sus propios scripts de base de datos en
 `scripts/provisioners/mysql/` que funcionan en un entorno de desarrollo
-local sin separación de repos. `PracticaYoruba-db` es el repositorio
+local sin separación de repos. `Kaupamex-db` es el repositorio
 de infraestructura de BD para entornos de producción o cualquier entorno
 donde la base de datos vive en un servidor dedicado.
 
 | Situación | Enfoque recomendado |
 |---|---|
 | Desarrollo local en una máquina | `sudo bash scripts/bootstrap.sh` en la API |
-| Servidor de BD dedicado (VPS, producción) | `PracticaYoruba-db` provisioners |
-| CI/CD con contenedor de BD separado | `PracticaYoruba-db` provisioners |
+| Servidor de BD dedicado (VPS, producción) | `Kaupamex-db` provisioners |
+| CI/CD con contenedor de BD separado | `Kaupamex-db` provisioners |
 
-Ambos enfoques crean los mismos schemas (`practicayoruba_db` y
-`practicayoruba_qa`) con el mismo usuario (`django_user`) y las mismas
+Ambos enfoques crean los mismos schemas (`kaupamex_db` y
+`kaupamex_qa`) con el mismo usuario (`django_user`) y las mismas
 credenciales por defecto. La diferencia es dónde corren.
 
 ---
@@ -31,14 +31,14 @@ Cada repositorio tiene su propio `.env`. Las variables de BD deben
 ser **idénticas** en ambos archivos. Un cambio en uno que no se replique
 en el otro produce errores silenciosos en tiempo de ejecución.
 
-| `PracticaYoruba-db/.env` | `PracticaYoruba-api/practicayoruba/.env` | Default |
+| `Kaupamex-db/.env` | `Kaupamex-api/kaupamex/.env` | Default |
 |---|---|---|
-| `DB_NAME` | `DB_NAME` | `practicayoruba_db` |
+| `DB_NAME` | `DB_NAME` | `kaupamex_db` |
 | `DB_USER` | `DB_USER` | `django_user` |
 | `DB_PASSWORD` | `DB_PASSWORD` | `django_pass` |
 | `DB_HOST` | `DB_HOST` | `127.0.0.1` |
 | `DB_PORT` | `DB_PORT` | `3306` |
-| `DB_QA_NAME` | `DB_QA_NAME` | `practicayoruba_qa` |
+| `DB_QA_NAME` | `DB_QA_NAME` | `kaupamex_qa` |
 | `DB_QA_USER` | `DB_QA_USER` | `django_user` |
 | `DB_QA_PASSWORD` | `DB_QA_PASSWORD` | `django_pass` |
 | `DB_QA_HOST` | `DB_QA_HOST` | `127.0.0.1` |
@@ -51,7 +51,7 @@ en el otro produce errores silenciosos en tiempo de ejecución.
 Orden obligatorio. Un error en cualquier paso bloquea los siguientes.
 
 ```bash
-# ── En PracticaYoruba-db ────────────────────────────────────────────
+# ── En Kaupamex-db ────────────────────────────────────────────
 cd kaupamex-db
 cp .env.example .env
 # Editar .env con las credenciales reales
@@ -65,13 +65,13 @@ sudo bash provisioners/mariadb/db_setup.sh
 # 3. Crear schema QA para pytest
 sudo bash provisioners/mariadb/db_qa_setup.sh
 
-# ── En PracticaYoruba-api ────────────────────────────────────────────
-cd PracticaYoruba-api
-cp practicayoruba/.env.example practicayoruba/.env
-# Editar practicayoruba/.env con las MISMAS credenciales del paso anterior
+# ── En Kaupamex-api ────────────────────────────────────────────
+cd Kaupamex-api
+cp kaupamex/.env.example kaupamex/.env
+# Editar kaupamex/.env con las MISMAS credenciales del paso anterior
 
 source venv/bin/activate   # activar el virtualenv
-cd practicayoruba
+cd kaupamex
 
 # 4. Aplicar migraciones en el schema de producción
 python manage.py migrate
@@ -83,18 +83,18 @@ DJANGO_SETTINGS_MODULE=config.settings.testing \
 
 # ── Verificación de la integración ──────────────────────────────────
 
-# 6. Verificar BD desde PracticaYoruba-db (script reporta N checks
+# 6. Verificar BD desde Kaupamex-db (script reporta N checks
 #    dinamicamente en el header — DEC-DB-4, sin magic number).
 cd kaupamex-db
 bash scripts/verify.sh
 
-# 7. Verificar BD + ORM desde PracticaYoruba-db (Python; ver check_db.py
+# 7. Verificar BD + ORM desde Kaupamex-db (Python; ver check_db.py
 #    para el conteo actual).
 pip install -r requirements.txt
 python scripts/check_db.py
 
 # 8. Verificar configuración Django
-cd PracticaYoruba-api/practicayoruba
+cd Kaupamex-api/kaupamex
 python manage.py check --database default
 
 # 9. Correr la suite de tests
@@ -108,11 +108,11 @@ pytest
 En cualquier momento, sin necesidad de reprovisionar:
 
 ```bash
-# Desde PracticaYoruba-db
+# Desde Kaupamex-db
 bash scripts/verify.sh           # verifica MariaDB, schemas, privilegios
 python scripts/check_db.py       # verifica conectividad ORM y migraciones
 
-# Desde PracticaYoruba-api/practicayoruba
+# Desde Kaupamex-api/kaupamex
 python manage.py check --database default      # Django ORM
 python manage.py showmigrations                # estado de migraciones
 DJANGO_SETTINGS_MODULE=config.settings.testing \
@@ -129,7 +129,7 @@ pytest                                         # suite completa
 Las migraciones no se han aplicado aún.
 
 ```bash
-cd PracticaYoruba-api/practicayoruba
+cd Kaupamex-api/kaupamex
 python manage.py migrate
 ```
 
@@ -138,7 +138,7 @@ python manage.py migrate
 La migración de la app `users` no se aplicó.
 
 ```bash
-cd PracticaYoruba-api/practicayoruba
+cd Kaupamex-api/kaupamex
 python manage.py migrate apps.users
 ```
 
@@ -146,8 +146,8 @@ python manage.py migrate apps.users
 
 Las credenciales en los dos `.env` no coinciden.
 
-1. Verificar `PracticaYoruba-db/.env` — los valores de `DB_*`
-2. Verificar `PracticaYoruba-api/practicayoruba/.env` — deben ser idénticos
+1. Verificar `Kaupamex-db/.env` — los valores de `DB_*`
+2. Verificar `Kaupamex-api/kaupamex/.env` — deben ser idénticos
 3. Verificar que MariaDB está activo: `bash scripts/verify.sh`
 
 ### `OperationalError: (2002, ...)` en pytest
@@ -155,7 +155,7 @@ Las credenciales en los dos `.env` no coinciden.
 MariaDB no está corriendo.
 
 ```bash
-# Desde PracticaYoruba-db
+# Desde Kaupamex-db
 bash scripts/verify.sh   # diagnostica el estado completo
 ```
 

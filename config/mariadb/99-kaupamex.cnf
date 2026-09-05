@@ -1,16 +1,16 @@
 # =============================================================================
-# config/mariadb/99-practicayoruba.cnf
+# config/mariadb/99-kaupamex.cnf
 # Overrides de MariaDB 11.8 para la plataforma Kaupamex
 # =============================================================================
 #
 # Este archivo es la fuente de verdad para la configuración de MariaDB del
 # proyecto. Durante el provisionamiento se activa con un symlink:
 #
-#   sudo ln -sf "$(pwd)/config/mariadb/99-practicayoruba.cnf" \
-#               /etc/mysql/mariadb.conf.d/99-practicayoruba.cnf
+#   sudo ln -sf "$(pwd)/config/mariadb/99-kaupamex.cnf" \
+#               /etc/mysql/mariadb.conf.d/99-kaupamex.cnf
 #   sudo systemctl reload mariadb
 #
-# Por qué 99-practicayoruba.cnf y no modificar 50-server.cnf:
+# Por qué 99-kaupamex.cnf y no modificar 50-server.cnf:
 #   - 50-server.cnf es propiedad del paquete mariadb-server. Puede ser
 #     sobreescrito en actualizaciones del sistema operativo.
 #   - MariaDB lee los archivos de mariadb.conf.d/ en orden alfabético.

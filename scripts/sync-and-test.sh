@@ -1,6 +1,6 @@
 #!/usr/bin/env bash
 #
-# sync-and-test.sh — Sincroniza los 5 repos de PracticaYoruba a develop
+# sync-and-test.sh — Sincroniza los 5 repos de Kaupamex a develop
 # (fast-forward only) y, opcionalmente, reinstala dependencias.
 # Pensado para el entorno WSL2 `Ubuntu-ecomerce-p001`.
 #
@@ -26,8 +26,8 @@
 #     (`db_qa_setup.sh`) exige root/`sudo` — son paso del perfil `deploy`,
 #     NO de `develop`. Bundlearlos en un script develop-only fallaria.
 #   - `pytest` debe correr desde la RAIZ del repo api (ahi vive `pytest.ini`
-#     con `pythonpath=practicayoruba` + `testpaths=tests`). Desde
-#     `practicayoruba/` colecta 0 items (verde falso).
+#     con `pythonpath=kaupamex` + `testpaths=tests`). Desde
+#     `kaupamex/` colecta 0 items (verde falso).
 #   Por eso las pruebas se documentan como procedimiento de dos perfiles
 #   con captura de exit. Ver `--test-steps`.
 #

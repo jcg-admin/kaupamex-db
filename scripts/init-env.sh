@@ -1,6 +1,6 @@
 #!/bin/bash
 # =============================================================================
-# init-env.sh — Genera .env con credenciales seguras para PracticaYoruba-db
+# init-env.sh — Genera .env con credenciales seguras para Kaupamex-db
 # =============================================================================
 # Uso:
 #   bash scripts/init-env.sh [--db-root <path>] [--api-root <path>]
@@ -21,7 +21,7 @@
 #
 #   2. kaupamex-db/.env  ← copia derivada (repo standalone)
 #
-#   3. kaupamex-api/practicayoruba/.env  ← copia derivada (API Django)
+#   3. kaupamex-api/kaupamex/.env  ← copia derivada (API Django)
 #      bootstrap.sh lee DB_PASSWORD desde aquí.
 #
 # Invariante crítica — DB_PASSWORD == DB_QA_PASSWORD:
@@ -121,15 +121,15 @@ else
     API_REPO_ROOT=""
     for cand in \
         "${PARENT}/kaupamex-api" \
-        "${PARENT}/PracticaYoruba-api"; do
-        [[ -d "$cand/practicayoruba" ]] && { API_REPO_ROOT="$cand"; break; }
+        "${PARENT}/Kaupamex-api"; do
+        [[ -d "$cand/kaupamex" ]] && { API_REPO_ROOT="$cand"; break; }
     done
 fi
 
-API_ENV="${API_REPO_ROOT:+${API_REPO_ROOT}/practicayoruba/.env}"
-API_ENV_EXAMPLE="${API_REPO_ROOT:+${API_REPO_ROOT}/practicayoruba/.env.example}"
+API_ENV="${API_REPO_ROOT:+${API_REPO_ROOT}/kaupamex/.env}"
+API_ENV_EXAMPLE="${API_REPO_ROOT:+${API_REPO_ROOT}/kaupamex/.env.example}"
 
-echo "=== PracticaYoruba — init-env.sh ==="
+echo "=== Kaupamex — init-env.sh ==="
 echo ""
 echo "  db-root     : ${DB_REPO_ROOT}"
 echo "  monorepo-db : ${MONOREPO_DB_ROOT:-(no detectado — provisioners usarán kaupamex/db/)}"
@@ -237,7 +237,7 @@ _apply_creds "$DB_ENV_EXAMPLE" "$DB_ENV"
 echo "  Creado: ${DB_ENV}"
 echo ""
 
-# ── 3. API kaupamex-api/practicayoruba/.env ──────────────────────────────
+# ── 3. API kaupamex-api/kaupamex/.env ──────────────────────────────
 if [[ -n "$API_ENV" ]]; then
     if [[ "$API_ENV_EXISTED" == "false" ]]; then
         if [[ -f "$API_ENV_EXAMPLE" ]]; then

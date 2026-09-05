@@ -9,7 +9,7 @@ staging) o para verificar que el estado en producción es el correcto.
 
 REQUIERE un usuario con privilegios suficientes para crear schemas
 y usuarios. Se recomienda usar un usuario admin configurado aparte,
-NO el usuario practicayoruba_app de la aplicación.
+NO el usuario kaupamex_app de la aplicación.
 
 Por defecto usa DB_USER y DB_PASSWORD del .env que deben tener
 CREATE, CREATE USER y GRANT OPTION. Si no los tienen, el script
@@ -20,10 +20,10 @@ Estado objetivo en VM3:
            kaupamex_core_qa (utf8mb4/utf8mb4_unicode_ci)
 
   Usuarios:
-    practicayoruba_app@%            → DML en db, ALL en qa
-    practicayoruba_app@localhost    → idem
-    practicayoruba_app@127.0.0.1   → idem
-    practicayoruba_readonly@%      → SELECT en db
+    kaupamex_app@%            → DML en db, ALL en qa
+    kaupamex_app@localhost    → idem
+    kaupamex_app@127.0.0.1   → idem
+    kaupamex_readonly@%      → SELECT en db
 
 Uso:
   cd scripts/db-client
@@ -119,9 +119,9 @@ def load_env(path: str = None) -> dict:
 
 def connect_admin(env: dict) -> mysql.connector.MySQLConnection:
     params = {
-        'host':               env.get('DB_HOST', 'db.practicayoruba.com'),
+        'host':               env.get('DB_HOST', 'db.kaupamex.com'),
         'port':               int(env.get('DB_PORT', 3306)),
-        'user':               env.get('DB_USER', 'practicayoruba_app'),
+        'user':               env.get('DB_USER', 'kaupamex_app'),
         'password':           env.get('DB_PASSWORD', ''),
         'connection_timeout': 10,
         'ssl_verify_cert':    True,
@@ -196,16 +196,16 @@ def setup_schemas(cnx, log: Logger, dry_run: bool) -> bool:
 
 
 def setup_usuario_app(cnx, env: dict, log: Logger, dry_run: bool) -> bool:
-    log.step(2, 5, "Crear usuario practicayoruba_app (3 hosts)")
+    log.step(2, 5, "Crear usuario kaupamex_app (3 hosts)")
     ok = True
     pwd = env.get('DB_PASSWORD', '')
 
     for host in ['%', 'localhost', '127.0.0.1']:
-        user_host = f"'practicayoruba_app'@'{host}'"
+        user_host = f"'kaupamex_app'@'{host}'"
 
         exists = row_exists(cnx,
             f"SELECT COUNT(*) FROM mysql.user "
-            f"WHERE User='practicayoruba_app' AND Host='{host}'")
+            f"WHERE User='kaupamex_app' AND Host='{host}'")
 
         if exists and not dry_run:
             # Sincronizar contraseña
@@ -224,14 +224,14 @@ def setup_usuario_app(cnx, env: dict, log: Logger, dry_run: bool) -> bool:
 
 
 def setup_usuario_readonly(cnx, env: dict, log: Logger, dry_run: bool) -> bool:
-    log.step(3, 5, "Crear usuario practicayoruba_readonly")
+    log.step(3, 5, "Crear usuario kaupamex_readonly")
     ok = True
     pwd = env.get('DB_READONLY_PASSWORD', '')
-    user_host = "'practicayoruba_readonly'@'%'"
+    user_host = "'kaupamex_readonly'@'%'"
 
     exists = row_exists(cnx,
         "SELECT COUNT(*) FROM mysql.user "
-        "WHERE User='practicayoruba_readonly' AND Host='%'")
+        "WHERE User='kaupamex_readonly' AND Host='%'")
 
     if exists and not dry_run:
         ok &= exec_sql(cnx,
@@ -255,23 +255,23 @@ def setup_grants(cnx, log: Logger, dry_run: bool) -> bool:
     grants = [
         # app — DML en prod (3 hosts)
         ("SELECT, INSERT, UPDATE, DELETE", "kaupamex_core.*",
-         "practicayoruba_app", "%"),
+         "kaupamex_app", "%"),
         ("SELECT, INSERT, UPDATE, DELETE", "kaupamex_core.*",
-         "practicayoruba_app", "localhost"),
+         "kaupamex_app", "localhost"),
         ("SELECT, INSERT, UPDATE, DELETE", "kaupamex_core.*",
-         "practicayoruba_app", "127.0.0.1"),
+         "kaupamex_app", "127.0.0.1"),
 
         # app — ALL en QA (3 hosts)
         ("ALL PRIVILEGES", "kaupamex_core_qa.*",
-         "practicayoruba_app", "%"),
+         "kaupamex_app", "%"),
         ("ALL PRIVILEGES", "kaupamex_core_qa.*",
-         "practicayoruba_app", "localhost"),
+         "kaupamex_app", "localhost"),
         ("ALL PRIVILEGES", "kaupamex_core_qa.*",
-         "practicayoruba_app", "127.0.0.1"),
+         "kaupamex_app", "127.0.0.1"),
 
         # readonly — SELECT en prod
         ("SELECT", "kaupamex_core.*",
-         "practicayoruba_readonly", "%"),
+         "kaupamex_readonly", "%"),
     ]
 
     for privs, on, user, host in grants:
@@ -288,13 +288,13 @@ def setup_grants(cnx, log: Logger, dry_run: bool) -> bool:
 def verificar_grants(cnx, log: Logger, dry_run: bool) -> bool:
     log.step(5, 5, "Verificar grants aplicados")
     if dry_run:
-        log.dry("SHOW GRANTS FOR 'practicayoruba_app'@'%'")
-        log.dry("SHOW GRANTS FOR 'practicayoruba_readonly'@'%'")
+        log.dry("SHOW GRANTS FOR 'kaupamex_app'@'%'")
+        log.dry("SHOW GRANTS FOR 'kaupamex_readonly'@'%'")
         return True
 
     ok = True
-    for user, host in [('practicayoruba_app', '%'),
-                        ('practicayoruba_readonly', '%')]:
+    for user, host in [('kaupamex_app', '%'),
+                        ('kaupamex_readonly', '%')]:
         try:
             cur = cnx.cursor()
             cur.execute(f"SHOW GRANTS FOR '{user}'@'{host}'")
@@ -321,12 +321,12 @@ def main():
     log = Logger("setup_db")
     env = load_env()
 
-    host = env.get('DB_HOST', 'db.practicayoruba.com')
+    host = env.get('DB_HOST', 'db.kaupamex.com')
     port = env.get('DB_PORT', '3306')
 
     mode = "DRY-RUN" if args.dry_run else "APLICANDO"
     log.header(f"SETUP DB — {host}:{port} [{mode}]")
-    log.info(f"Usuario admin: {env.get('DB_USER', 'practicayoruba_app')}")
+    log.info(f"Usuario admin: {env.get('DB_USER', 'kaupamex_app')}")
     log.info(f"Log: {log.log_file}")
 
     if args.dry_run:

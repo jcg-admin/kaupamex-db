@@ -1,13 +1,13 @@
 #!/bin/bash
 # =============================================================================
-# utils/logging.sh — Funciones de logging — PracticaYoruba-db
+# utils/logging.sh — Funciones de logging — Kaupamex-db
 # =============================================================================
-# Portado desde PracticaYoruba-api/scripts/utils/logging.sh.
+# Portado desde Kaupamex-api/scripts/utils/logging.sh.
 #
 # Adaptación respecto al original:
 #   init_log usa ${PROJECT_ROOT}/logs en lugar de
-#   ${PROJECT_ROOT}/practicayoruba/logs — en PracticaYoruba-db no
-#   existe el subdirectorio practicayoruba/.
+#   ${PROJECT_ROOT}/kaupamex/logs — en Kaupamex-db no
+#   existe el subdirectorio kaupamex/.
 #   (Hallazgo H-F2-001)
 #
 # Provee:

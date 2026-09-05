@@ -4,7 +4,7 @@ Runbook de operaciones de **kaupamex-db**.
 
 > **Reescrito 2026-08-12 (tarea #249, H-SERVER-11).** La versión anterior
 > era un runbook de MariaDB: 70 menciones al motor retirado, 8 al par de
-> schemas `practicayoruba_*` y 8 a `/opt/practicayoruba/`, más una sección
+> schemas `kaupamex_*` y 8 a `/opt/kaupamex/`, más una sección
 > completa sobre un fixture de pytest que ya no existe. Barrer sólo las
 > rutas —el eje barato— lo habría sacado de la lista de pendientes dejando
 > declarado el motor equivocado, que es lo que
@@ -17,12 +17,12 @@ Tres capas que la versión anterior de este archivo colapsaba en una:
 - **Kaupamex es el producto y el operador L0.** Da nombre a la
   infraestructura: bases `kaupamex_core` / `kaupamex_core_qa`, rutas de
   despliegue `/opt/kaupamex/`, repos `kaupamex-{api,db,docs,server,ui}`.
-- **PracticaYoruba es una empresa L1** — la de ejemplo, no el producto.
+- **Kaupamex es una empresa L1** — la de ejemplo, no el producto.
   Un e-commerce es lo que hace un L1, nunca la plataforma entera.
 - **kaupamex-db** es este repositorio (`jcg-admin/kaupamex-db`).
 
 Canon: `.claude/rules/terminologia-l0-company.md`, DEC-KX-05, DEC-KX-06 y
-ADR-021. Las apariciones de `practicayoruba` que **sí** son correctas hoy
+ADR-021. Las apariciones de `kaupamex` que **sí** son correctas hoy
 son las de la empresa L1; en **infraestructura** (nombre de base, ruta de
 despliegue, dominio de plataforma) son drift y se corrigen al encontrarlas.
 
@@ -185,7 +185,7 @@ Timestamp en `America/Mexico_City`. Retención por
 sudo bash scripts/setup_backup_cron.sh
 ```
 
-Instala `/etc/cron.d/practicayoruba-backup`, que corre el backup diario a
+Instala `/etc/cron.d/kaupamex-backup`, que corre el backup diario a
 las 02:00 (`America/Mexico_City`) como `svc-dbdata`.
 
 Prerequisito: el bind mount
@@ -193,9 +193,9 @@ Prerequisito: el bind mount
 mount Clase C").
 
 > **El nombre del archivo de cron y el del log siguen diciendo
-> `practicayoruba`.** Es deliberado: renombrar
-> `/etc/cron.d/practicayoruba-backup` y
-> `/var/log/practicayoruba-backup.log` es una decisión de rename aparte —
+> `kaupamex`.** Es deliberado: renombrar
+> `/etc/cron.d/kaupamex-backup` y
+> `/var/log/kaupamex-backup.log` es una decisión de rename aparte —
 > el mismo precedente con el que H-SERVER-08 dejó los nombres de vhost.
 > Lo que **sí** se corrigió aquí es a qué script apunta el cron: instalaba
 > `backup_db.sh` (MariaDB) mientras su propio comentario declaraba respaldar
@@ -326,11 +326,11 @@ relación cross-user es lo que hay que entender.
 | `/opt/kaupamex/backups/database/` (dumps) | `svc-dbdata:svc-dbdata` | 755 | sólo `svc-dbdata` y root |
 | `/opt/kaupamex/backups/project/` | `svc-backups:svc-backups` | 755 | sólo `svc-backups` y root |
 | `/var/lib/postgresql/16/main/` (datadir) | `postgres:postgres` | 700 | sólo `postgres` y root |
-| `/etc/ssl/practicayoruba/cert.pem` | `root:root` | 644 | todos (cert público) |
-| `/etc/ssl/practicayoruba/key.pem` | `root:root` | 600 | sólo root |
+| `/etc/ssl/kaupamex/cert.pem` | `root:root` | 644 | todos (cert público) |
+| `/etc/ssl/kaupamex/key.pem` | `root:root` | 600 | sólo root |
 
 `SSL_CERT_DIR` conserva el nombre del L1 porque está atado al **dominio
-real** (`practicayoruba.mx`), no a la plataforma: es una decisión de DNS,
+real** (`kaupamex.mx`), no a la plataforma: es una decisión de DNS,
 no de layout. Ese es el criterio que la separa de las rutas de despliegue,
 que sí se migraron.
 
@@ -388,7 +388,7 @@ está en el `.gitignore` del repo y el bind mount lo saca del árbol real.
 
 `provisioners/mariadb/`, `scripts/start_db.sh`, `verify.sh`,
 `backup_db.sh`, `check_db.py`, `utils/database.sh` y
-`config/mariadb/99-practicayoruba.cnf` **no sirven a ningún entorno**. La VM
+`config/mariadb/99-kaupamex.cnf` **no sirven a ningún entorno**. La VM
 que los usaba se eliminó y no se considera activa; el próximo despliegue se
 levanta con PostgreSQL + Gunicorn embebido.
 

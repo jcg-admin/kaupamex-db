@@ -38,8 +38,8 @@ provisioner que crea el objeto equivocado y un `GRANT` que no protege nada.
 | Identidad que se conecta | **user** (`'u'@'host'`) | **rol** con `LOGIN` — no lleva host en el nombre |
 | Alcance del `GRANT` | por schema | por database **y** por schema **y** por objeto |
 
-Consecuencia operativa: nuestros dos schemas de MariaDB (`practicayoruba_db`,
-`practicayoruba_qa`) se convierten en dos **databases** de PostgreSQL, no en dos
+Consecuencia operativa: nuestros dos schemas de MariaDB (`kaupamex_db`,
+`kaupamex_qa`) se convierten en dos **databases** de PostgreSQL, no en dos
 schemas de una sola. Y el rol necesita `GRANT ALL ON SCHEMA public` explícito
 —ver §4— o el ORM falla en la primera migración.
 
