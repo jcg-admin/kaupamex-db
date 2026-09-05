@@ -1,6 +1,6 @@
 # CLAUDE.md — kaupamex-db
 
-Submódulo **db** del monorepo PracticaYoruba (repo GitHub `jcg-admin/kaupamex-db`).
+Submódulo **db** del multi-repo Kaupamex (repo GitHub `jcg-admin/kaupamex-db`).
 Base de datos, provisionada con bash + python-dotenv (sin Vagrant).
 Cheat-sheet local — no duplica el gobierno del padre.
 
@@ -151,7 +151,7 @@ scripts/                start_postgres.sh, verify_postgres.sh, backup_postgres.s
   db-client/            verificación SSL/privilegios contra la VM de producción
 utils/                  core.sh, database.sh (MariaDB), postgresql.sh, logging.sh,
                         network.sh, validation.sh
-config/mariadb/         99-practicayoruba.cnf
+config/mariadb/         99-kaupamex.cnf
 ```
 
 ## Bases y rol (PostgreSQL)
@@ -168,8 +168,10 @@ namespace **dentro** de una base (el default es `public`).
 - Las bases por empresa (`company_<N>_db`) las crea la app, con `pg_trgm` y
   `unaccent` instaladas al crearlas.
 
-**Motor viejo (sin entorno activo):** schemas `practicayoruba_db` /
-`practicayoruba_qa` en MariaDB, charset `utf8mb4`, collate `utf8mb4_unicode_ci`.
+**Motor viejo (sin entorno activo):** dos schemas en MariaDB —uno de
+producción y uno de pruebas—, charset `utf8mb4`, collate `utf8mb4_unicode_ci`.
+Sus nombres llevaban el del L1 y se retiraron con el barrido del 2026-09-05;
+el git log los conserva.
 
 ## Lo que este submódulo NO lleva (y por qué)
 
