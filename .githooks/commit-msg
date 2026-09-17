@@ -97,4 +97,45 @@ case "$FIRST_WORD" in
         ;;
 esac
 
+# -----------------------------------------------------------------------------
+# Segundo eje: la cita durable RESUELVE, no solo tiene la FORMA
+# -----------------------------------------------------------------------------
+# Una cadena `TASK-<CAPA>-NNNN` con forma impecable puede no nombrar a nadie: el
+# NNNN es la secuencia del store, no el ordinal del board, y rellenar el ordinal
+# a cuatro digitos la fabrica. Medido sobre 400 commits del proveedor: 13 de 114
+# citas distintas no resuelven, todas con esa forma (H-THYROX-62).
+#
+# EL MECANISMO VIVE EN EL PROVEEDOR, no aqui. Este bloque es un STUB: resuelve
+# donde esta thyrox y le pasa el mensaje. Mismo reparto que el `pre-commit` de
+# kaupamex-docs, que es el precedente ya decidido de como un consumidor invoca
+# un gate del proveedor.
+#
+# El envoltorio sale 0 o 2, NUNCA 1: un 1 abortaria este hook bajo `set -e`
+# antes de su propio veredicto Tim Pope. Por eso el aviso de deuda heredada
+# viaja por stderr y el codigo dice «sigue», y la graduacion es una linea alla.
+DUENO=""
+if [ -n "${THYROX_ROOT:-}" ]; then
+    DUENO="$THYROX_ROOT/bin/commit-msg-citation"
+else
+    NIVEL="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
+    while [ "$NIVEL" != "/" ]; do
+        if [ -f "$NIVEL/thyrox/bin/commit-msg-citation" ]; then
+            DUENO="$NIVEL/thyrox/bin/commit-msg-citation"; break
+        fi
+        NIVEL="$(dirname "$NIVEL")"
+    done
+fi
+if [ -z "$DUENO" ] || [ ! -f "$DUENO" ]; then
+    cat >&2 <<'MSG'
+commit-msg REHUSADO — no se encontro thyrox/bin/commit-msg-citation.
+No se emite un veredicto: un gate que no puede medir no autoriza el commit.
+Declarar THYROX_ROOT, o clonar thyrox junto a los repos de kaupamex.
+Emergencia: `git commit --no-verify` (y anotar el motivo en el progreso).
+MSG
+    exit 2
+fi
+CITA=0
+bash "$DUENO" "$1" || CITA=$?
+[ "$CITA" -eq 0 ] || exit 2
+
 exit "$EXIT"
