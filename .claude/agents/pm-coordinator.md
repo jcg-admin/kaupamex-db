@@ -15,7 +15,6 @@ skills:
   - pm-monitoring
   - pm-closing
 background: true
-isolation: worktree
 color: yellow
 updated_at: 2026-04-17 14:30:24
 ---

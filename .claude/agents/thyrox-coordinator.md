@@ -9,7 +9,6 @@ tools:
   - Grep
   - Bash
 background: true
-isolation: worktree
 updated_at: 2026-04-20 13:27:25
 ---
 
