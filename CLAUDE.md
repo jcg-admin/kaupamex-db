@@ -29,7 +29,13 @@ El análisis que fundó el cambio: `analisis-postgres-only-vs-mariadb.rst` y
 
 ## Gobernanza
 
-Las reglas no negociables viven en el superproyecto, no aquí:
+
+La entrada efectiva para Codex es `AGENTS.md` en este repositorio. El
+superproyecto `../kaupamex/` no está montado en este workspace. Las reglas
+locales de `.claude/rules/` se consultan según el componente y no dependen de
+una carga automática del padre. Los enlaces históricos siguientes al
+superproyecto están sin resolver; no deben tratarse como instrucciones
+cargadas ni como requisito implícito para trabajar:
 
 - `../kaupamex/.claude/CLAUDE.md` — contexto persistente (Level 2).
 - `../kaupamex/.claude/rules/` — reglas cargadas en cada sesión. En particular:
